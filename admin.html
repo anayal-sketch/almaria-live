@@ -323,6 +323,10 @@ const D={
   k_prospect:'Prospect', k_resident:'Resident', k_supplier:'Supplier', k_agent:'Agent',
   k_other:'Other', k_unknown:'Not decided',
   crm_search:'Search a name, phone or email',
+  crm_unit:'Apartment', crm_lease:'Lease term', crm_from:'From',
+  crm_ended:'Ended', crm_current:'Current', crm_earlier:'earlier',
+  crm_earlier_t:'This person has more than one lease on file. The current one is shown.',
+  crm_no_lease:'No lease on file for this person.',
   crm_ident:'Identity and employment',
   crm_id_type:'Document', crm_id_no:'Number', crm_id_exp:'Expires',
   crm_nat:'Nationality', crm_job:'Job title', crm_emp:'Employer',
@@ -773,6 +777,10 @@ const D={
   k_prospect:'مستأجر محتمل', k_resident:'ساكن', k_supplier:'مورّد', k_agent:'وسيط',
   k_other:'أخرى', k_unknown:'لم يُحدَّد',
   crm_search:'ابحث باسم أو جوال أو بريد',
+  crm_unit:'الشقة', crm_lease:'مدة العقد', crm_from:'من',
+  crm_ended:'منتهٍ', crm_current:'ساري', crm_earlier:'سابق',
+  crm_earlier_t:'لهذا الشخص أكثر من عقد مسجّل. المعروض هو العقد الحالي.',
+  crm_no_lease:'لا يوجد عقد مسجّل لهذا الشخص.',
   crm_ident:'الهوية وجهة العمل',
   crm_id_type:'نوع الوثيقة', crm_id_no:'الرقم', crm_id_exp:'تنتهي في',
   crm_nat:'الجنسية', crm_job:'المسمى الوظيفي', crm_emp:'جهة العمل',
@@ -4143,6 +4151,7 @@ function pgSup(){
    ========================================================================== */
 const CRM = (function(){
   let contacts = [], deals = [], tasks = [], renewals = [], agreements = [], timeline = {};
+  let tenancy = {};
   let loaded = false, loading = false, err = null;
 
   const uid = () => { const c = SB.claims(); return (c && c.sub) || null; };
@@ -4151,14 +4160,21 @@ const CRM = (function(){
     if(loading) return loaded;
     loading = true; err = null;
     try{
-      const [c, d, t, r, a] = await Promise.all([
+      const [c, d, t, r, a, ten] = await Promise.all([
         SB.sel('contacts',   'select=*&order=name_en.asc'),
         SB.sel('deals',      'select=*,contacts(name_en,name_ar)&order=stage_since.desc'),
         SB.sel('tasks_open', 'select=*&order=due_on.asc.nullslast'),
         SB.sel('renewals_due','select=*&order=ends_on.asc'),
-        SB.sel('supplier_agreements_due','select=*&order=ends_on.asc.nullslast')
+        SB.sel('supplier_agreements_due','select=*&order=ends_on.asc.nullslast'),
+        SB.sel('contact_tenancy','select=*&order=contact_id.asc,ends_on.desc')
       ]);
       contacts = c; deals = d; tasks = t; renewals = r; agreements = a;
+      /* Grouped by person, current lease first. A resident with a renewal
+         history has several rows and none of them is dropped. */
+      tenancy = {};
+      ten.forEach(x => { (tenancy[x.contact_id] = tenancy[x.contact_id] || []).push(x); });
+      Object.values(tenancy).forEach(list => list.sort(
+        (x,y) => (y.is_current - x.is_current) || String(y.ends_on).localeCompare(String(x.ends_on))));
       loaded = true;
     }catch(e){ err = e; loaded = false; console.error('CRM.load', e); }
     finally{ loading = false; }
@@ -4183,6 +4199,7 @@ const CRM = (function(){
     tasks:      () => tasks,
     renewals:   () => renewals,
     agreements: () => agreements,
+    tenancy:    id => tenancy[id] || [],
     cached:     id => timeline[id] || null,
     reload:     async () => { loaded = false; return load(); }
   };
@@ -4239,13 +4256,15 @@ function pgCRM(){
     </div></div>` :
   `<div class="card"><div class="tw"><table>
     <thead><tr><th>${T('crm_name')}</th><th>${T('crm_kind')}</th><th>${T('crm_phone')}</th>
-      <th>${T('crm_email')}</th><th>${T('crm_linked')}</th><th>${T('crm_id_on_file')}</th></tr></thead>
+      <th>${T('crm_unit')}</th><th>${T('crm_lease')}</th>
+      <th>${T('crm_email')}</th><th>${T('crm_id_on_file')}</th></tr></thead>
     <tbody>${rows.map(c=>`<tr style="cursor:pointer" onclick="contactDrawer(${c.id})">
       <td class="strong">${esc(cName(c))}</td>
       <td><span class="pill p-neut">${kindName(c.kind)}</span></td>
       <td class="mono">${c.phone ? esc(c.phone) : '<span class="sub2">—</span>'}</td>
+      <td class="mono strong">${unitCell(c)}</td>
+      <td class="mono sub2">${leaseCell(c)}</td>
       <td>${c.email ? esc(c.email) : '<span class="sub2">—</span>'}</td>
-      <td class="sub2">${c.resident_id ? T('crm_is_res') : c.supplier_id ? esc(c.supplier_id) : '—'}</td>
       <td class="sub2">${c.id_number ? `<span class="pill p-neut">${idTypeName(c.id_type)}</span>` : '—'}</td>
     </tr>`).join('')}</tbody></table></div></div>`}
   <div class="note">${T('crm_note')}</div>`;
@@ -4259,6 +4278,7 @@ async function contactDrawer(id){
     <div class="note" style="margin-bottom:12px">
       ${kindName(c.kind)}${c.phone?' · <span class="mono">'+esc(c.phone)+'</span>':''}${c.email?' · '+esc(c.email):''}
     </div>
+    ${tenancyBlock(c)}
     ${identityBlock(c)}
     <button class="btn pri" onclick="logContactOpen(${id})">${I('plus',15)} ${T('crm_log')}</button>
     <div class="f" style="margin:18px 0 8px">${T('crm_timeline')}</div>
@@ -4289,6 +4309,24 @@ function maskId(v){
 }
 function idReveal(id){ ID_SHOWN = (ID_SHOWN === id) ? null : id; contactDrawer(id); }
 
+function tenancyBlock(c){
+  const t = CRM.tenancy(c.id);
+  if(!t.length) return c.resident_id
+    ? `<div class="note" style="margin-bottom:12px">${T('crm_no_lease')}</div>` : '';
+  return `<div class="card" style="margin:0 0 14px"><div class="tw"><table>
+    <thead><tr><th>${T('crm_unit')}</th><th>${T('ren_ends')}</th>
+      <th>${T('crm_from')}</th><th class="num">${T('ren_value')}</th><th></th></tr></thead>
+    <tbody>${t.map(x=>`<tr>
+      <td class="strong mono">${esc(x.unit_id)}</td>
+      <td class="mono">${x.ends_on ? fmtISO(x.ends_on) : '<span class="sub2">—</span>'}</td>
+      <td class="mono sub2">${x.starts_on ? fmtISO(x.starts_on) : '—'}</td>
+      <td class="num mono">${x.contract_value==null?'<span class="sub2">—</span>':money(x.contract_value)}</td>
+      <td>${x.is_current
+            ? `<span class="pill p-good">${T('crm_current')}</span>`
+            : `<span class="pill p-neut">${T('crm_ended')}</span>`}</td>
+    </tr>`).join('')}</tbody></table></div></div>`;
+}
+
 function identityBlock(c){
   const bits = [];
   if(c.job_title)   bits.push(esc(c.job_title));
@@ -4311,6 +4349,32 @@ function identityBlock(c){
         ${exp}
       </div>` : exp}
   </div></div>`;
+}
+
+/* A contact's flat and lease term, from contact_tenancy. Both facts were
+   already in `leases`; nothing here is deduced.
+
+   A lease that has ENDED is shown as ended rather than left blank. Three of the
+   twenty residents are in that state, and a blank cell would read as "we do not
+   know" — which is a different thing and this project keeps them apart. */
+function unitCell(c){
+  const t = CRM.tenancy(c.id);
+  if(!t.length) return '<span class="sub2">—</span>';
+  const cur = t[0];
+  return esc(cur.unit_id) + (cur.is_current ? ''
+    : ` <span class="pill p-neut">${T('crm_ended')}</span>`);
+}
+function leaseCell(c){
+  const t = CRM.tenancy(c.id);
+  if(!t.length) return '<span class="sub2">—</span>';
+  const cur = t[0];
+  const term = (cur.starts_on ? fmtISO(cur.starts_on) : '—') + ' → ' +
+               (cur.ends_on   ? fmtISO(cur.ends_on)   : '—');
+  /* Never show one of several without saying there are others. */
+  const more = t.length > 1
+    ? ` <span class="sub2" title="${T('crm_earlier_t')}">+${NUM(t.length-1)} ${T('crm_earlier')}</span>`
+    : '';
+  return term + more;
 }
 
 /* --------------------------------- writing ------------------------------ */
