@@ -323,6 +323,8 @@ const D={
   k_prospect:'Prospect', k_resident:'Resident', k_supplier:'Supplier', k_agent:'Agent',
   k_other:'Other', k_unknown:'Not decided',
   crm_search:'Search a name, phone or email',
+  crm_edit:'Edit details', crm_id_keep:'leave blank to keep the number on file',
+  crm_id_on_file_note:'A number is already on file; typing here replaces it.',
   crm_unit:'Apartment', crm_lease:'Lease term', crm_from:'From',
   crm_ended:'Ended', crm_current:'Current', crm_earlier:'earlier',
   crm_earlier_t:'This person has more than one lease on file. The current one is shown.',
@@ -777,6 +779,8 @@ const D={
   k_prospect:'مستأجر محتمل', k_resident:'ساكن', k_supplier:'مورّد', k_agent:'وسيط',
   k_other:'أخرى', k_unknown:'لم يُحدَّد',
   crm_search:'ابحث باسم أو جوال أو بريد',
+  crm_edit:'تعديل البيانات', crm_id_keep:'اتركه فارغاً للإبقاء على الرقم المسجّل',
+  crm_id_on_file_note:'يوجد رقم مسجّل بالفعل؛ الكتابة هنا تستبدله.',
   crm_unit:'الشقة', crm_lease:'مدة العقد', crm_from:'من',
   crm_ended:'منتهٍ', crm_current:'ساري', crm_earlier:'سابق',
   crm_earlier_t:'لهذا الشخص أكثر من عقد مسجّل. المعروض هو العقد الحالي.',
@@ -4281,6 +4285,8 @@ async function contactDrawer(id){
     ${tenancyBlock(c)}
     ${identityBlock(c)}
     <button class="btn pri" onclick="logContactOpen(${id})">${I('plus',15)} ${T('crm_log')}</button>
+    <button class="btn" style="margin-${LANG==='ar'?'right':'left'}:8px"
+            onclick="contactOpen(${id})">${T('crm_edit')}</button>
     <div class="f" style="margin:18px 0 8px">${T('crm_timeline')}</div>
     ${rows === null ? `<div class="note">${T('crm_loading')}</div>`
       : !rows.length ? `<div class="note">${T('crm_tl_none')}</div>`
@@ -4378,46 +4384,55 @@ function leaseCell(c){
 }
 
 /* --------------------------------- writing ------------------------------ */
-function contactOpen(){
-  openDrawer(T('crm_add'), `
+/* The same form for a new contact and an existing one. The one field that is
+   NOT pre-filled is the identity number: printing it back into an input would
+   put it on screen in plain text every time somebody edits a phone number,
+   which is exactly what the masking on the card exists to prevent. Left blank
+   it keeps whatever is on file; typed into, it replaces it. */
+function contactOpen(id){
+  const c = id ? CRM.contacts().find(x => x.id === id) : null;
+  const v = k => c && c[k] ? esc(c[k]) : '';
+  openDrawer(c ? T('crm_edit') : T('crm_add'), `
     <div style="margin:10px 0"><label class="f">${T('crm_name_en')}</label>
-      <input class="inp" id="cNameEn" placeholder="Faisal Al-Otaibi"></div>
+      <input class="inp" id="cNameEn" value="${v('name_en')}" placeholder="Faisal Al-Otaibi"></div>
     <div style="margin:10px 0"><label class="f">${T('crm_name_ar')}</label>
-      <input class="inp" id="cNameAr" dir="rtl" placeholder="فيصل العتيبي"></div>
+      <input class="inp" id="cNameAr" dir="rtl" value="${v('name_ar')}" placeholder="فيصل العتيبي"></div>
     <div style="margin:10px 0"><label class="f">${T('crm_kind')}</label>
       <select class="inp" id="cKind">
-        ${KINDS.map(([v,k])=>`<option value="${v}" ${v==='unknown'?'selected':''}>${T(k)}</option>`).join('')}
+        ${KINDS.map(([kv,kk])=>`<option value="${kv}" ${kv===(c?c.kind:'unknown')?'selected':''}>${T(kk)}</option>`).join('')}
       </select>
       <div class="note" style="margin-top:6px">${T('crm_kind_note')}</div></div>
     <div style="margin:10px 0"><label class="f">${T('crm_phone')}</label>
-      <input class="inp" id="cPhone" placeholder="+9665..."></div>
+      <input class="inp" id="cPhone" value="${v('phone')}" placeholder="+9665..."></div>
     <div style="margin:10px 0"><label class="f">${T('crm_email')}</label>
-      <input class="inp" id="cEmail" type="email"></div>
+      <input class="inp" id="cEmail" type="email" value="${v('email')}"></div>
     <div class="f" style="margin:20px 0 8px">${T('crm_ident')}</div>
     <div style="margin:10px 0"><label class="f">${T('crm_id_type')}</label>
       <select class="inp" id="cIdType">
-        ${IDTYPES.map(([v,k])=>`<option value="${v}" ${v==='unknown'?'selected':''}>${T(k)}</option>`).join('')}
+        ${IDTYPES.map(([tv,tk])=>`<option value="${tv}" ${tv===(c?c.id_type:'unknown')?'selected':''}>${T(tk)}</option>`).join('')}
       </select></div>
     <div style="margin:10px 0"><label class="f">${T('crm_id_no')}</label>
-      <input class="inp" id="cIdNo" inputmode="numeric" autocomplete="off">
-      <div class="note" style="margin-top:6px">${T('crm_id_note')}</div></div>
+      <input class="inp" id="cIdNo" inputmode="numeric" autocomplete="off"
+             placeholder="${c && c.id_number ? T('crm_id_keep') : ''}">
+      <div class="note" style="margin-top:6px">${
+        c && c.id_number ? T('crm_id_on_file_note') + ' ' + T('crm_id_note') : T('crm_id_note')}</div></div>
     <div style="margin:10px 0"><label class="f">${T('crm_id_exp')}</label>
-      <input class="inp" id="cIdExp" type="date">
+      <input class="inp" id="cIdExp" type="date" value="${c && c.id_expires_on ? c.id_expires_on : ''}">
       <div class="note" style="margin-top:6px">${T('crm_id_exp_note')}</div></div>
     <div style="margin:10px 0"><label class="f">${T('crm_nat')}</label>
-      <input class="inp" id="cNat"></div>
+      <input class="inp" id="cNat" value="${v('nationality')}"></div>
     <div style="margin:10px 0"><label class="f">${T('crm_job')}</label>
-      <input class="inp" id="cJob"></div>
+      <input class="inp" id="cJob" value="${v('job_title')}"></div>
     <div style="margin:10px 0"><label class="f">${T('crm_emp')}</label>
-      <input class="inp" id="cEmp"></div>
+      <input class="inp" id="cEmp" value="${v('employer')}"></div>
     <div style="margin:10px 0"><label class="f">${T('crm_note_f')}</label>
-      <textarea class="inp" id="cNote" rows="3"></textarea></div>
-    <button class="btn pri" style="margin-top:12px" onclick="contactSave()">${T('save')}</button>
+      <textarea class="inp" id="cNote" rows="3">${v('note')}</textarea></div>
+    <button class="btn pri" style="margin-top:12px" onclick="contactSave(${id || 'null'})">${T('save')}</button>
     <div class="note" style="margin-top:12px">${T('crm_id_handling')}</div>`);
 }
 
-async function contactSave(){
-  const v = id => ($(id) && $(id).value || '').trim();
+async function contactSave(id){
+  const v = k => ($(k) && $(k).value || '').trim();
   if(!v('cNameEn')) return toast(T('crm_need_name'));
   try{
     /* Stored canonically — the database requires digits only, so the same
@@ -4426,17 +4441,23 @@ async function contactSave(){
     const idNo = v('cIdNo').replace(/[\s-]/g,'').toUpperCase() || null;
     const idType = $('cIdType').value;
     if(idNo && idType === 'unknown') return toast(T('crm_id_need_type'));
-    await SB.ins('contacts', [{
+    const row = {
       name_en: v('cNameEn'), name_ar: v('cNameAr') || null,
       kind: $('cKind').value,
       phone: v('cPhone') || null, email: v('cEmail') || null,
-      id_type: idType, id_number: idNo,
+      id_type: idType,
       id_expires_on: v('cIdExp') || null,
       nationality: v('cNat') || null,
       job_title:   v('cJob') || null,
       employer:    v('cEmp') || null,
       note: v('cNote') || null
-    }]);
+    };
+    /* An empty number box on an EDIT means "leave it as it is", not "delete
+       it". Only send the field when something was actually typed. On a new
+       contact an empty box does mean none, so it is sent as null. */
+    if(idNo || !id) row.id_number = idNo;
+    if(id) await SB.upd('contacts', 'id=eq.' + id, row);
+    else   await SB.ins('contacts', [row]);
     await CRM.reload(); closeDrawer(); render(); toast(T('crm_saved'));
   }catch(e){ toast(T('crm_err') + ' ' + (e.message || e)); }
 }
