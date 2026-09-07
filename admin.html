@@ -323,6 +323,11 @@ const D={
   k_prospect:'Prospect', k_resident:'Resident', k_supplier:'Supplier', k_agent:'Agent',
   k_other:'Other', k_unknown:'Not decided',
   crm_search:'Search a name, phone or email',
+  idoc_t:'Identity document', idoc_open:'Open', idoc_add:'Upload a scan',
+  idoc_none:'No scan on file.', idoc_pick:'Choose a file first.',
+  idoc_big:'That file is over 15 MB.', idoc_working:'Uploading…',
+  idoc_saved:'Scan saved.',
+  idoc_note:'A photo or PDF of the passport, Iqama or national ID. Held in a private store that only staff can reach — there is no public link, and opening one creates a link that expires after a minute. Never sent to the resident app.',
   crm_edit:'Edit details', crm_id_keep:'leave blank to keep the number on file',
   crm_id_on_file_note:'A number is already on file; typing here replaces it.',
   crm_unit:'Apartment', crm_lease:'Lease term', crm_from:'From',
@@ -779,6 +784,11 @@ const D={
   k_prospect:'مستأجر محتمل', k_resident:'ساكن', k_supplier:'مورّد', k_agent:'وسيط',
   k_other:'أخرى', k_unknown:'لم يُحدَّد',
   crm_search:'ابحث باسم أو جوال أو بريد',
+  idoc_t:'صورة الوثيقة', idoc_open:'فتح', idoc_add:'رفع صورة',
+  idoc_none:'لا توجد صورة مرفوعة.', idoc_pick:'اختر ملفاً أولاً.',
+  idoc_big:'حجم الملف يتجاوز ١٥ ميجابايت.', idoc_working:'جارٍ الرفع…',
+  idoc_saved:'تم حفظ الصورة.',
+  idoc_note:'صورة أو ملف PDF لجواز السفر أو الإقامة أو الهوية الوطنية. تُحفظ في مخزن خاص لا يصل إليه إلا الموظفون — لا يوجد رابط عام، وفتحها ينشئ رابطاً ينتهي خلال دقيقة. ولا تُرسل إلى تطبيق السكان إطلاقاً.',
   crm_edit:'تعديل البيانات', crm_id_keep:'اتركه فارغاً للإبقاء على الرقم المسجّل',
   crm_id_on_file_note:'يوجد رقم مسجّل بالفعل؛ الكتابة هنا تستبدله.',
   crm_unit:'الشقة', crm_lease:'مدة العقد', crm_from:'من',
@@ -4155,7 +4165,7 @@ function pgSup(){
    ========================================================================== */
 const CRM = (function(){
   let contacts = [], deals = [], tasks = [], renewals = [], agreements = [], timeline = {};
-  let tenancy = {};
+  let tenancy = {}, idDocs = {};
   let loaded = false, loading = false, err = null;
 
   const uid = () => { const c = SB.claims(); return (c && c.sub) || null; };
@@ -4164,17 +4174,20 @@ const CRM = (function(){
     if(loading) return loaded;
     loading = true; err = null;
     try{
-      const [c, d, t, r, a, ten] = await Promise.all([
+      const [c, d, t, r, a, ten, ids] = await Promise.all([
         SB.sel('contacts',   'select=*&order=name_en.asc'),
         SB.sel('deals',      'select=*,contacts(name_en,name_ar)&order=stage_since.desc'),
         SB.sel('tasks_open', 'select=*&order=due_on.asc.nullslast'),
         SB.sel('renewals_due','select=*&order=ends_on.asc'),
         SB.sel('supplier_agreements_due','select=*&order=ends_on.asc.nullslast'),
-        SB.sel('contact_tenancy','select=*&order=contact_id.asc,ends_on.desc')
+        SB.sel('contact_tenancy','select=*&order=contact_id.asc,ends_on.desc'),
+        SB.sel('identity_documents','select=*&order=uploaded_at.desc')
       ]);
       contacts = c; deals = d; tasks = t; renewals = r; agreements = a;
       /* Grouped by person, current lease first. A resident with a renewal
          history has several rows and none of them is dropped. */
+      idDocs = {};
+      ids.forEach(x => { (idDocs[x.contact_id] = idDocs[x.contact_id] || []).push(x); });
       tenancy = {};
       ten.forEach(x => { (tenancy[x.contact_id] = tenancy[x.contact_id] || []).push(x); });
       Object.values(tenancy).forEach(list => list.sort(
@@ -4204,6 +4217,7 @@ const CRM = (function(){
     renewals:   () => renewals,
     agreements: () => agreements,
     tenancy:    id => tenancy[id] || [],
+    idDocs:     id => idDocs[id] || [],
     cached:     id => timeline[id] || null,
     reload:     async () => { loaded = false; return load(); }
   };
@@ -4284,6 +4298,7 @@ async function contactDrawer(id){
     </div>
     ${tenancyBlock(c)}
     ${identityBlock(c)}
+    ${idDocBlock(c)}
     <button class="btn pri" onclick="logContactOpen(${id})">${I('plus',15)} ${T('crm_log')}</button>
     <button class="btn" style="margin-${LANG==='ar'?'right':'left'}:8px"
             onclick="contactOpen(${id})">${T('crm_edit')}</button>
@@ -4331,6 +4346,61 @@ function tenancyBlock(c){
             ? `<span class="pill p-good">${T('crm_current')}</span>`
             : `<span class="pill p-neut">${T('crm_ended')}</span>`}</td>
     </tr>`).join('')}</tbody></table></div></div>`;
+}
+
+/* The scan of the document, rather than the number typed off it.
+   The file itself is never linked directly: the bucket is private and there is
+   no public URL, so opening one asks Supabase for a link that expires in a
+   minute. That is why this is a button and not an <a href>. */
+function idDocBlock(c){
+  const docs = CRM.idDocs(c.id);
+  return `<div class="card" style="margin:0 0 14px"><div class="bd">
+    <div class="f" style="margin-bottom:8px">${T('idoc_t')}</div>
+    ${docs.length ? `<div class="tw"><table><tbody>${docs.map(d=>`<tr>
+        <td>${esc(d.filename)}</td>
+        <td class="mono sub2">${d.bytes ? NUM(Math.round(d.bytes/1024)) + ' KB' : ''}</td>
+        <td class="mono sub2">${fmtISO(d.uploaded_at)}</td>
+        <td><button class="tbtn" onclick="idDocOpen('${esc(d.storage_path)}')">${T('idoc_open')}</button></td>
+      </tr>`).join('')}</tbody></table></div>`
+      : `<div class="note">${T('idoc_none')}</div>`}
+    <input type="file" id="idDocFile" accept="image/*,application/pdf" style="margin-top:12px">
+    <button class="btn" style="margin-top:10px" onclick="idDocUpload(${c.id})">
+      ${I('plus',15)} ${T('idoc_add')}</button>
+    <div class="note" style="margin-top:10px">${T('idoc_note')}</div>
+  </div></div>`;
+}
+
+async function idDocOpen(path){
+  try{
+    /* Sixty seconds. Long enough to open, short enough that a copied link in a
+       chat message is dead before anyone else clicks it. */
+    const url = await SB.signedUrl(path, 60);
+    window.open(url, '_blank', 'noopener');
+  }catch(e){ toast(T('crm_err') + ' ' + (e.message || e)); }
+}
+
+async function idDocUpload(contactId){
+  const el = $('idDocFile');
+  const file = el && el.files && el.files[0];
+  if(!file) return toast(T('idoc_pick'));
+  if(file.size > 15 * 1024 * 1024) return toast(T('idoc_big'));
+  try{
+    toast(T('idoc_working'));
+    const buf  = await file.arrayBuffer();
+    const fp   = await docFingerprint(buf);
+    const stamp= new Date().toISOString().replace(/[-:T.]/g,'').slice(0,14);
+    const safe = String(file.name || 'id').replace(/[^\w.\-]+/g,'_').slice(-60);
+    const path = await SB.upload('identity/' + contactId + '/' + stamp + '-' + safe, file);
+    await SB.ins('documents', [{
+      kind:'identity', storage_path:path, filename:file.name,
+      mime:file.type || 'application/octet-stream', bytes:file.size,
+      sha256: fp.hex, readable:false,
+      /* Keyed on the CONTACT, never on the flat — see the patch comment. A
+         unit-keyed ref_key would be readable by the resident of that unit. */
+      ref_key:'identity:' + contactId
+    }]);
+    await CRM.reload(); await contactDrawer(contactId); toast(T('idoc_saved'));
+  }catch(e){ toast(T('crm_err') + ' ' + (e.message || e)); }
 }
 
 function identityBlock(c){
