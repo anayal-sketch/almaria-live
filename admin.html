@@ -308,6 +308,41 @@ const D={
   nav_ops:'Operations', nav_prop:'Property', nav_insight:'Insight',
   m_over:'Overview', m_wo:'Work orders', m_ppm:'Planned maintenance', m_units:'Units',
   m_res:'Residents', m_rep:'Reports', m_ann:'Announcements', m_sup:'Suppliers',
+  nav_admin:'Administration',
+  m_roles:'Users and roles',
+  t_roles:'Users and roles', s_roles:'Who works here, and what each of them may do',
+  ro_banner:'You are signed in as a viewer. You can read everything on these screens and change nothing. That is enforced by the database, not by this page.',
+  ro_toast:'A viewer cannot change records. Ask an administrator to change your role.',
+  rl_admin:'Administrator', rl_manager:'Manager', rl_viewer:'Viewer',
+  rl_admin_d:'Everything a manager can do, and the roster: add people, change roles, switch people off.',
+  rl_manager_d:'The day job — contacts, leases, work orders, costs, announcements, documents.',
+  rl_viewer_d:'Reads everything. Writes nothing, anywhere.',
+  rl_only_admin_t:'Only an administrator can open this screen',
+  rl_only_admin_b:'This is where colleagues are added and roles are decided. Ask whoever administers the console if you need to be here.',
+  rl_add:'Add a colleague', rl_edit:'Edit', rl_name:'Name', rl_mail:'Email',
+  rl_role:'Role', rl_status:'Status', rl_account:'Sign-in account', rl_last:'Last signed in',
+  rl_job:'Job title', rl_phone:'Phone', rl_note:'Note',
+  rl_active:'Active', rl_off:'Switched off',
+  rl_on_btn:'Switch access back on', rl_off_btn:'Switch access off',
+  rl_acc_ok:'Ready', rl_acc_none:'Not invited yet', rl_acc_noclaim:'Invited, not marked staff',
+  rl_acc_never:'Never signed in',
+  rl_never:'never',
+  rl_two_t:'Adding somebody takes two steps',
+  rl_two_b:'This screen is step one: it decides what a person may do. Step two is creating the sign-in account itself, and that can only be done in the Supabase dashboard — Authentication → Users → Invite, then set the account\'s app_metadata to {"role":"staff"}. The console cannot do it: creating an account needs the service key, which this console has never held and must not hold. Until step two is done the person is on the list here and simply cannot sign in.',
+  rl_need_mail:'An email address is needed — it is what links this person to their sign-in account.',
+  rl_bad_mail:'That does not look like an email address.',
+  rl_saved:'Saved.',
+  rl_self:'This is you',
+  rl_self_note:'You cannot change your own role or switch your own access off. That is how an administrator locks themselves out, and only the Supabase dashboard can undo it.',
+  rl_none_t:'Only you, so far',
+  rl_none_b:'Add the people who work on this building and decide what each of them may touch.',
+  rl_trail:'Every change to who may do what',
+  rl_trail_none:'Nothing has changed yet.',
+  rl_when:'When', rl_what:'What', rl_who:'Who',
+  ac_added:'added', ac_role_changed:'role changed', ac_deactivated:'switched off',
+  ac_reactivated:'switched back on', ac_details_changed:'details changed',
+  ac_linked:'signed in for the first time', ac_removed:'removed',
+  rl_err:'Could not save:',
   nav_crm:'Relationships',
   m_crm:'Contacts', m_pipe:'Pipeline', m_todo:'Follow-ups',
   t_crm:'Contacts', s_crm:'People this office deals with — live record',
@@ -769,6 +804,41 @@ const D={
   nav_ops:'التشغيل', nav_prop:'العقار', nav_insight:'التقارير',
   m_over:'نظرة عامة', m_wo:'أوامر العمل', m_ppm:'الصيانة الوقائية', m_units:'الوحدات',
   m_res:'السكان', m_rep:'التقارير', m_ann:'الإعلانات', m_sup:'الموردون',
+  nav_admin:'الإدارة',
+  m_roles:'المستخدمون والصلاحيات',
+  t_roles:'المستخدمون والصلاحيات', s_roles:'من يعمل هنا، وما الذي يستطيع كل واحد فعله',
+  ro_banner:'أنت مسجّل الدخول بصلاحية اطّلاع. تستطيع قراءة كل ما في هذه الشاشات ولا تستطيع تعديل شيء. هذا يُطبَّق في قاعدة البيانات لا في هذه الصفحة.',
+  ro_toast:'صلاحية الاطّلاع لا تسمح بالتعديل. اطلب من مدير النظام تغيير صلاحيتك.',
+  rl_admin:'مدير النظام', rl_manager:'مدير', rl_viewer:'مطّلع',
+  rl_admin_d:'كل ما يستطيعه المدير، إضافةً إلى قائمة المستخدمين: إضافة الأشخاص وتغيير الصلاحيات وإيقاف الوصول.',
+  rl_manager_d:'العمل اليومي — جهات الاتصال والعقود وأوامر العمل والتكاليف والإعلانات والمستندات.',
+  rl_viewer_d:'يقرأ كل شيء. ولا يكتب شيئاً في أي مكان.',
+  rl_only_admin_t:'هذه الشاشة لمدير النظام وحده',
+  rl_only_admin_b:'هنا يُضاف الزملاء وتُحدَّد الصلاحيات. راجع من يدير لوحة الإدارة إن كنت بحاجة للدخول.',
+  rl_add:'إضافة زميل', rl_edit:'تعديل', rl_name:'الاسم', rl_mail:'البريد الإلكتروني',
+  rl_role:'الصلاحية', rl_status:'الحالة', rl_account:'حساب الدخول', rl_last:'آخر دخول',
+  rl_job:'المسمى الوظيفي', rl_phone:'الجوال', rl_note:'ملاحظة',
+  rl_active:'فعّال', rl_off:'موقوف',
+  rl_on_btn:'إعادة تفعيل الوصول', rl_off_btn:'إيقاف الوصول',
+  rl_acc_ok:'جاهز', rl_acc_none:'لم تُرسل الدعوة بعد', rl_acc_noclaim:'دُعي، ولم يُعلَّم كموظف',
+  rl_acc_never:'لم يسجّل الدخول بعد',
+  rl_never:'لا يوجد',
+  rl_two_t:'إضافة شخص تتم على خطوتين',
+  rl_two_b:'هذه الشاشة هي الخطوة الأولى: تحدّد ما يستطيع الشخص فعله. الخطوة الثانية هي إنشاء حساب الدخول نفسه، ولا تتم إلا من لوحة Supabase — Authentication ← Users ← Invite، ثم ضبط app_metadata للحساب على {"role":"staff"}. لوحة الإدارة لا تستطيع ذلك: إنشاء الحسابات يتطلب مفتاح الخدمة، وهو مفتاح لم تحمله هذه اللوحة يوماً ولا يجوز أن تحمله. وإلى أن تتم الخطوة الثانية يبقى الشخص مدرجاً هنا ولا يستطيع تسجيل الدخول.',
+  rl_need_mail:'البريد الإلكتروني مطلوب — فهو ما يربط الشخص بحساب دخوله.',
+  rl_bad_mail:'هذا لا يبدو بريداً إلكترونياً.',
+  rl_saved:'تم الحفظ.',
+  rl_self:'هذا أنت',
+  rl_self_note:'لا تستطيع تغيير صلاحيتك أنت ولا إيقاف وصولك أنت. هكذا يحبس مدير النظام نفسه خارج اللوحة، ولا يمكن التراجع عنه إلا من لوحة Supabase.',
+  rl_none_t:'أنت وحدك حتى الآن',
+  rl_none_b:'أضف من يعمل على هذا المبنى وحدّد ما يستطيع كل واحد الوصول إليه.',
+  rl_trail:'كل تغيير في الصلاحيات',
+  rl_trail_none:'لم يتغيّر شيء بعد.',
+  rl_when:'التاريخ', rl_what:'ما الذي حدث', rl_who:'من قام به',
+  ac_added:'أُضيف', ac_role_changed:'تغيّرت الصلاحية', ac_deactivated:'أُوقف الوصول',
+  ac_reactivated:'أُعيد التفعيل', ac_details_changed:'تعديل البيانات',
+  ac_linked:'سجّل الدخول لأول مرة', ac_removed:'حُذف',
+  rl_err:'تعذّر الحفظ:',
   nav_crm:'العلاقات',
   m_crm:'جهات الاتصال', m_pipe:'المسار التأجيري', m_todo:'المتابعات',
   t_crm:'جهات الاتصال', s_crm:'من يتعامل معهم المكتب — سجل مباشر',
@@ -2355,7 +2425,11 @@ const NAVDEF=[
  ['todo','m_todo','clock',()=>crmReady()?CRM.tasks().filter(t=>t.overdue).length:0],
  ['grp','nav_insight'],
  ['fin','m_fin','build',0],
- ['rep','m_rep','chart',0]
+ ['rep','m_rep','chart',0],
+ /* Only an administrator sees these two, and only once the database has said
+    so. The fifth element is that test; a group carries it as its third. */
+ ['grp','nav_admin',()=>rolesAdmin()],
+ ['roles','m_roles','users',0,()=>rolesAdmin()]
 ];
 
 /* SB and CRM are `const`, declared roughly 1,600 lines below this, and the
@@ -2373,7 +2447,10 @@ const crmReady = () => {
 };
 
 function renderNav(){
- $('nav').innerHTML=NAVDEF.map(d=>{
+ $('nav').innerHTML=NAVDEF.filter(d=>{
+  const show = d[0]==='grp' ? d[2] : d[4];
+  return typeof show === 'function' ? show() : true;
+ }).map(d=>{
   if(d[0]==='grp')return `<div class="grp">${T(d[1])}</div>`;
   const [id,k,ic,cnt]=d; const c=typeof cnt==='function'?cnt():cnt;
   return `<button class="${PAGE===id?'on':''}" onclick="go('${id}')">${I(ic,17)}<span>${T(k)}</span>${c?`<span class="cnt">${NUM(c)}</span>`:''}</button>`;
@@ -2399,8 +2476,12 @@ function render(){
  })();
  $('sideFoot').textContent=L('Prototype · demonstration data','نموذج تجريبي · بيانات توضيحية');
  const f={over:pgOver,wo:pgWO,ppm:pgPPM,units:pgUnits,res:pgRes,rep:pgRep,fin:pgFin,
-          ann:pgAnn,sup:pgSup,crm:pgCRM,pipe:pgPipe,todo:pgTodo}[PAGE];
- $('page').innerHTML=f();
+          ann:pgAnn,sup:pgSup,crm:pgCRM,pipe:pgPipe,todo:pgTodo,roles:pgRoles}[PAGE]
+          || pgOver;
+ /* The read-only strip sits above every page rather than on one of them,
+    because a viewer needs to know why the buttons are missing wherever they
+    happen to be standing. */
+ $('page').innerHTML=roBanner()+f();
  if(PAGE==='over'||PAGE==='rep'){
   const a=document.querySelector('#cFlow'); if(a)wireFlow(a);
   const b=document.querySelector('#cSla'); if(b)wireSla(b);
@@ -2550,6 +2631,9 @@ function logJobOpen(){
 }
 
 function logJobSave(){
+  /* The database refuses a viewer's write; this is so the refusal arrives as a
+     sentence rather than as a 42501 from PostgREST. */
+  if(!writeGate()) return;
   const unit = $('jUnit').value, cat = $('jCat').value;
   const mat  = $('jMat').value, date = $('jDate').value;
   if(!unit || !cat || mat === '' || !date){ toast(T('log_need')); return; }
@@ -3473,6 +3557,9 @@ const docsFor = r => (LINK.get().docs||[]).filter(d=>d.key===docKey(r));
 const docCount = r => docsFor(r).length;
 
 async function docAttach(file, ref, kind){
+  /* The database refuses a viewer's write; this is so the refusal arrives as a
+     sentence rather than as a 42501 from PostgREST. */
+  if(!writeGate()) return;
   const buf = await file.arrayBuffer();
   const fp  = await docFingerprint(buf);
   const put = await DOCSTORE.put(file);
@@ -4223,6 +4310,93 @@ const CRM = (function(){
   };
 })();
 
+/* ==========================================================================
+   ROLES — who works here, and what each of them may do
+
+   The console does NOT decide any of this. Postgres does: is_staff() lets a
+   person read, can_write() lets them change something, is_admin() lets them
+   change who else may do what. This module asks the database which of those
+   the signed-in person is, and then arranges the screen to match.
+
+   Two things follow from that division, and both matter.
+
+   First, hiding a button is a courtesy, not a control. A viewer with the
+   browser console open can call SB.ins() directly; the database refuses it,
+   and check_roles.sh proves the database refuses it. What this module does is
+   stop somebody being invited to try.
+
+   Second, this module cannot create a sign-in account and does not pretend to.
+   Creating a Supabase user, and marking it staff, needs the service key. This
+   console has never held that key. So adding a colleague is two steps and the
+   screen says which step you are on, rather than offering a button that fails.
+   ========================================================================== */
+const ROLES = (function(){
+  let roster = [], history = [], mine = null;
+  let loaded = false, loading = false, err = null;
+
+  async function load(){
+    if(loading) return loaded;
+    loading = true; err = null;
+    try{
+      /* link_staff_member() is idempotent and is the only write this module
+         makes by itself: it fills in the account id on a roster row that was
+         created before the account existed, and returns the caller's role. It
+         refuses to link anything unless the token already carries the staff
+         claim, so it cannot be used to claim a colleague's waiting row. */
+      try{ mine = await SB.rpc('link_staff_member'); }
+      catch(e){ mine = null; }
+      if(!mine){ try{ mine = await SB.rpc('staff_role'); }catch(e){ mine = null; } }
+
+      if(mine === 'admin'){
+        const [r,h] = await Promise.all([
+          SB.sel('staff_roster',
+                 'select=*&order=active.desc,role.asc,email.asc'),
+          SB.sel('staff_role_history', 'select=*&limit=200')
+        ]);
+        roster = r; history = h;
+      }else{
+        /* Not a mistake and not an empty state: a manager and a viewer are
+           refused these two by policy, and the screen they would go to is not
+           shown to them at all. */
+        roster = []; history = [];
+      }
+      loaded = true;
+    }catch(e){ err = e; loaded = false; console.error('ROLES.load', e); }
+    finally{ loading = false; }
+    return loaded;
+  }
+
+  return {
+    load, on: () => loaded, err: () => err,
+    mine:     () => mine,
+    isAdmin:  () => mine === 'admin',
+    canWrite: () => mine === 'admin' || mine === 'manager',
+    readOnly: () => mine === 'viewer',
+    roster:   () => roster,
+    history:  () => history,
+    reload:   async () => { loaded = false; return load(); }
+  };
+})();
+
+/* Same temporal-dead-zone hazard as crmReady(): the navigation is built at
+   boot, long before SB and ROLES are initialised, and a bare reference throws
+   rather than returning undefined. */
+const rolesAdmin = () => {
+  try { return SB.signedIn() && SB.isStaff() && ROLES.isAdmin(); }
+  catch (e) { return false; }
+};
+const rolesViewer = () => {
+  try { return SB.signedIn() && SB.isStaff() && ROLES.readOnly(); }
+  catch (e) { return false; }
+};
+/* Called at the top of every write the console offers. The database refuses a
+   viewer's write anyway — this exists so the refusal arrives as a sentence
+   rather than as a 42501 from PostgREST. */
+function writeGate(){
+  if(rolesViewer()){ toast(T('ro_toast')); return false; }
+  return true;
+}
+
 /* Shown instead of a CRM screen when nobody has signed in. It explains the
    absence rather than filling it. */
 function crmOffline(what){
@@ -4266,10 +4440,11 @@ function pgCRM(){
    <input placeholder="${T('crm_search')}" value="${CF.q}"
      oninput="CF.q=this.value;clearTimeout(window._ct);window._ct=setTimeout(render,220)" style="min-width:240px">
    <div style="flex:1"></div>
-   <button class="tbtn pri" onclick="contactOpen()">${I('plus',15)}<span>${T('crm_add')}</span></button>
+   ${rolesViewer() ? '' :
+     `<button class="tbtn pri" onclick="contactOpen()">${I('plus',15)}<span>${T('crm_add')}</span></button>`}
   </div>
   ${!CRM.contacts().length ? `<div class="card"><div class="bd">${emptyState(
-      T('crm_none_t'), T('crm_none_b'),
+      T('crm_none_t'), T('crm_none_b'), rolesViewer() ? '' :
       `<button class="btn pri" style="margin-top:14px" onclick="contactOpen()">${I('plus',15)} ${T('crm_add')}</button>`)}
     </div></div>` :
   `<div class="card"><div class="tw"><table>
@@ -4299,9 +4474,10 @@ async function contactDrawer(id){
     ${tenancyBlock(c)}
     ${identityBlock(c)}
     ${idDocBlock(c)}
+    ${rolesViewer() ? '' : `
     <button class="btn pri" onclick="logContactOpen(${id})">${I('plus',15)} ${T('crm_log')}</button>
     <button class="btn" style="margin-${LANG==='ar'?'right':'left'}:8px"
-            onclick="contactOpen(${id})">${T('crm_edit')}</button>
+            onclick="contactOpen(${id})">${T('crm_edit')}</button>`}
     <div class="f" style="margin:18px 0 8px">${T('crm_timeline')}</div>
     ${rows === null ? `<div class="note">${T('crm_loading')}</div>`
       : !rows.length ? `<div class="note">${T('crm_tl_none')}</div>`
@@ -4363,9 +4539,10 @@ function idDocBlock(c){
         <td><button class="tbtn" onclick="idDocOpen('${esc(d.storage_path)}')">${T('idoc_open')}</button></td>
       </tr>`).join('')}</tbody></table></div>`
       : `<div class="note">${T('idoc_none')}</div>`}
+    ${rolesViewer() ? '' : `
     <input type="file" id="idDocFile" accept="image/*,application/pdf" style="margin-top:12px">
     <button class="btn" style="margin-top:10px" onclick="idDocUpload(${c.id})">
-      ${I('plus',15)} ${T('idoc_add')}</button>
+      ${I('plus',15)} ${T('idoc_add')}</button>`}
     <div class="note" style="margin-top:10px">${T('idoc_note')}</div>
   </div></div>`;
 }
@@ -4380,6 +4557,9 @@ async function idDocOpen(path){
 }
 
 async function idDocUpload(contactId){
+  /* The database refuses a viewer's write; this is so the refusal arrives as a
+     sentence rather than as a 42501 from PostgREST. */
+  if(!writeGate()) return;
   const el = $('idDocFile');
   const file = el && el.files && el.files[0];
   if(!file) return toast(T('idoc_pick'));
@@ -4502,6 +4682,9 @@ function contactOpen(id){
 }
 
 async function contactSave(id){
+  /* The database refuses a viewer's write; this is so the refusal arrives as a
+     sentence rather than as a 42501 from PostgREST. */
+  if(!writeGate()) return;
   const v = k => ($(k) && $(k).value || '').trim();
   if(!v('cNameEn')) return toast(T('crm_need_name'));
   try{
@@ -4561,6 +4744,9 @@ function logContactOpen(contactId){
 }
 
 async function logContactSave(contactId){
+  /* The database refuses a viewer's write; this is so the refusal arrives as a
+     sentence rather than as a 42501 from PostgREST. */
+  if(!writeGate()) return;
   const when = $('iWhen') && $('iWhen').value;
   if(!when) return toast(T('crm_need_when'));
   const at = new Date(when);
@@ -4698,6 +4884,9 @@ function dealOpen(leaseId, unitId){
 }
 
 async function dealSave(leaseId){
+  /* The database refuses a viewer's write; this is so the refusal arrives as a
+     sentence rather than as a 42501 from PostgREST. */
+  if(!writeGate()) return;
   const c = $('dContact').value, u = ($('dUnit').value||'').trim(), b = $('dBudget').value;
   try{
     await SB.ins('deals', [{
@@ -4731,6 +4920,9 @@ function dealAdvance(id){
 }
 
 async function dealMove(id){
+  /* The database refuses a viewer's write; this is so the refusal arrives as a
+     sentence rather than as a 42501 from PostgREST. */
+  if(!writeGate()) return;
   const stage = $('mStage').value;
   const lost  = ($('mLost') && $('mLost').value || '').trim();
   if(stage === 'lost' && !lost) return toast(T('pipe_need_why'));
@@ -4799,6 +4991,9 @@ function taskOpen(){
 }
 
 async function taskSave(){
+  /* The database refuses a viewer's write; this is so the refusal arrives as a
+     sentence rather than as a 42501 from PostgREST. */
+  if(!writeGate()) return;
   const title = ($('tTitle').value||'').trim();
   if(!title) return toast(T('todo_need_title'));
   try{
@@ -4827,6 +5022,9 @@ function taskClose(id, how){
 }
 
 async function taskCloseSave(id, status, outcome){
+  /* The database refuses a viewer's write; this is so the refusal arrives as a
+     sentence rather than as a 42501 from PostgREST. */
+  if(!writeGate()) return;
   if(status === 'cancelled' && !outcome) return toast(T('todo_need_why'));
   try{
     await SB.upd('tasks', 'id=eq.' + id, {
@@ -4910,6 +5108,205 @@ render();
    database, against the signed-in user. Without a session it reads nothing —
    which is checked, not assumed.
    ========================================================================== */
+/* ==========================================================================
+   Users and roles — the administrator's screen
+   ========================================================================== */
+
+/* Shown above every page, on every screen, for a viewer. A person who finds
+   the buttons missing deserves to be told why on the page they are standing
+   on, not on one they have to go looking for. */
+function roBanner(){
+  if(!rolesViewer()) return '';
+  return `<div class="demo">${I('alert',15,2.2)}<span>${T('ro_banner')}</span></div>`;
+}
+
+const RLROLES = [['admin','rl_admin','rl_admin_d'],
+                 ['manager','rl_manager','rl_manager_d'],
+                 ['viewer','rl_viewer','rl_viewer_d']];
+const rlName = r => T((RLROLES.find(x=>x[0]===r) || [null,'rl_viewer'])[1]);
+const rlPill = r => r==='admin' ? 'p-crit' : r==='manager' ? 'p-info' : 'p-neut';
+
+/* The three different things that can be wrong with somebody's sign-in, kept
+   apart, because the fix for each is different and an administrator staring at
+   "cannot sign in" has no way to guess which one it is. */
+function acctCell(m){
+  if(!m.has_account) return `<span class="pill p-warn">${T('rl_acc_none')}</span>`;
+  if(!m.claim_ok)    return `<span class="pill p-warn">${T('rl_acc_noclaim')}</span>`;
+  if(!m.last_sign_in_at) return `<span class="pill p-neut">${T('rl_acc_never')}</span>`;
+  return `<span class="pill p-good">${T('rl_acc_ok')}</span>`;
+}
+
+const ACTIONS = {added:'ac_added', role_changed:'ac_role_changed',
+                 deactivated:'ac_deactivated', reactivated:'ac_reactivated',
+                 details_changed:'ac_details_changed', linked:'ac_linked',
+                 removed:'ac_removed'};
+/* The trail is written in the database's own vocabulary; nothing raw reaches
+   the screen. An unrecognised action is shown as itself rather than as a
+   guess — this console has had three separate leaks of raw enum values and
+   every one of them was a translation table missing a row. */
+function acName(a){ return ACTIONS[a] ? T(ACTIONS[a]) : String(a || ''); }
+function trailWhat(h){
+  if(h.action === 'role_changed' && h.old_role && h.new_role)
+    return acName(h.action) + ': ' + rlName(h.old_role) + ' → ' + rlName(h.new_role);
+  if(h.action === 'added' && h.new_role)
+    return acName(h.action) + ': ' + rlName(h.new_role);
+  return acName(h.action);
+}
+
+function pgRoles(){
+  if(!SB.signedIn() || !SB.isStaff()) return crmOffline(T('rl_only_admin_b'));
+  if(ROLES.err())
+    return `<div class="card"><div class="bd"><div class="warnbox">${I('alert',16,2.2)}<span>${
+      T('crm_err')} ${esc(String(ROLES.err().message || ROLES.err()))}</span></div></div></div>`;
+  if(!ROLES.on())
+    return `<div class="card"><div class="bd"><div class="note">${T('crm_loading')}</div></div></div>`;
+  if(!ROLES.isAdmin())
+    return `<div class="card"><div class="bd">${emptyState(
+      T('rl_only_admin_t'), T('rl_only_admin_b'), '')}</div></div>`;
+
+  const me   = (SB.email() || '').toLowerCase();
+  const rows = ROLES.roster();
+  const hist = ROLES.history();
+
+  return `
+  <div class="filters">
+   <div style="flex:1"></div>
+   <button class="tbtn pri" onclick="roleOpen()">${I('plus',15)}<span>${T('rl_add')}</span></button>
+  </div>
+
+  <div class="card mb"><div class="tw"><table>
+    <thead><tr><th>${T('rl_name')}</th><th>${T('rl_mail')}</th><th>${T('rl_role')}</th>
+      <th>${T('rl_status')}</th><th>${T('rl_account')}</th><th>${T('rl_last')}</th></tr></thead>
+    <tbody>${rows.map(m=>`<tr style="cursor:pointer" onclick="roleDrawer('${esc(m.id)}')">
+      <td class="strong">${esc((LANG==='ar' ? (m.name_ar||m.name_en) : m.name_en) || '—')}${
+        m.email === me ? ` <span class="sub2">· ${T('rl_self')}</span>` : ''}</td>
+      <td class="mono sub2">${esc(m.email)}</td>
+      <td><span class="pill ${rlPill(m.role)}">${rlName(m.role)}</span></td>
+      <td>${m.active ? `<span class="pill p-good">${T('rl_active')}</span>`
+                     : `<span class="pill p-crit">${T('rl_off')}</span>`}</td>
+      <td>${acctCell(m)}</td>
+      <td class="mono sub2">${m.last_sign_in_at ? fmtISO(m.last_sign_in_at)
+                                                : '<span class="sub2">'+T('rl_never')+'</span>'}</td>
+    </tr>`).join('')}</tbody></table></div></div>
+
+  ${rows.length <= 1 ? `<div class="card mb"><div class="bd">${emptyState(
+      T('rl_none_t'), T('rl_none_b'),
+      `<button class="btn pri" style="margin-top:14px" onclick="roleOpen()">${I('plus',15)} ${T('rl_add')}</button>`)}
+    </div></div>` : ''}
+
+  <div class="card mb"><div class="bd">
+    <div class="warnbox">${I('alert',16,2.2)}<span><b>${T('rl_two_t')}</b> — ${T('rl_two_b')}</span></div>
+  </div></div>
+
+  <div class="card">
+    <div class="hd"><div style="flex:1"><h2>${T('rl_trail')}</h2></div></div>
+    ${!hist.length ? `<div class="bd"><div class="note">${T('rl_trail_none')}</div></div>`
+    : `<div class="tw"><table>
+        <thead><tr><th>${T('rl_when')}</th><th>${T('rl_mail')}</th>
+          <th>${T('rl_what')}</th><th>${T('rl_who')}</th></tr></thead>
+        <tbody>${hist.map(h=>`<tr>
+          <td class="mono sub2" style="white-space:nowrap">${fmtISO(h.changed_at)}</td>
+          <td class="mono sub2">${esc(h.email)}</td>
+          <td>${esc(trailWhat(h))}</td>
+          <td class="sub2">${h.changed_by_email ? esc(h.changed_by_email)
+                                                : '<span class="sub2">—</span>'}</td>
+        </tr>`).join('')}</tbody></table></div>`}
+  </div>`;
+}
+
+function roleDrawer(id){
+  const m = ROLES.roster().find(x => String(x.id) === String(id)); if(!m) return;
+  const mine = m.email === (SB.email() || '').toLowerCase();
+  const desc = (RLROLES.find(x=>x[0]===m.role) || [null,null,'rl_viewer_d'])[2];
+  openDrawer(esc((LANG==='ar' ? (m.name_ar||m.name_en) : m.name_en) || m.email), `
+    <div class="note" style="margin-bottom:12px"><span class="mono">${esc(m.email)}</span>${
+      m.job_title ? ' · ' + esc(m.job_title) : ''}${m.phone ? ' · <span class="mono">'+esc(m.phone)+'</span>' : ''}</div>
+    <div style="margin:12px 0">
+      <span class="pill ${rlPill(m.role)}">${rlName(m.role)}</span>
+      ${m.active ? `<span class="pill p-good">${T('rl_active')}</span>`
+                 : `<span class="pill p-crit">${T('rl_off')}</span>`}
+      ${acctCell(m)}
+    </div>
+    <div class="note">${T(desc)}</div>
+    ${m.note ? `<div class="note" style="margin-top:10px">${esc(m.note)}</div>` : ''}
+    <div style="margin-top:18px">
+      <button class="btn pri" onclick="roleOpen('${esc(m.id)}')">${T('rl_edit')}</button>
+      ${mine ? '' : `<button class="btn" style="margin-${LANG==='ar'?'right':'left'}:8px"
+          onclick="roleToggle('${esc(m.id)}',${m.active ? 'false' : 'true'})">${
+          m.active ? T('rl_off_btn') : T('rl_on_btn')}</button>`}
+    </div>
+    ${mine ? `<div class="note" style="margin-top:14px">${T('rl_self_note')}</div>` : ''}
+    <div class="f" style="margin:20px 0 8px">${T('rl_account')}</div>
+    <div class="note">${T('rl_two_b')}</div>`);
+}
+
+function roleOpen(id){
+  const m = id ? ROLES.roster().find(x => String(x.id) === String(id)) : null;
+  const mine = !!m && m.email === (SB.email() || '').toLowerCase();
+  const v = k => m && m[k] ? esc(m[k]) : '';
+  openDrawer(m ? T('rl_edit') : T('rl_add'), `
+    <div style="margin:10px 0"><label class="f">${T('rl_mail')}</label>
+      <input class="inp" id="rMail" type="email" autocomplete="off"
+             value="${v('email')}" ${m ? 'disabled' : ''} placeholder="fatima@almaria.sa">
+      <div class="note" style="margin-top:6px">${T('rl_need_mail')}</div></div>
+    <div style="margin:10px 0"><label class="f">${T('rl_name')}</label>
+      <input class="inp" id="rNameEn" value="${v('name_en')}"></div>
+    <div style="margin:10px 0"><label class="f">${T('rl_name')} (ع)</label>
+      <input class="inp" id="rNameAr" dir="rtl" value="${v('name_ar')}"></div>
+    <div style="margin:10px 0"><label class="f">${T('rl_role')}</label>
+      <select class="inp" id="rRole" ${mine ? 'disabled' : ''}>
+        ${RLROLES.map(([rv,rk])=>`<option value="${rv}" ${
+          rv===(m ? m.role : 'viewer')?'selected':''}>${T(rk)}</option>`).join('')}
+      </select>
+      <div class="note" style="margin-top:6px">${
+        mine ? T('rl_self_note')
+             : RLROLES.map(([rv,rk,rd])=>'<b>'+T(rk)+'</b> — '+T(rd)).join('<br>')}</div></div>
+    <div style="margin:10px 0"><label class="f">${T('rl_job')}</label>
+      <input class="inp" id="rJob" value="${v('job_title')}"></div>
+    <div style="margin:10px 0"><label class="f">${T('rl_phone')}</label>
+      <input class="inp" id="rPhone" value="${v('phone')}" placeholder="+9665..."></div>
+    <div style="margin:10px 0"><label class="f">${T('rl_note')}</label>
+      <textarea class="inp" id="rNote" rows="3">${v('note')}</textarea></div>
+    <button class="btn pri" style="margin-top:12px"
+            onclick="roleSave(${m ? "'" + esc(m.id) + "'" : 'null'})">${T('save')}</button>
+    <div class="note" style="margin-top:14px"><b>${T('rl_two_t')}</b> — ${T('rl_two_b')}</div>`);
+}
+
+async function roleSave(id){
+  const val = k => ($(k) && $(k).value || '').trim();
+  const m = id ? ROLES.roster().find(x => String(x.id) === String(id)) : null;
+  const mail = (m ? m.email : val('rMail')).toLowerCase();
+  if(!mail) return toast(T('rl_need_mail'));
+  if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return toast(T('rl_bad_mail'));
+  const row = {
+    name_en:   val('rNameEn') || null,
+    name_ar:   val('rNameAr') || null,
+    job_title: val('rJob')    || null,
+    phone:     val('rPhone')  || null,
+    note:      val('rNote')   || null
+  };
+  /* Never sent for your own row. The database refuses it by trigger, but a
+     request that is certain to be refused should not be made at all — the
+     refusal would arrive as an error where the honest answer is that the box
+     was disabled on purpose. */
+  const mine = !!m && m.email === (SB.email() || '').toLowerCase();
+  if(!mine) row.role = ($('rRole') && $('rRole').value) || 'viewer';
+  if(!m){ row.email = mail; row.active = true; }
+  try{
+    if(m) await SB.upd('staff_members', 'id=eq.' + encodeURIComponent(m.id), row);
+    else  await SB.ins('staff_members', [row]);
+    await ROLES.reload(); closeDrawer(); render(); toast(T('rl_saved'));
+  }catch(e){ toast(T('rl_err') + ' ' + (e.message || e)); }
+}
+
+async function roleToggle(id, on){
+  const m = ROLES.roster().find(x => String(x.id) === String(id)); if(!m) return;
+  try{
+    await SB.upd('staff_members', 'id=eq.' + encodeURIComponent(m.id), {active: !!on});
+    await ROLES.reload(); closeDrawer(); render(); toast(T('rl_saved'));
+  }catch(e){ toast(T('rl_err') + ' ' + (e.message || e)); }
+}
+
 const SB = (function(){
   const BASE = 'https://oaxasgfdfxrkbllzwvna.supabase.co';
   const KEY  = 'sb_publishable_WRR6q8UHhW7gIWp6NdP50w_rO6eDRVU';
@@ -5000,6 +5397,12 @@ const SB = (function(){
                               headers:hdr({'Content-Type':'application/json', Prefer:'return=representation'}),
                               body:JSON.stringify(patch)});
   const del = (t,q)      => call('/rest/v1/'+t+'?'+q, {method:'DELETE', headers:hdr()});
+  /* The three Postgres functions a signed-in user is allowed to call. All
+     three answer about the CALLER and nobody else: what role they hold, and —
+     once, on first sign-in — linking their roster row to their account. */
+  const rpc = (fn,args)  => call('/rest/v1/rpc/'+fn, {method:'POST',
+                              headers:hdr({'Content-Type':'application/json'}),
+                              body:JSON.stringify(args || {})});
 
   /* ------------------------------- storage ------------------------------- */
   /* The bucket is private. Nothing is ever fetched by a plain URL; a link is
@@ -5075,7 +5478,7 @@ const SB = (function(){
   return {
     base: BASE, configured: () => !!(BASE && KEY),
     signIn, signOut, refresh, ready, signedIn, isStaff, email, claims,
-    sel, ins, ups, upd, del, upload, signedUrl,
+    sel, ins, ups, upd, del, rpc, upload, signedUrl,
     watch, stopWatching, rtState: () => rt
   };
 })();
@@ -5500,6 +5903,7 @@ async function sbDoSignIn(){
     }
     if(!await LIVE.start()) throw (LIVE.err() || new Error('could not read the register'));
     CRM.load().then(() => render());
+    ROLES.load().then(() => render());
     LINK.onChange(() => { render(); linkFlash(); });
     closeDrawer(); render();
     toast(L('Connected. This console is now the register.',
@@ -5564,6 +5968,9 @@ function lastCostMonth(){
         /* The CRM is its own read: it is staff-only and has no seeded copy, so
            it must not be able to hold up the register loading. */
         CRM.load().then(() => render());
+        /* Separate read, and deliberately not awaited with the register: it
+           decides what the screen offers, not what the screen shows. */
+        ROLES.load().then(() => render());
       }
     }
   }catch(e){ console.error('backend boot', e); }
