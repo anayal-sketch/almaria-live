@@ -1482,9 +1482,85 @@ const COST_LOG = [{"d":"2025-01-19","c":"elec","u":"—","s":"Rukn Al-Sahara Mai
    read/write with table queries is the only change needed to make this
    sync across devices — no calling code moves.
    ========================================================================== */
+/* ==========================================================================
+   ENVIRONMENT — the one place that says which building's records this build
+   is allowed to touch.
+
+   The 8 September staging audit found the staging build sharing production's
+   backend, its session key and its shared-record key, on the same origin. A
+   production session loaded in staging, and a staging write reached the
+   production database. A path segment is not an environment.
+
+   Three things make it real, and all three are here:
+
+     1. A separate Supabase project. Staging has its own database, its own
+        auth users and its own keys — seeded with generated data only.
+     2. Storage namespaced by environment, so a session or a shared demo
+        record from one never resolves in the other, same origin or not.
+     3. A boot assertion. A build that is labelled staging and pointed at the
+        production project refuses to start, and says so, rather than writing
+        to the wrong building's records and being found out later.
+
+   To produce the staging build, tool/make_env.mjs rewrites this block. It is
+   never edited by hand in two places, because that is how the two drift.
+   ========================================================================== */
+const ENV = {
+  name:    "staging",
+  label_en:"STAGING — generated data, separate database. Nothing here is a real tenant, a real payment or a real invoice.", label_ar:"بيئة اختبار — بيانات مولّدة وقاعدة بيانات منفصلة. لا شيء هنا يخص ساكناً حقيقياً أو دفعة حقيقية أو فاتورة حقيقية.",
+  base:    "https://foddducvcwcvogwflicj.supabase.co",
+  key:     "sb_publishable_huUcsmISZ3smEEZROVTz4Q_--jxRLVb",
+  prefix:  "almaria.staging",
+  /* The project ref this build is FORBIDDEN to talk to. Naming the forbidden
+     one rather than the permitted one is deliberate: a copy-paste that changes
+     the URL and forgets the label is exactly the mistake being guarded, and
+     this catches it in the direction it actually happens. */
+  forbid:  "oaxasgfdfxrkbllzwvna"
+};
+(function assertEnvironment(){
+  const ref = (ENV.base.match(/https:\/\/([a-z0-9]+)\.supabase\.co/) || [])[1] || '';
+  if(ENV.forbid && ref === ENV.forbid){
+    document.addEventListener('DOMContentLoaded', function(){
+      document.body.innerHTML =
+        '<div style="font:16px/1.6 system-ui;padding:40px;max-width:46em;margin:0 auto">'
+        + '<h1 style="font-size:20px">This build is misconfigured and will not start</h1>'
+        + '<p>It is labelled <b>' + ENV.name + '</b> but is pointed at the '
+        + '<b>production</b> database. Nothing has been read or written.</p>'
+        + '<p>Point it at its own project, or relabel it. A staging build must '
+        + 'never write to the building’s real records.</p></div>';
+    });
+    throw new Error('environment misconfigured: ' + ENV.name + ' build pointed at production');
+  }
+})();
+
+/* A non-production build says so on every screen, permanently. A banner that
+   can be dismissed is a banner that is dismissed on the first morning and never
+   seen again, which is how somebody ends up believing a test figure. */
+(function environmentBanner(){
+  if(ENV.name === 'production') return;
+  const paint = function(){
+    if(document.getElementById('envbar')) return;
+    const ar = (document.documentElement.getAttribute('lang') === 'ar');
+    const b = document.createElement('div');
+    b.id = 'envbar';
+    b.setAttribute('role', 'status');
+    b.textContent = ar ? ENV.label_ar : ENV.label_en;
+    b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;'
+      + 'background:#7a2418;color:#fff;font:600 12px/1.5 system-ui,sans-serif;'
+      + 'letter-spacing:.04em;text-align:center;padding:6px 12px;'
+      + 'box-shadow:0 -1px 0 rgba(0,0,0,.25);pointer-events:none';
+    document.body.appendChild(b);
+    document.body.style.paddingBottom = '30px';
+  };
+  if(document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', paint);
+  else paint();
+  /* The language toggle rewrites the page; the bar is repainted with it. */
+  setInterval(function(){ try{ paint(); }catch(e){} }, 1500);
+})();
+
 const LINK = (function(){
-  const KEY = 'almaria.link.v1';
-  const CHAN = 'almaria.link';
+  const KEY = ENV.prefix + '.link.v1';
+  const CHAN = ENV.prefix + '.link';
   const BLANK = () => ({v:1, rev:0, at:0, by:'', wo:{}, newWO:[], anns:[], pay:{}});
 
   let cache = null, subs = [], bc = null, ok = true;
@@ -1966,7 +2042,7 @@ function impDate(v){
   return isNaN(d) ? null : d.toISOString().slice(0,10);
 }
 
-/* an instalment cell is "40,000" over "15-9-2025" on two lines */
+/* an instalment cell is an amount over a date on two lines */
 function impInstalment(v){
   if(v === null || v === undefined || v === '') return null;
   const parts = String(v).split(/[\n\r]+/).map(x=>x.trim()).filter(Boolean);
@@ -5463,10 +5539,10 @@ async function roleToggle(id, on){
 }
 
 const SB = (function(){
-  const BASE = 'https://oaxasgfdfxrkbllzwvna.supabase.co';
-  const KEY  = 'sb_publishable_WRR6q8UHhW7gIWp6NdP50w_rO6eDRVU';
-  const SKEY = 'almaria.sb.session.v1';
-  const TOPIC = 'realtime:almaria';
+  const BASE = ENV.base;
+  const KEY  = ENV.key;
+  const SKEY = ENV.prefix + '.sb.session.v1';
+  const TOPIC = 'realtime:' + ENV.prefix;
 
   let sess = null;
   try{ sess = JSON.parse(localStorage.getItem(SKEY) || 'null'); }catch(e){ sess = null; }
