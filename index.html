@@ -399,9 +399,6 @@ html[dir="rtl"] .drawer{transform:translateX(102%)}
 .footer-lock{display:block;height:16px;width:213px;object-fit:contain;margin:2px auto 12px;opacity:.8}
 
 /* fake QR */
-.qr{width:172px;height:172px;margin:0 auto;display:grid;grid-template-columns:repeat(21,1fr);gap:0}
-.qr i{background:#fff}
-.qr i.b{background:var(--teal-900)}
 
 .linkbar{display:none;align-items:center;justify-content:center;gap:8px;margin:16px auto 0;padding:7px 14px;
   border-radius:999px;background:#E8F5EE;color:#136B43;font-size:12.5px;font-weight:700;
@@ -436,132 +433,18 @@ html[dir="rtl"] .drawer{transform:translateX(102%)}
         </span>
       </div>
 
-      <div class="topbar" id="topbar">
-        
-      <button class="iconbtn" onclick="openDrawer()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17"></path></svg></button>
-      <div class="grow">
-        <h1 style="font-size:17px">Welcome back, Sara</h1>
-        <div class="sub">Your building hub</div>
-      </div>
-      <button class="iconbtn" style="position:relative" onclick="demo()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9a6 6 0 0 0-12 0c0 5-2 6.5-2 6.5h16S18 14 18 9Z"></path><path d="M13.7 19.5a2 2 0 0 1-3.4 0"></path></svg><span class="dot"></span></button>
-      <div class="avatar">SY</div>
-      </div>
+      <!-- Empty by design. Until 9 September this shell carried a fully
+           rendered Home screen for a fictional tenant — their name in the
+           greeting, their initials in the avatar, their rent below it — served
+           to anyone who opened the URL. JavaScript replaced it on sign-in, so
+           every visual check passed and the bytes went out anyway. There is no
+           signed-out application any more: the page paints a sign-in screen and
+           nothing else until Postgres answers for a real person. -->
+      <div class="topbar" id="topbar"></div>
       <div class="screen" id="screen">
-        
-  <div class="hero">
-    <div class="art"></div>
-    <div class="wmark"><svg viewBox="0 0 640 540" width="100%" fill="none" stroke="currentColor" stroke-width="26" stroke-linecap="butt" stroke-linejoin="miter"><path d="M35 520V225L230 25L320 116"></path><path d="M229 520V226L425 25L615 226V520"></path><path d="M365 155L425 218V520"></path><path d="M325 375V520"></path></svg></div>
-    <div class="body">
-      <img class="lock" alt="Almaria Residence" src="data:image/png;base64,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">
-      <h2>Everything your home needs, in one place</h2>
-      <p>Maintenance, rent, building notices and amenities — 37 apartments, one app.</p>
-    </div>
-    <div class="dots"><i class="on"></i><i></i><i></i></div>
-  </div>
-
-  <div class="sect first">Quick actions</div>
-  <div class="quick">
-    <button class="qa" onclick="sheetNewRequest()">
-    <span class="icobox" style="background:#FBF3DE;color:#A8811A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg></span>
-    <span class="t">New request</span><span class="d">Report a maintenance issue</span></button>
-    <button class="qa" onclick="sheetGatePass()">
-    <span class="icobox" style="background:#E4EEF2;color:#00506B"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><path d="M14 14h3v3h-3zM20 14h1M14 20h3M20 17v4"></path></svg></span>
-    <span class="t">Visitor pass</span><span class="d">Send a QR code in seconds</span></button>
-    <button class="qa" onclick="go('pay')">
-    <span class="icobox" style="background:#E6F2EC;color:#2C8259"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.6"></rect><path d="M2.5 10h19M6 15h3"></path></svg></span>
-    <span class="t">Rent &amp; payments</span><span class="d">Schedule, receipts, balance</span></button>
-    <button class="qa" onclick="sheetContact()">
-    <span class="icobox" style="background:#FBEAEA;color:#C0504A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 16.9v2.6a2 2 0 0 1-2.2 2 19.5 19.5 0 0 1-8.5-3 19.2 19.2 0 0 1-5.9-5.9 19.5 19.5 0 0 1-3-8.6A2 2 0 0 1 3.9 1.8h2.6a2 2 0 0 1 2 1.7c.13.96.36 1.9.7 2.8a2 2 0 0 1-.45 2.1L7.6 9.6a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.45c.9.34 1.84.57 2.8.7a2 2 0 0 1 1.8 2.05Z"></path></svg></span>
-    <span class="t">Contact building</span><span class="d">Manager, security, emergency</span></button>
-  </div>
-
-  <div class="sect-row">
-    <h2>Your open requests</h2>
-    <button class="link" onclick="go('svc');svcTab('open')">View all</button>
-  </div>
-  <div class="card tight">
-    <div class="reqrow" onclick="sheetRequest('MR-2608-138')">
-    <span class="icobox" style="background:#F1F3F5;color:var(--ink-2);width:40px;height:40px;border-radius:12px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2s6 6.6 6 10.6a6 6 0 0 1-12 0c0-4 6-10.6 6-10.6Z"></path></svg></span>
-    <div class="grow">
-      <div class="id">MR-2608-138</div>
-      <div class="t truncate">Water heater not heating</div>
-      <div class="row" style="gap:8px"><span class="pill b">Submitted</span><span class="muted">16 Aug 2026</span></div>
-    </div>
-    <span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></span>
-  </div>
-  </div>
-
-  <div class="sect">Next payment</div>
-  <div class="card" onclick="go('pay')" style="cursor:pointer">
-    <div class="row">
-      <div class="icobox" style="background:var(--gold-soft);color:#A8811A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2.4"></rect><path d="M3 10h18M8 3v4M16 3v4"></path></svg></div>
-      <div class="grow">
-        <div style="font-size:15px;font-weight:800">12,916 SAR</div>
-        <div class="muted">Instalment 3 of 12 · 5 Sep 2026</div>
+        <noscript><p style="padding:24px">This application needs JavaScript.</p></noscript>
       </div>
-      <span class="pill a">16 days</span>
-    </div>
-  </div>
-
-  <div class="sect-row">
-    <h2>Latest announcement</h2>
-    <button class="link" onclick="go('com')">View all</button>
-  </div>
-  <div class="post" onclick="sheetPost(1)">
-    <div class="img" style="background:linear-gradient(135deg,#3E5F7A,#22384A);color:rgba(255,255,255,.9)">
-      <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2s6 6.6 6 10.6a6 6 0 0 1-12 0c0-4 6-10.6 6-10.6Z"></path></svg>
-      <span class="tag">Notice</span>
-    </div>
-    <div class="pb">
-      <h3>Water tank cleaning — Thursday 20 August</h3>
-      <div class="ex">The building water tanks will be cleaned and sterilised on Thursday 20 August between 09:00 and 14:00. Water s…</div>
-      <div class="meta"><span>Building management</span><span>20 Aug 2026</span></div>
-    </div>
-  </div>
-
-  <div class="sect">Building amenities</div>
-  <div class="grid2">
-    <button class="svc" onclick="sheetAmenity(0)">
-    <span style="color:#0A5B75"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 17.5c1.7 0 1.7 1.6 3.4 1.6s1.7-1.6 3.4-1.6 1.7 1.6 3.4 1.6 1.7-1.6 3.4-1.6 1.7 1.6 3.4 1.6"></path><path d="M2.5 12.8c1.7 0 1.7 1.6 3.4 1.6s1.7-1.6 3.4-1.6 1.7 1.6 3.4 1.6 1.7-1.6 3.4-1.6 1.7 1.6 3.4 1.6"></path><path d="M7 12V5.4A2.4 2.4 0 0 1 9.4 3h.2A2.4 2.4 0 0 1 12 5.4M17 12V5.4"></path></svg></span>
-    <span class="n">Rooftop pool</span>
-    <span class="n2">06:00 – 22:00</span></button><button class="svc" onclick="sheetAmenity(1)">
-    <span style="color:#0A5B75"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6M7 6.5v11M17 6.5v11M20 9v6M7 12h10"></path></svg></span>
-    <span class="n">Gym</span>
-    <span class="n2">24 hours</span></button><button class="svc" onclick="sheetAmenity(2)">
-    <span style="color:#0A5B75"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.5c3.6 0 6.3-2.5 6.3-5.9 0-4.2-4.4-5.5-3.4-10.8-2.6.6-4.6 3-4.6 5.4 0 1.5-1.4 1.2-1.4-.6-1.9 1.6-3.2 3.9-3.2 6C5.7 19 8.4 21.5 12 21.5Z"></path></svg></span>
-    <span class="n">Roof terrace &amp; BBQ</span>
-    <span class="n2">16:00 – 23:00</span></button><button class="svc" onclick="sheetAmenity(3)">
-    <span style="color:#0A5B75"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16v2.6a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V11l2.4-5.2A2 2 0 0 1 6.2 4.6h11.6a2 2 0 0 1 1.8 1.2L22 11v7.6a1 1 0 0 1-1 1h-.5a1 1 0 0 1-1-1V16"></path><path d="M2 11h20M6 13.7h1.5M16.5 13.7H18"></path></svg></span>
-    <span class="n">Parking</span>
-    <span class="n2">24 hours</span></button>
-  </div>
-  <div style="height:6px"></div>
-  <button class="btn ghost" onclick="go('svc')">View all <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
-  
-      </div>
-      <nav class="tabbar" id="tabbar">
-        
-    <button class="tab on" onclick="go('home')">
-      <span class="ico"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1.5 1.5 0 0 1-1.5 1.5h-4V14h-7v7.5h-4A1.5 1.5 0 0 1 3 20Z"></path></svg></span>
-      <span>Home</span>
-    </button>
-    <button class="tab " onclick="go('svc')">
-      <span class="ico"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M19.4 14.5a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-.97 1.47V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1.05-1.47 1.6 1.6 0 0 0-1.77.32l-.06.06A2 2 0 1 1 4.44 17l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.47-.97H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.47-1.05 1.6 1.6 0 0 0-.32-1.77l-.06-.06A2 2 0 1 1 7 4.44l.06.06a1.6 1.6 0 0 0 1.77.32H9a1.6 1.6 0 0 0 .97-1.47V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 .97 1.47 1.6 1.6 0 0 0 1.77-.32l.06-.06A2 2 0 1 1 19.56 7l-.06.06a1.6 1.6 0 0 0-.32 1.77V9a1.6 1.6 0 0 0 1.47.97H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5.97Z"></path></svg><span class="badge">1</span></span>
-      <span>Services</span>
-    </button>
-    <button class="tab " onclick="go('pay')">
-      <span class="ico"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.6"></rect><path d="M2.5 10h19M6 15h3"></path></svg></span>
-      <span>Payments</span>
-    </button>
-    <button class="tab " onclick="go('com')">
-      <span class="ico"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"></circle><path d="M2.5 20a6.5 6.5 0 0 1 13 0"></path><path d="M17 5.5a3 3 0 0 1 0 5.6M18 20a6 6 0 0 0-2.2-4.6"></path></svg><span class="badge">1</span></span>
-      <span>Community</span>
-    </button>
-    <button class="tab " onclick="go('prof')">
-      <span class="ico"><svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"></circle><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0"></path></svg></span>
-      <span>Profile</span>
-    </button>
-      </nav>
+      <nav class="tabbar" id="tabbar"></nav>
 
       <div class="toast" id="toast"></div>
       <div class="splash" id="splash">
@@ -656,6 +539,9 @@ let LANG = 'en';
 const D = {
   en:{
     appName:'Almaria Residence', hub:'Your building hub', welcome:'Welcome back',
+    lock_title:'Sign in to your apartment',
+    lock_body:'This app shows your own tenancy — your lease, your payment schedule and your maintenance requests. There is nothing to see until you sign in.',
+    lock_help:'Use the details the building office gave you. If you do not have them, contact the office.',
     tab_home:'Home', tab_svc:'Services', tab_pay:'Payments', tab_com:'Community', tab_prof:'Profile',
     heroKicker:'ALMARIA RESIDENCE', heroTitle:'Everything your home needs, in one place',
     heroText:'Maintenance, rent, building notices and amenities — 37 apartments, one app.',
@@ -665,6 +551,10 @@ const D = {
     qa_pay:'Rent & payments', qa_pay_d:'Schedule, receipts, balance',
     qa_call:'Contact building', qa_call_d:'Manager, security, emergency',
     openReq:'Your open requests', viewAll:'View all', nextPay:'Next payment',
+    pay_allpaid:'Nothing outstanding', pay_allpaid_d:'Every instalment on this lease is paid.',
+    pay_none:'No schedule on file', pay_none_d:'The office has not entered a payment schedule for this tenancy yet.',
+    pay_paid:'Paid', pay_overdue_d:'days overdue', pay_today:'Due today',
+    req_hold_d:'Paused by the office',
     latest:'Latest announcement', amenities:'Building amenities',
     svc_cat:'Services', svc_open:'Open', svc_hist:'History',
     pickService:'Choose a service', newRequest:'New request', submit:'Submit request',
@@ -718,6 +608,9 @@ const D = {
   },
   ar:{
     appName:'المارية ريزيدنس', hub:'مركز خدمات سكنك', welcome:'أهلاً بعودتك',
+    lock_title:'سجّل الدخول لعرض شقتك',
+    lock_body:'يعرض هذا التطبيق عقدك أنت — الإيجار وجدول الدفعات وطلبات الصيانة الخاصة بك. لا يوجد ما يُعرض قبل تسجيل الدخول.',
+    lock_help:'استخدم البيانات التي زوّدتك بها إدارة المبنى. إن لم تكن لديك، تواصل مع الإدارة.',
     tab_home:'الرئيسية', tab_svc:'الخدمات', tab_pay:'المدفوعات', tab_com:'المجتمع', tab_prof:'حسابي',
     heroKicker:'المارية ريزيدنس', heroTitle:'كل ما يحتاجه سكنك في مكان واحد',
     heroText:'الصيانة والإيجار وإشعارات المبنى والمرافق — ٣٧ شقة، تطبيق واحد.',
@@ -727,6 +620,10 @@ const D = {
     qa_pay:'الإيجار والمدفوعات', qa_pay_d:'الجدول والإيصالات والرصيد',
     qa_call:'التواصل مع الإدارة', qa_call_d:'المدير، الأمن، الطوارئ',
     openReq:'طلباتك المفتوحة', viewAll:'عرض الكل', nextPay:'الدفعة القادمة',
+    pay_allpaid:'لا يوجد مستحق', pay_allpaid_d:'جميع دفعات هذا العقد مسدَّدة.',
+    pay_none:'لا يوجد جدول دفعات', pay_none_d:'لم تُدخل الإدارة جدول دفعات لهذا العقد بعد.',
+    pay_paid:'مدفوعة', pay_overdue_d:'يوم تأخير', pay_today:'مستحقة اليوم',
+    req_hold_d:'موقوف مؤقتاً من الإدارة',
     latest:'آخر إعلان', amenities:'مرافق المبنى',
     svc_cat:'الخدمات', svc_open:'المفتوحة', svc_hist:'السجل',
     pickService:'اختر الخدمة', newRequest:'طلب جديد', submit:'إرسال الطلب',
@@ -782,14 +679,30 @@ const D = {
 const T = k => (D[LANG][k] !== undefined ? D[LANG][k] : k);
 const L = (en,ar) => LANG==='en' ? en : ar;
 const NUM = s => LANG==='en' ? String(s) : String(s).replace(/[0-9]/g, d=>'٠١٢٣٤٥٦٧٨٩'[d]);
-const money = n => NUM(n.toLocaleString('en-US')) + ' ' + T('sar');
+/* An amount the database does not hold is not zero, and must not print as a
+   number. This used to throw on null — which is why every caller had been
+   given a fallback to the demo lease's figure instead, and that was far worse
+   than a crash: a real tenant was shown an invented rent as their own. */
+const NONE = () => L('Not recorded', 'غير مسجَّل');
+const money = n => (n === null || n === undefined || n === '' || isNaN(Number(n)))
+  ? NONE() : NUM(Number(n).toLocaleString('en-US')) + ' ' + T('sar');
+/* Any other value the database does not hold. Same rule, same reason. */
+const shown = v => (v === null || v === undefined || v === '') ? NONE() : v;
 
 /* ---------------------------- data ---------------------------- */
+/* No demonstration tenant. Ahmed, 9 September: "if signed out no information
+   to show, i have to be signed in."
+
+   What remains is the SHAPE the app renders, empty. Every value arrives from
+   Postgres for the person who signed in; a field the database does not hold
+   stays null and reads as "Not recorded". Nothing here belongs to anybody,
+   because there is nothing here — which is the only version of this that
+   cannot leak into a real session, be mistaken for the building, or be
+   screenshotted as though it were. */
 const RESIDENT = {
-  name_en:'Sara Younes', name_ar:'سارة يونس',
-  initials:'SY', email:'resident@example.com', phone:'+966 55 000 0000',
-  unit:'B-009', type_en:'2 Bedroom', type_ar:'غرفتان نوم',
-  since_en:'Jul 2026', since_ar:'يوليو ٢٠٢٦', last_en:'Today', last_ar:'اليوم'
+  name_en:null, name_ar:null, initials:'', email:null, phone:null,
+  unit:null, type_en:null, type_ar:null,
+  since_en:null, since_ar:null, last_en:null, last_ar:null
 };
 
 const CATS = [
@@ -813,77 +726,15 @@ const STATUS = {
   progress:{k:'st_prog', cls:'a'}, hold:{k:'st_hold', cls:'a'}, done:{k:'st_done', cls:'g'}, cancelled:{k:'st_can', cls:'n'}
 };
 
-let REQUESTS = [
-  {id:'MR-2608-138', cat:'plumb', title_en:"Water heater not heating", title_ar:"سخان الماء لا يسخّن",
-   date_en:'16 Aug 2026', date_ar:'١٦ أغسطس ٢٠٢٦', status:'submitted', pri:'med', tech:'Ramy H.', tech_ar:'رامي ح.',
-   steps:[["submitted", "16 Aug 2026", "١٦ أغسطس ٢٠٢٦"]]},
-  {id:'MR-2607-109', cat:'wifi', title_en:"Terrace WiFi weak", title_ar:"ضعف شبكة الواي فاي في التراس",
-   date_en:'26 Jul 2026', date_ar:'٢٦ يوليو ٢٠٢٦', status:'done', pri:'med', tech:'Ramy H.', tech_ar:'رامي ح.', stars:4,
-   steps:[["submitted", "26 Jul 2026", "٢٦ يوليو ٢٠٢٦"], ["assigned", "26 Jul 2026", "٢٦ يوليو ٢٠٢٦"], ["progress", "26 Jul 2026", "٢٦ يوليو ٢٠٢٦"], ["done", "26 Jul 2026", "٢٦ يوليو ٢٠٢٦"]]},
-  {id:'MR-2607-100', cat:'elec', title_en:"Distribution board tripping", title_ar:"فصل متكرر في لوحة الكهرباء",
-   date_en:'26 Jul 2026', date_ar:'٢٦ يوليو ٢٠٢٦', status:'done', pri:'med', tech:'Ramy H.', tech_ar:'رامي ح.', stars:4,
-   steps:[["submitted", "26 Jul 2026", "٢٦ يوليو ٢٠٢٦"], ["assigned", "26 Jul 2026", "٢٦ يوليو ٢٠٢٦"], ["progress", "26 Jul 2026", "٢٦ يوليو ٢٠٢٦"], ["done", "26 Jul 2026", "٢٦ يوليو ٢٠٢٦"]]},
-  {id:'MR-2605-054', cat:'elec', title_en:"Bedroom light fitting loose", title_ar:"وحدة إنارة غرفة النوم غير مثبّتة",
-   date_en:'13 May 2026', date_ar:'١٣ مايو ٢٠٢٦', status:'done', pri:'high', tech:'Ramy H.', tech_ar:'رامي ح.', stars:5,
-   steps:[["submitted", "13 May 2026", "١٣ مايو ٢٠٢٦"], ["assigned", "13 May 2026", "١٣ مايو ٢٠٢٦"], ["progress", "13 May 2026", "١٣ مايو ٢٠٢٦"], ["done", "13 May 2026", "١٣ مايو ٢٠٢٦"]]},
-  {id:'MR-2603-011', cat:'elec', title_en:"Bedroom light fitting loose", title_ar:"وحدة إنارة غرفة النوم غير مثبّتة",
-   date_en:'28 Mar 2026', date_ar:'٢٨ مارس ٢٠٢٦', status:'done', pri:'med', tech:'Ramy H.', tech_ar:'رامي ح.', stars:5,
-   steps:[["submitted", "28 Mar 2026", "٢٨ مارس ٢٠٢٦"], ["assigned", "28 Mar 2026", "٢٨ مارس ٢٠٢٦"], ["progress", "28 Mar 2026", "٢٨ مارس ٢٠٢٦"], ["done", "28 Mar 2026", "٢٨ مارس ٢٠٢٦"]]},
-  {id:'MR-2603-016', cat:'elec', title_en:"Distribution board tripping", title_ar:"فصل متكرر في لوحة الكهرباء",
-   date_en:'24 Mar 2026', date_ar:'٢٤ مارس ٢٠٢٦', status:'done', pri:'med', tech:'Mostafa A.', tech_ar:'مصطفى ع.', stars:5,
-   steps:[["submitted", "24 Mar 2026", "٢٤ مارس ٢٠٢٦"], ["assigned", "24 Mar 2026", "٢٤ مارس ٢٠٢٦"], ["progress", "24 Mar 2026", "٢٤ مارس ٢٠٢٦"], ["done", "24 Mar 2026", "٢٤ مارس ٢٠٢٦"]]},
-  {id:'MR-2603-007', cat:'carp', title_en:"Wardrobe hinge broken", title_ar:"مفصلة خزانة الملابس مكسورة",
-   date_en:'20 Mar 2026', date_ar:'٢٠ مارس ٢٠٢٦', status:'done', pri:'low', tech:'Sayed M.', tech_ar:'سيد م.', stars:5,
-   steps:[["submitted", "20 Mar 2026", "٢٠ مارس ٢٠٢٦"], ["assigned", "20 Mar 2026", "٢٠ مارس ٢٠٢٦"], ["progress", "20 Mar 2026", "٢٠ مارس ٢٠٢٦"], ["done", "20 Mar 2026", "٢٠ مارس ٢٠٢٦"]]},
-  {id:'MR-2603-009', cat:'elec', title_en:"Kitchen extractor not running", title_ar:"شفاط المطبخ لا يعمل",
-   date_en:'16 Mar 2026', date_ar:'١٦ مارس ٢٠٢٦', status:'done', pri:'med', tech:'Ramy H.', tech_ar:'رامي ح.', stars:5,
-   steps:[["submitted", "16 Mar 2026", "١٦ مارس ٢٠٢٦"], ["assigned", "16 Mar 2026", "١٦ مارس ٢٠٢٦"], ["progress", "16 Mar 2026", "١٦ مارس ٢٠٢٦"], ["done", "16 Mar 2026", "١٦ مارس ٢٠٢٦"]]}
-];
+/* Filled from this resident's own work orders. See RESIDENT above. */
+let REQUESTS = [];
 
-const LEASE = {
-  annual:155000, inst:12, term_en:'5 Jul 2026 – 4 Jul 2027', term_ar:'٥ يوليو ٢٠٢٦ – ٤ يوليو ٢٠٢٧',
-  rows:[
-    {n:1, amt:12917, iso:'2026-07-05', due_en:'5 Jul 2026', due_ar:'٥ يوليو ٢٠٢٦', st:'paid', ref:'RCT-26-0701'},
-    {n:2, amt:12918, iso:'2026-08-05', due_en:'5 Aug 2026', due_ar:'٥ أغسطس ٢٠٢٦', st:'paid', ref:'RCT-26-0802'},
-    {n:3, amt:12916, iso:'2026-09-05', due_en:'5 Sep 2026', due_ar:'٥ سبتمبر ٢٠٢٦', st:'due'},
-    {n:4, amt:12918, iso:'2026-10-05', due_en:'5 Oct 2026', due_ar:'٥ أكتوبر ٢٠٢٦', st:'upcoming'},
-    {n:5, amt:12917, iso:'2026-11-05', due_en:'5 Nov 2026', due_ar:'٥ نوفمبر ٢٠٢٦', st:'upcoming'},
-    {n:6, amt:12916, iso:'2026-12-05', due_en:'5 Dec 2026', due_ar:'٥ ديسمبر ٢٠٢٦', st:'upcoming'},
-    {n:7, amt:12917, iso:'2027-01-05', due_en:'5 Jan 2027', due_ar:'٥ يناير ٢٠٢٧', st:'upcoming'},
-    {n:8, amt:12917, iso:'2027-02-05', due_en:'5 Feb 2027', due_ar:'٥ فبراير ٢٠٢٧', st:'upcoming'},
-    {n:9, amt:12917, iso:'2027-03-05', due_en:'5 Mar 2027', due_ar:'٥ مارس ٢٠٢٧', st:'upcoming'},
-    {n:10, amt:12917, iso:'2027-04-05', due_en:'5 Apr 2027', due_ar:'٥ أبريل ٢٠٢٧', st:'upcoming'},
-    {n:11, amt:12917, iso:'2027-05-05', due_en:'5 May 2027', due_ar:'٥ مايو ٢٠٢٧', st:'upcoming'},
-    {n:12, amt:12916, iso:'2027-06-05', due_en:'5 Jun 2027', due_ar:'٥ يونيو ٢٠٢٧', st:'upcoming'}
-  ]
-};
+/* The shape only. See RESIDENT above. */
+const LEASE = { annual:null, inst:null, term_en:null, term_ar:null, rows:[] };
 
-const POSTS = [
-  {id:1, tone:['#3E5F7A','#22384A'], ico:'drop', tag:'post',
-   t_en:'Water tank cleaning — Thursday 20 August',
-   t_ar:'تنظيف خزانات المياه — الخميس ٢٠ أغسطس',
-   d_en:'20 Aug 2026', d_ar:'٢٠ أغسطس ٢٠٢٦',
-   b_en:'The building water tanks will be cleaned and sterilised on Thursday 20 August between 09:00 and 14:00. Water supply will be interrupted for approximately three hours during this window. Please store what you need for the morning. A certificate of cleaning will be posted in the lobby afterwards.',
-   b_ar:'سيتم تنظيف وتعقيم خزانات المياه بالمبنى يوم الخميس ٢٠ أغسطس من الساعة ٩:٠٠ حتى ١٤:٠٠. سينقطع ضخ المياه لمدة ثلاث ساعات تقريباً خلال هذه الفترة، ونرجو تعبئة احتياجاتكم صباحاً. وسيتم تعليق شهادة التنظيف في اللوبي بعد الانتهاء.'},
-  {id:2, tone:['#6B5E3A','#3A3222'], ico:'lift', tag:'post',
-   t_en:'Elevator annual maintenance — lift B',
-   t_ar:'الصيانة السنوية للمصاعد — المصعد (ب)',
-   d_en:'15 Aug 2026', d_ar:'١٥ أغسطس ٢٠٢٦',
-   b_en:'Lift B will be out of service on Sunday 24 August from 08:00 to 16:00 for its annual statutory inspection. Lift A will operate normally throughout. We ask residents on the upper floors to plan deliveries around this window.',
-   b_ar:'سيكون المصعد (ب) خارج الخدمة يوم الأحد ٢٤ أغسطس من الساعة ٨:٠٠ حتى ١٦:٠٠ لإجراء الفحص السنوي النظامي. وسيعمل المصعد (أ) بشكل طبيعي طوال الفترة. نرجو من سكان الأدوار العليا تنظيم عمليات التوصيل خارج هذا الوقت.'},
-  {id:3, tone:['#2E6B6B','#12403F'], ico:'pool', tag:'event',
-   t_en:'Rooftop pool — extended summer hours',
-   t_ar:'مسبح السطح — تمديد ساعات الصيف',
-   d_en:'10 Aug 2026', d_ar:'١٠ أغسطس ٢٠٢٦',
-   b_en:'Through September the rooftop pool stays open until 23:00. The terrace lounge and BBQ area remain available to residents and their guests; the BBQ bar can be reserved through the Services tab up to 24 hours in advance.',
-   b_ar:'حتى نهاية سبتمبر يبقى مسبح السطح مفتوحاً حتى الساعة ١١ مساءً. وتظل جلسة التراس وركن الشواء متاحة للسكان وضيوفهم، ويمكن حجز ركن الشواء من تبويب الخدمات قبل ٢٤ ساعة.'},
-  {id:4, tone:['#5A4A6B','#2F2540'], ico:'car', tag:'post',
-   t_en:'Visitor parking — new registration at the gate',
-   t_ar:'مواقف الزوار — تسجيل جديد عند البوابة',
-   d_en:'2 Aug 2026', d_ar:'٢ أغسطس ٢٠٢٦',
-   b_en:'From 1 September visitor vehicles must be registered at the gate using the visitor pass issued from this app. Unregistered vehicles in resident bays will be asked to move. Each apartment keeps its one allocated covered bay.',
-   b_ar:'اعتباراً من ١ سبتمبر يجب تسجيل مركبات الزوار عند البوابة باستخدام تصريح الزائر الصادر من التطبيق. وسيُطلب من المركبات غير المسجّلة في مواقف السكان إخلاء الموقف. ويحتفظ كل شقة بموقفها المظلل المخصص.'}
-];
+/* Filled from the announcements the office has published, and from nothing
+   else. See RESIDENT above. */
+const POSTS = [];
 
 const AMENITIES = [
   {ico:'pool',   k:'amen_pool',    d:'amen_pool_d',    h_en:'06:00 – 22:00', h_ar:'٦ ص – ١٠ م',  book:true},
@@ -903,11 +754,19 @@ let FORM = {cat:null, pri:'med', time:'any'};
 
 /* ---------------------------- helpers ---------------------------- */
 const $ = id => document.getElementById(id);
-const openReqs = () => REQUESTS.filter(r=>['submitted','assigned','progress'].includes(r.status));
+/* APP-07. 'hold' was in neither list, so a paused job vanished from the
+   resident's app entirely — the one status where a tenant most needs to see
+   where their request has got to. A held job is still an open job. */
+const openReqs = () => REQUESTS.filter(r=>['submitted','assigned','progress','hold'].includes(r.status));
 const doneReqs = () => REQUESTS.filter(r=>['done','cancelled'].includes(r.status));
 const statusPill = s => `<span class="pill ${STATUS[s].cls}">${T(STATUS[s].k)}</span>`;
 const priLabel = p => T(p==='high'?'p_high':p==='low'?'p_low':'p_med');
-const rname = () => L(RESIDENT.name_en, RESIDENT.name_ar);
+/* The resident's own name, or null — never a substitute. `rfirst` is the
+   greeting; with no name on file there is no greeting to personalise, and
+   "Welcome back, Yazeed" said to somebody else is the whole defect in one
+   line. Escaped at every site: this is the one field the resident controls. */
+const rname  = () => L(RESIDENT.name_en, RESIDENT.name_ar) || null;
+const rfirst = () => { const n = rname(); return n ? String(n).trim().split(/\s+/)[0] : null; };
 
 function toast(msg){
   const el = $('toast');
@@ -943,9 +802,117 @@ function openSheet(title, body){
    read/write with table queries is the only change needed to make this
    sync across devices — no calling code moves.
    ========================================================================== */
+/* ==========================================================================
+   ENVIRONMENT — the one place that says which building's records this build
+   is allowed to touch.
+
+   The 8 September staging audit found the staging build sharing production's
+   backend, its session key and its shared-record key, on the same origin. A
+   production session loaded in staging, and a staging write reached the
+   production database. A path segment is not an environment.
+
+   Three things make it real, and all three are here:
+
+     1. A separate Supabase project. Staging has its own database, its own
+        auth users and its own keys — seeded with generated data only.
+     2. Storage namespaced by environment, so a session or a shared demo
+        record from one never resolves in the other, same origin or not.
+     3. A boot assertion. A build that is labelled staging and pointed at the
+        production project refuses to start, and says so, rather than writing
+        to the wrong building's records and being found out later.
+
+   To produce the staging build, tool/make_env.mjs rewrites this block. It is
+   never edited by hand in two places, because that is how the two drift.
+   ========================================================================== */
+const ENV = {
+  name:    'production',
+  label_en:'', label_ar:'',
+  base:    'https://oaxasgfdfxrkbllzwvna.supabase.co',
+  key:     'sb_publishable_WRR6q8UHhW7gIWp6NdP50w_rO6eDRVU',
+  prefix:  'almaria',
+  /* The project ref this build is FORBIDDEN to talk to. Naming the forbidden
+     one rather than the permitted one is deliberate: a copy-paste that changes
+     the URL and forgets the label is exactly the mistake being guarded, and
+     this catches it in the direction it actually happens. */
+  forbid:  null
+};
+(function assertEnvironment(){
+  const ref = (ENV.base.match(/https:\/\/([a-z0-9]+)\.supabase\.co/) || [])[1] || '';
+  if(ENV.forbid && ref === ENV.forbid){
+    document.addEventListener('DOMContentLoaded', function(){
+      document.body.innerHTML =
+        '<div style="font:16px/1.6 system-ui;padding:40px;max-width:46em;margin:0 auto">'
+        + '<h1 style="font-size:20px">This build is misconfigured and will not start</h1>'
+        + '<p>It is labelled <b>' + ENV.name + '</b> but is pointed at the '
+        + '<b>production</b> database. Nothing has been read or written.</p>'
+        + '<p>Point it at its own project, or relabel it. A staging build must '
+        + 'never write to the building’s real records.</p></div>';
+    });
+    throw new Error('environment misconfigured: ' + ENV.name + ' build pointed at production');
+  }
+})();
+
+/* A non-production build says so on every screen, permanently. A banner that
+   can be dismissed is a banner that is dismissed on the first morning and never
+   seen again, which is how somebody ends up believing a test figure.
+
+   MOB-04, found by the 8 September audit: the first version was
+   position:fixed;bottom:0 with body.paddingBottom to compensate. The resident
+   shell is position:fixed;inset:0 on a phone, so padding on the body reserved
+   nothing and the bar covered the tab labels — 48px of it, over a tab bar
+   occupying y=770-844 at 390x844. pointer-events:none meant automation still
+   clicked through and every navigation test passed while a person could not
+   read the tabs. A warning that hides the controls is its own defect.
+
+   It now measures itself and the app shell gives up exactly that much room.
+
+   MOB-05, same audit: the text stayed English after switching to Arabic,
+   because the repaint returned early whenever the element already existed. It
+   now re-reads the language every tick and follows the document's direction. */
+(function environmentBanner(){
+  if(ENV.name === 'production') return;
+  const css = document.createElement('style');
+  css.textContent =
+    '#envbar{position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#7a2418;'
+    + 'color:#fff;font:600 12px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;'
+    + 'letter-spacing:.03em;text-align:center;box-sizing:border-box;'
+    + 'padding:6px 12px calc(6px + env(safe-area-inset-bottom,0px));'
+    + 'box-shadow:0 -1px 0 rgba(0,0,0,.25);pointer-events:none}'
+    /* The shell gives up the bar's measured height rather than overlapping it. */
+    + 'html.has-envbar body{padding-bottom:var(--envbar-h,32px)}'
+    + '@media (max-width:820px){html.has-envbar .phone{bottom:var(--envbar-h,32px)!important;'
+    + 'height:auto!important}}';
+  const paint = function(){
+    let b = document.getElementById('envbar');
+    if(!b){
+      if(!document.body) return;
+      if(!css.parentNode) document.head.appendChild(css);
+      b = document.createElement('div');
+      b.id = 'envbar';
+      b.setAttribute('role', 'status');
+      document.body.appendChild(b);
+      document.documentElement.classList.add('has-envbar');
+    }
+    /* Re-read every tick: the language toggle rewrites the document. */
+    const ar = (document.documentElement.getAttribute('lang') === 'ar');
+    const want = ar ? ENV.label_ar : ENV.label_en;
+    if(b.textContent !== want) b.textContent = want;
+    b.dir = ar ? 'rtl' : 'ltr';
+    /* Reserve what it actually occupies, not what it was assumed to be. */
+    const h = Math.ceil(b.getBoundingClientRect().height);
+    if(h && document.documentElement.style.getPropertyValue('--envbar-h') !== h + 'px')
+      document.documentElement.style.setProperty('--envbar-h', h + 'px');
+  };
+  if(document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', paint);
+  else paint();
+  setInterval(function(){ try{ paint(); }catch(e){} }, 700);
+  window.addEventListener('resize', function(){ try{ paint(); }catch(e){} });
+})();
+
 const LINK = (function(){
-  const KEY = 'almaria.link.v1';
-  const CHAN = 'almaria.link';
+  const KEY = ENV.prefix + '.link.v1';
+  const CHAN = ENV.prefix + '.link';
   const BLANK = () => ({v:1, rev:0, at:0, by:'', wo:{}, newWO:[], anns:[], pay:{}});
 
   let cache = null, subs = [], bc = null, ok = true;
@@ -1102,12 +1069,52 @@ function sheetRate(id){
     <div class="muted" style="text-align:center">${L('Tap a star to rate','اضغط على نجمة للتقييم')}</div>`);
 }
 
+/* SEC-02. Everything that reaches innerHTML from a request, a name, a post or
+   the database goes through this first. A resident types the title of their own
+   maintenance request, and it is rendered in the office's console as well as
+   here. */
+/* A colour reaches a style attribute, where escaping is the wrong tool — a
+   quoted string can still carry a second declaration. Only a literal colour is
+   allowed through; anything else falls back to the neutral. */
+function cssColour(v){
+  const t = String(v == null ? '' : v).trim();
+  return /^(#[0-9a-fA-F]{3,8}|rgba?\([\d.,%\s]+\)|hsla?\([\d.,%\s]+\)|[a-zA-Z]{3,20})$/.test(t)
+    ? t : '#8A929C';
+}
+function esc(v){
+  return String(v == null ? '' : v)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+/* DATA-05. daysTo used to clamp at zero, so an instalment five days overdue
+   read "0 days" — the same as one due today. Days are now signed and the
+   caller decides what to say about them. */
 function daysTo(iso){
-  const d = Math.ceil((new Date(iso+'T00:00:00') - new Date(new Date().toDateString()))/864e5);
-  return Math.max(0, d);
+  return Math.ceil((new Date(iso+'T00:00:00') - new Date(new Date().toDateString()))/864e5);
+}
+
+/* DATA-05. The schedule used to mark only the FIRST unpaid row 'due' whatever
+   its date, leaving later overdue rows labelled Upcoming. State is derived from
+   the date of each row, per row. */
+function payState(r){
+  if(r.st === 'paid') return 'paid';
+  const d = daysTo(r.iso);
+  return d < 0 ? 'overdue' : d <= 7 ? 'due' : 'upcoming';
+}
+function dueChip(r){
+  const st = payState(r), d = daysTo(r.iso);
+  if(st === 'paid')    return `<span class="pill g">${T('pay_paid')}</span>`;
+  if(st === 'overdue') return `<span class="pill r">${NUM(-d)} ${T('pay_overdue_d')}</span>`;
+  if(d === 0)          return `<span class="pill a">${T('pay_today')}</span>`;
+  return `<span class="pill a">${NUM(d)} ${T('days')}</span>`;
 }
 function go(tab){ TAB = tab; closeAll(); render(); $('screen').scrollTop = 0; }
-function demo(){ toast(T('toastDemo')); }
+/* APP-05/06. `demo()` used to be here: a toast reading "Prototype — this
+   action is not wired up", behind eighteen controls. It has no callers left.
+   The controls were not disabled or relabelled; they were removed, because a
+   resident who presses one learns that the app is a mock-up, and that is the
+   thing they then believe about the parts that DO work. */
 
 /* ---------------------------- language ---------------------------- */
 function setLang(l){
@@ -1126,7 +1133,56 @@ function setLang(l){
 /* ==========================================================================
    RENDER
    ========================================================================== */
-function render(){ renderTop(); renderScreen(); renderTabs(); }
+/* There is no signed-out application.
+
+   "if signed out no information to show, i have to be signed in." — Ahmed,
+   9 September. Everything below the gate is read from Postgres under the
+   signed-in resident's own access rules, so the gate is a courtesy: the
+   database is what refuses. But the courtesy matters, because the thing it
+   used to show instead was a working model of a building that does not exist,
+   and a working model is exactly what gets mistaken for the thing. */
+function unlocked(){
+  try { return SB.configured() && SB.signedIn() && LINK.live && LINK.live() === true; }
+  catch (e) { return false; }
+}
+function render(){
+  if(!unlocked()) return renderLocked();
+  renderTop(); renderScreen(); renderTabs();
+}
+
+function renderLocked(){
+  closeAll();
+  $('tabbar').innerHTML = '';
+  $('topbar').innerHTML = `
+    <div class="grow">
+      <h1 style="font-size:17px">${T('appName')}</h1>
+      <div class="sub">${L('Resident app','تطبيق السكان')}</div>
+    </div>
+    <button class="iconbtn" onclick="setLang(LANG==='en'?'ar':'en')" aria-label="${
+      L('Change language','تغيير اللغة')}">${I('globe',22)}</button>`;
+  $('screen').innerHTML = `
+    <div style="text-align:center;padding:34px 4px 10px">
+      <div style="color:var(--gold);opacity:.9">${MARK('132px',44)}</div>
+      <h2 style="margin:20px 0 6px;font-size:19px;font-weight:800">${T('lock_title')}</h2>
+      <p class="muted" style="margin:0 auto;max-width:30em;line-height:1.6">${T('lock_body')}</p>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <div class="bd">
+        <div class="fgroup">
+          <label class="f">${L('Email','البريد الإلكتروني')}</label>
+          <input class="inp" id="sbMail" type="email" autocomplete="username" inputmode="email">
+        </div>
+        <div class="fgroup">
+          <label class="f">${L('Password','كلمة المرور')}</label>
+          <input class="inp" id="sbPass" type="password" autocomplete="current-password"
+                 onkeydown="if(event.key==='Enter')sbIn()">
+        </div>
+        <button class="btn primary" id="sbGo" style="margin-top:4px" onclick="sbIn()">${
+          L('Sign in','تسجيل الدخول')}</button>
+      </div>
+    </div>
+    <p class="muted" style="text-align:center;margin-top:18px;line-height:1.6">${T('lock_help')}</p>`;
+}
 
 function renderTop(){
   const bar = $('topbar');
@@ -1134,10 +1190,9 @@ function renderTop(){
     bar.innerHTML = `
       <button class="iconbtn" onclick="openDrawer()">${I('menu',24)}</button>
       <div class="grow">
-        <h1 style="font-size:17px">${T('welcome')}${L(',','،')} ${rname().split(' ')[0]}</h1>
+        <h1 style="font-size:17px">${T('welcome')}${rfirst() ? L(',','،') + ' ' + esc(rfirst()) : ''}</h1>
         <div class="sub">${T('hub')}</div>
       </div>
-      <button class="iconbtn" style="position:relative" onclick="demo()">${I('bell',22)}<span class="dot"></span></button>
       <div class="avatar">${RESIDENT.initials}</div>`;
   } else {
     const titles = {svc:T('tab_svc'), pay:T('tab_pay'), com:T('community'), prof:T('tab_prof')};
@@ -1147,8 +1202,7 @@ function renderTop(){
         <h1>${titles[TAB]}</h1>
         <div class="sub">${subs[TAB]}</div>
       </div>
-      ${TAB==='svc' ? `<button class="iconbtn" onclick="sheetNewRequest()">${I('plus',24)}</button>` : ''}
-      <button class="iconbtn" style="position:relative" onclick="demo()">${I('bell',22)}<span class="dot"></span></button>`;
+      ${TAB==='svc' ? `<button class="iconbtn" onclick="sheetNewRequest()">${I('plus',24)}</button>` : ''}`;
   }
 }
 
@@ -1178,7 +1232,16 @@ function renderScreen(){
 
 /* ---------------------------- HOME ---------------------------- */
 function viewHome(){
-  const nextRow = LEASE.rows.find(r=>r.st==='due');
+  /* APP-01. This was `LEASE.rows.find(r=>r.st==='due')` and then read
+     nextRow.amt unconditionally. A tenant who has paid everything, or whose
+     schedule has not been entered, or who has no active lease, opened the app
+     to a blank screen and a TypeError. Paying in full is not an error state.
+
+     Falls forward to the next unpaid row rather than only the one flagged
+     'due', so a schedule whose flags are stale still shows the right one. */
+  const unpaid  = (LEASE.rows || []).filter(r => r.st !== 'paid');
+  const nextRow = unpaid.find(r => r.st === 'due') || unpaid[0] || null;
+  const allPaid = (LEASE.rows || []).length > 0 && unpaid.length === 0;
   const op = openReqs();
   const p = POSTS[0];
   return `
@@ -1196,7 +1259,6 @@ function viewHome(){
   <div class="sect first">${T('quick')}</div>
   <div class="quick">
     ${qa('plus','#FBF3DE','#A8811A',T('qa_req'),T('qa_req_d'),'sheetNewRequest()')}
-    ${qa('qr','#E4EEF2','#00506B',T('qa_gate'),T('qa_gate_d'),'sheetGatePass()')}
     ${qa('card','#E6F2EC','#2C8259',T('qa_pay'),T('qa_pay_d'),"go('pay')")}
     ${qa('phone','#FBEAEA','#C0504A',T('qa_call'),T('qa_call_d'),'sheetContact()')}
   </div>
@@ -1214,31 +1276,56 @@ function viewHome(){
 
   <div class="sect">${T('nextPay')}</div>
   <div class="card" onclick="go('pay')" style="cursor:pointer">
+    ${nextRow ? `
     <div class="row">
       <div class="icobox" style="background:var(--gold-soft);color:#A8811A">${I('cal',22)}</div>
       <div class="grow">
         <div style="font-size:15px;font-weight:800">${money(nextRow.amt)}</div>
         <div class="muted">${T('instalment')} ${NUM(nextRow.n)} ${T('of')} ${NUM(LEASE.rows.length)} · ${L(nextRow.due_en,nextRow.due_ar)}</div>
       </div>
-      <span class="pill a">${NUM(daysTo(nextRow.iso))} ${T('days')}</span>
-    </div>
+      ${dueChip(nextRow)}
+    </div>` : allPaid ? `
+    <div class="row">
+      <div class="icobox" style="background:#E6F2EC;color:#2C8259">${I('check',22)}</div>
+      <div class="grow">
+        <div style="font-size:15px;font-weight:800">${T('pay_allpaid')}</div>
+        <div class="muted">${T('pay_allpaid_d')}</div>
+      </div>
+    </div>` : `
+    <div class="row">
+      <div class="icobox" style="background:#F1F3F5;color:var(--ink-2)">${I('cal',22)}</div>
+      <div class="grow">
+        <div style="font-size:15px;font-weight:800">${T('pay_none')}</div>
+        <div class="muted">${T('pay_none_d')}</div>
+      </div>
+    </div>`}
   </div>
 
   <div class="sect-row">
     <h2>${T('latest')}</h2>
-    <button class="link" onclick="go('com')">${T('viewAll')}</button>
+    ${POSTS.length ? `<button class="link" onclick="go('com')">${T('viewAll')}</button>` : ''}
   </div>
-  <div class="post" onclick="sheetPost(1)">
-    <div class="img" style="background:linear-gradient(135deg,${p.tone[0]},${p.tone[1]});color:rgba(255,255,255,.9)">
+  ${POSTS.length ? '' : `<div class="card"><div class="bd muted">${
+      L('No notices from the building management yet.','لا توجد إعلانات من إدارة المبنى بعد.')}</div></div>`}
+  <!-- APP-08. This was sheetPost(1) — a hardcoded 1 — while the card above it
+       renders POSTS[0]. With a live feed the two are different posts, so
+       tapping the notice you can see opened a different one. The id is bound
+       and quoted, because live ids are strings prefixed with L.
+
+       And p may be undefined: with the demonstration posts cleared on sign-in
+       (see LIVE.paint) a building that has published nothing has an empty feed,
+       and this read p.id off it and took the whole Home screen down. -->
+  ${!p ? '' : `<div class="post" onclick="sheetPost('${esc(String(p.id))}')">
+    <div class="img" style="background:linear-gradient(135deg,${cssColour(p.tone[0])},${cssColour(p.tone[1])});color:rgba(255,255,255,.9)">
       ${I(p.ico,46,1.4)}
       <span class="tag">${T(p.tag)}</span>
     </div>
     <div class="pb">
       <h3>${L(p.t_en,p.t_ar)}</h3>
       <div class="ex">${L(p.b_en,p.b_ar).slice(0,110)}…</div>
-      <div class="meta"><span>${L('Building management','إدارة المبنى')}</span><span>${L(p.d_en,p.d_ar)}</span></div>
+      <div class="meta"><span>${L('Building management','إدارة المبنى')}</span><span>${esc(L(p.d_en,p.d_ar))}</span></div>
     </div>
-  </div>
+  </div>`}
 
   <div class="sect">${T('amenities')}</div>
   <div class="grid2">
@@ -1264,8 +1351,8 @@ function reqRow(r){
   return `<div class="reqrow" onclick="sheetRequest('${r.id}')">
     <span class="icobox" style="background:#F1F3F5;color:var(--ink-2);width:40px;height:40px;border-radius:12px">${I(c.ico,20)}</span>
     <div class="grow">
-      <div class="id">${r.id}</div>
-      <div class="t truncate">${L(r.title_en,r.title_ar)}</div>
+      <div class="id">${esc(r.id)}</div>
+      <div class="t truncate">${esc(L(r.title_en,r.title_ar))}</div>
       <div class="row" style="gap:8px">${statusPill(r.status)}<span class="muted">${L(r.date_en,r.date_ar)}</span></div>
     </div>
     <span class="chev">${I('chev',18)}</span>
@@ -1342,7 +1429,7 @@ function formHTML(){
 
   <div class="fgroup">
     <label class="f">${T('f_unit')}</label>
-    <input class="inp" value="${L('Apartment','شقة')} ${RESIDENT.unit} · ${L(RESIDENT.type_en,RESIDENT.type_ar)}" readonly style="background:#F1F3F5;color:var(--muted)">
+    <input class="inp" value="${L('Apartment','شقة')} ${esc(shown(RESIDENT.unit))} · ${esc(shown(L(RESIDENT.type_en,RESIDENT.type_ar)))}" readonly style="background:#F1F3F5;color:var(--muted)">
   </div>
 
   <div class="fgroup">
@@ -1365,11 +1452,6 @@ function formHTML(){
     <div class="chips">${times.map(([v,k])=>`<button class="chip ${FORM.time===v?'on':''}" onclick="FORM.time='${v}';refreshForm()">${T(k)}</button>`).join('')}</div>
   </div>
 
-  <div class="fgroup">
-    <label class="f">${T('f_photo')}</label>
-    <div class="upload" onclick="demo()">${I('camera',26)}<div style="margin-top:8px">${T('photoHint')}</div></div>
-  </div>
-
   <button class="btn primary" onclick="submitRequest()">${T('submit')}</button>`;
 }
 function refreshForm(){
@@ -1388,7 +1470,13 @@ function slaHint(){
   el.style.display='flex'; el.style.gap='6px'; el.style.alignItems='center';
 }
 function submitRequest(){
+  /* APP-02. The form collects a title, a description and a preferred visit
+     window. Until 8 September 2026 only the title survived — it was copied into
+     `desc` and the other two were read from the DOM by nobody. The resident was
+     shown a success message either way. */
   const title = ($('rTitle')&&$('rTitle').value.trim()) || L('New maintenance request','طلب صيانة جديد');
+  const detail = ($('rDesc') && $('rDesc').value.trim()) || '';
+  const visit = (FORM.time || 'any');
   if(!FORM.cat){ toast(L('Please choose a service first.','يرجى اختيار نوع الخدمة أولاً.')); return; }
   const d  = new Date();
   const mE = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
@@ -1406,13 +1494,19 @@ function submitRequest(){
   REQUESTS.unshift({
     id: `MR-${String(d.getFullYear()).slice(2)}${String(d.getMonth()+1).padStart(2,'0')}-${seq}`,
     cat: FORM.cat, title_en: title, title_ar: title,
+    detail: detail, visit: visit,
     date_en: `${d.getDate()} ${mE} ${d.getFullYear()}`, date_ar: `${NUM(d.getDate())} ${mA} ${NUM(d.getFullYear())}`,
     status:'submitted', pri:FORM.pri, tech:'—', tech_ar:'—',
     steps:[['submitted', L(`${d.getDate()} ${mE} · now`, `${NUM(d.getDate())} ${mA} · الآن`), `${NUM(d.getDate())} ${mA} · الآن`]]
   });
   const nw = REQUESTS[0];
   LINK.commit(st=>{
-    st.newWO.push({id:nw.id, unit:RESIDENT.unit, cat:nw.cat, desc:nw.title_en,
+    st.newWO.push({id:nw.id, unit:RESIDENT.unit, cat:nw.cat,
+      /* `desc` is what the office record has always called the long text, so
+         the description goes there and the title travels beside it. Where the
+         resident wrote nothing, the title stands in rather than an empty
+         record — but the two fields stay distinct. */
+      title:nw.title_en, desc: detail || nw.title_en, visit: visit,
       pri:nw.pri, raised:new Date().toISOString(),
       tenant:RESIDENT.name_en, tenant_ar:RESIDENT.name_ar});
   }, 'resident');
@@ -1437,90 +1531,51 @@ function sheetRequest(id){
 
   const stars = r.stars ? `<div class="card"><div class="muted" style="margin-bottom:8px">${T('rated')}</div>
       <div style="display:flex;gap:5px;color:var(--gold)">${[1,2,3,4,5].map(i=>`<span style="opacity:${i<=r.stars?1:.22}">${I('star',22,1.6)}</span>`).join('')}</div></div>`
-    : (r.status==='done' ? `<button class="btn ghost" onclick="sheetRate('${r.id}')">${I('star',18)} ${T('rate')}</button>` : '');
+    : (r.status==='done' ? `<button class="btn ghost" onclick="sheetRate('${esc(String(r.id))}')">${I('star',18)} ${T('rate')}</button>` : '');
 
   openSheet(T('reqDetail'), `
     <div class="row" style="gap:13px;margin-bottom:16px">
       <span class="icobox" style="background:var(--gold-soft);color:#A8811A">${I(c.ico,24)}</span>
       <div class="grow">
-        <div class="id muted" style="font-size:11px">${r.id}</div>
-        <div style="font-size:16px;font-weight:800;line-height:1.3;margin-top:2px">${L(r.title_en,r.title_ar)}</div>
+        <div class="id muted" style="font-size:11px">${esc(r.id)}</div>
+        <div style="font-size:16px;font-weight:800;line-height:1.3;margin-top:2px">${esc(L(r.title_en,r.title_ar))}</div>
       </div>
     </div>
     <div style="margin-bottom:16px">${statusPill(r.status)}</div>
 
     <div class="card">
       <div class="kv"><div class="k">${T('category')}</div><div class="v">${L(c.en,c.ar)}</div></div>
-      <div class="kv"><div class="k">${T('unit')}</div><div class="v">${L('Apartment','شقة')} ${RESIDENT.unit}</div></div>
+      <div class="kv"><div class="k">${T('unit')}</div><div class="v">${L('Apartment','شقة')} ${esc(RESIDENT.unit)}</div></div>
       <div class="kv"><div class="k">${T('raised')}</div><div class="v">${L(r.date_en,r.date_ar)}</div></div>
       <div class="kv"><div class="k">${T('priority')}</div><div class="v">${priLabel(r.pri)}</div></div>
-      <div class="kv"><div class="k">${T('assignedTo')}</div><div class="v">${L(r.tech, r.tech_ar||r.tech)}</div></div>
+      <div class="kv"><div class="k">${T('assignedTo')}</div><div class="v">${esc(L(r.tech, r.tech_ar||r.tech))}</div></div>
       <div class="kv"><div class="k">${T('sla')}</div><div class="v">${NUM(c.sla)} ${T('hrs')}</div></div>
     </div>
 
     <div class="sect" style="margin-top:6px">${T('progress')}</div>
     <div class="card"><ul class="tl">${steps}</ul></div>
     ${stars}
-    ${['submitted','assigned'].includes(r.status)?`<button class="btn danger" onclick="demo()">${T('cancelReq')}</button>`:''}
   `);
 }
 
-/* ------- gate pass sheet ------- */
-function sheetGatePass(){
-  openSheet(T('gatePass'), `
-    <div class="fgroup">
-      <label class="f">${T('visitorName')}</label>
-      <input class="inp" id="vName" placeholder="${L('Full name','الاسم الكامل')}">
-    </div>
-    <div class="fgroup">
-      <label class="f">${T('visitDate')}</label>
-      <input class="inp" value="${L('18 Aug 2026','١٨ أغسطس ٢٠٢٦')}" readonly>
-    </div>
-    <div class="fgroup">
-      <label class="f">${T('validFor')}</label>
-      <div class="chips">
-        <button class="chip on">${T('hours4')}</button>
-        <button class="chip">${T('hours12')}</button>
-        <button class="chip">${T('day1')}</button>
-      </div>
-    </div>
-    <button class="btn primary" onclick="showPass()">${I('qr',20)} ${T('generate')}</button>`);
-}
-function showPass(){
-  const name = ($('vName')&&$('vName').value.trim()) || L('Visitor','زائر');
-  // deterministic pseudo-QR
-  let cells = '';
-  for(let i=0;i<441;i++){
-    const r=Math.floor(i/21), c=i%21;
-    const finder = (r<7&&c<7)||(r<7&&c>13)||(r>13&&c<7);
-    const ring = finder && (r%7===0||r%7===6||c%7===0||c%7===6||(r%7>=2&&r%7<=4&&c%7>=2&&c%7<=4));
-    const on = finder ? ring : ((r*7 + c*13 + (r*c)%5) % 3 === 0);
-    cells += `<i class="${on?'b':''}"></i>`;
-  }
-  openSheet(T('gatePass'), `
-    <div style="text-align:center">
-      <div class="card" style="padding:22px 18px">
-        <div class="qr">${cells}</div>
-        <div style="font-size:17px;font-weight:800;margin-top:16px">${name}</div>
-        <div class="muted" style="margin-top:4px">${L('Apartment','شقة')} ${RESIDENT.unit} · ${L('Almaria Residence','المارية ريزيدنس')}</div>
-        <div class="divider"></div>
-        <div class="row" style="justify-content:center;gap:22px">
-          <div><div class="k muted">${T('visitDate')}</div><div style="font-weight:800;font-size:14px">${L('18 Aug 2026','١٨ أغسطس ٢٠٢٦')}</div></div>
-          <div><div class="k muted">${T('validFor')}</div><div style="font-weight:800;font-size:14px">${T('hours4')}</div></div>
-        </div>
-      </div>
-      <p class="muted" style="line-height:1.5">${T('showGuard')}</p>
-      <button class="btn primary" onclick="closeAll();toast(T('toastPass'))">${I('phone',18)} ${L('Send by SMS','إرسال برسالة نصية')}</button>
-    </div>`);
-}
+/* APP-05. The visitor pass is gone, not disabled.
+
+   It drew a QR code from `(r*7 + c*13 + (r*c)%5) % 3` — a pattern, not an
+   encoding, scannable by nothing — over a hardcoded visit date of 18 August
+   2026, with a "Send by SMS" button that sent no SMS. A resident would have
+   held that up to a guard.
+
+   Whether it comes back is not a UI question. OQ-2 in the store plan is still
+   open: is there a scanner at the gate, and a process behind it? Until someone
+   answers that, the feature cannot exist. */
 
 /* ------- contact sheet ------- */
 function sheetContact(){
   const row = (ico,label,val,tone) => `
-    <div class="menurow" onclick="demo()">
+    <div class="menurow" style="cursor:default">
       <span class="icobox" style="background:${tone[0]};color:${tone[1]};width:40px;height:40px;border-radius:12px">${I(ico,20)}</span>
       <div class="grow"><div class="t">${label}</div><div class="sv" dir="ltr">${val}</div></div>
-      <span class="chev">${I('chev',18)}</span></div>`;
+    </div>`;
   openSheet(T('contact'), `
     <div class="card tight">
       ${row('user', T('mgr'), '+966 53 838 3007', ['var(--gold-soft)','#A8811A'])}
@@ -1552,7 +1607,6 @@ function sheetAmenity(i){
       <span style="color:#A8811A;flex:none">${I('shield',20)}</span>
       <p>${T('included')}</p>
     </div>
-    ${a.book?`<div style="height:16px"></div><button class="btn primary" onclick="closeAll();toast(L('Booking request sent to building management.','تم إرسال طلب الحجز إلى إدارة المبنى.'))">${T('bookIt')}</button>`:''}
   `);
 }
 
@@ -1561,7 +1615,10 @@ function viewPayments(){
   const paidCount = LEASE.rows.filter(r=>r.st==='paid').length;
   const paidAmt   = LEASE.rows.filter(r=>r.st==='paid').reduce((a,r)=>a+r.amt,0);
   const schedTot  = LEASE.rows.reduce((a,r)=>a+r.amt,0);
-  const pct = Math.round(paidAmt/schedTot*100);
+  /* An empty schedule is not a divide-by-zero, it is a lease with no
+     instalments recorded — which is what a real tenancy looks like before the
+     office has entered one. This printed NaN%. */
+  const pct = schedTot > 0 ? Math.round(paidAmt/schedTot*100) : 0;
   const pillFor = st => st==='paid' ? `<span class="pill g">${T('paid')}</span>`
     : st==='due' ? `<span class="pill a">${T('due')}</span>` : `<span class="pill n">${T('upcoming')}</span>`;
 
@@ -1569,10 +1626,10 @@ function viewPayments(){
   <div class="leasecard">
     <div class="lbl">${T('annualRent')}</div>
     <div class="big">${money(LEASE.annual)}</div>
-    <div style="font-size:12.5px;opacity:.8;font-weight:700">${L('Apartment','شقة')} ${RESIDENT.unit} · ${L(RESIDENT.type_en,RESIDENT.type_ar)}</div>
+    <div style="font-size:12.5px;opacity:.8;font-weight:700">${L('Apartment','شقة')} ${esc(shown(RESIDENT.unit))} · ${esc(shown(L(RESIDENT.type_en,RESIDENT.type_ar)))}</div>
     <div class="mk">${MARK('100%',34)}</div>
     <div class="lease-grid">
-      <div><div class="lbl">${T('leaseTerm')}</div><div class="v">${L(LEASE.term_en,LEASE.term_ar)}</div></div>
+      <div><div class="lbl">${T('leaseTerm')}</div><div class="v">${esc(shown(L(LEASE.term_en,LEASE.term_ar)))}</div></div>
       <div><div class="lbl">${T('paidToDate')}</div><div class="v">${money(paidAmt)}</div></div>
     </div>
   </div>
@@ -1589,7 +1646,7 @@ function viewPayments(){
   <div class="sect">${T('schedule')}</div>
   <div class="card tight">
     ${LEASE.rows.map(r=>`
-      <div class="payrow" ${r.ref?`onclick="demo()" style="cursor:pointer"`:''}>
+      <div class="payrow">
         <span class="icobox" style="width:40px;height:40px;border-radius:12px;background:${r.st==='paid'?'var(--green-soft)':r.st==='due'?'var(--amber-soft)':'#F1F3F5'};color:${r.st==='paid'?'var(--green)':r.st==='due'?'var(--amber)':'#98A0A9'}">
           ${I(r.st==='paid'?'check':'cal',20)}
         </span>
@@ -1606,35 +1663,45 @@ function viewPayments(){
     <p>${T('payNote')}</p>
   </div>
 
-  <button class="btn primary" onclick="demo()">${I('file',18)} ${T('payNow')}</button>
-  <div style="height:10px"></div>
-  <button class="btn ghost" onclick="demo()">${I('doc2',18)} ${T('receipts')}</button>
   `;
+  /* APP-05/06. Three placeholders stood here: "View payment instructions" and
+     "Receipts", both of which answered with "Prototype — this action is not
+     wired up", and a tap on any settled instalment that did the same.
+     The note above already carries the payment method, which is what the
+     button claimed to be about; there is no receipt document to open; and a
+     row that looks tappable and is not teaches the resident that the app is a
+     mock-up. Removed rather than shipped.
+     Receipts come back when the payment-evidence backfill does — see D3 in
+     claude/go-live-plan.md. */
 }
 
 /* ---------------------------- COMMUNITY ---------------------------- */
 function viewCommunity(){
   return POSTS.map(p=>`
-    <div class="post" onclick="sheetPost(${p.id})">
-      <div class="img" style="background:linear-gradient(135deg,${p.tone[0]},${p.tone[1]});color:rgba(255,255,255,.9)">
+    <div class="post" onclick="sheetPost('${esc(String(p.id))}')">
+      <div class="img" style="background:linear-gradient(135deg,${cssColour(p.tone[0])},${cssColour(p.tone[1])});color:rgba(255,255,255,.9)">
         ${I(p.ico,46,1.4)}<span class="tag">${T(p.tag)}</span>
       </div>
       <div class="pb">
-        <h3>${L(p.t_en,p.t_ar)}</h3>
-        <div class="ex">${L(p.b_en,p.b_ar).slice(0,120)}…</div>
-        <div class="meta"><span>${L('Building management','إدارة المبنى')}</span><span>${L(p.d_en,p.d_ar)}</span></div>
+        <h3>${esc(L(p.t_en,p.t_ar))}</h3>
+        <div class="ex">${esc(L(p.b_en,p.b_ar).slice(0,120))}…</div>
+        <div class="meta"><span>${L('Building management','إدارة المبنى')}</span><span>${esc(L(p.d_en,p.d_ar))}</span></div>
       </div>
     </div>`).join('');
 }
 function sheetPost(id){
-  const p = POSTS.find(x=>x.id===id);
+  /* Ids arrive as strings from the markup and may be numbers in the seeded
+     copy or 'L…' strings from the live feed, so compare as strings. A missing
+     post is a missing post, not a TypeError. */
+  const p = POSTS.find(x => String(x.id) === String(id));
+  if(!p) return;
   openSheet(L(p.t_en,p.t_ar), `
     <div style="height:130px;border-radius:16px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.9);margin-bottom:16px;background:linear-gradient(135deg,${p.tone[0]},${p.tone[1]})">${I(p.ico,50,1.4)}</div>
     <div class="row" style="justify-content:space-between;margin-bottom:12px">
       <span class="pill gold">${T(p.tag)}</span>
-      <span class="muted">${L(p.d_en,p.d_ar)}</span>
+      <span class="muted">${esc(L(p.d_en,p.d_ar))}</span>
     </div>
-    <p style="font-size:14.5px;line-height:1.75;font-weight:600;color:var(--ink-2);margin:0">${L(p.b_en,p.b_ar)}</p>
+    <p style="font-size:14.5px;line-height:1.75;font-weight:600;color:var(--ink-2);margin:0">${esc(L(p.b_en,p.b_ar))}</p>
     <div class="divider"></div>
     <div class="muted">${L('Posted by Almaria Residence building management','منشور من إدارة مبنى المارية ريزيدنس')}</div>
   `);
@@ -1644,11 +1711,11 @@ function sheetPost(id){
 function viewProfile(){
   return `
   <div class="phead">
-    <div class="pic">${RESIDENT.initials}</div>
-    <div class="nm">${rname()}</div>
-    <div class="un">${L('Apartment','شقة')} ${RESIDENT.unit} · ${L(RESIDENT.type_en,RESIDENT.type_ar)}</div>
+    <div class="pic">${esc(RESIDENT.initials)}</div>
+    <div class="nm">${esc(rname())}</div>
+    <div class="un">${L('Apartment','شقة')} ${esc(shown(RESIDENT.unit))} · ${esc(shown(L(RESIDENT.type_en,RESIDENT.type_ar)))}</div>
     <div class="split">
-      <div><div class="k">${T('joinDate')}</div><div class="v">${L(RESIDENT.since_en,RESIDENT.since_ar)}</div></div>
+      <div><div class="k">${T('joinDate')}</div><div class="v">${esc(shown(L(RESIDENT.since_en,RESIDENT.since_ar)))}</div></div>
       <div><div class="k">${T('lastLogin')}</div><div class="v">${L(RESIDENT.last_en,RESIDENT.last_ar)}</div></div>
     </div>
   </div>
@@ -1657,11 +1724,10 @@ function viewProfile(){
     <div class="row" style="margin-bottom:6px">
       <span style="color:#A8811A">${I('shield',20)}</span>
       <div class="grow" style="font-size:15.5px;font-weight:800">${T('prof_info')}</div>
-      <button class="iconbtn" onclick="demo()" style="width:32px;height:32px;color:#A8811A">${I('edit',18)}</button>
     </div>
-    <div class="kv"><div class="k">${T('prof_email')}</div><div class="v" dir="ltr" style="text-align:${LANG==='ar'?'right':'left'}">${RESIDENT.email}</div></div>
-    <div class="kv"><div class="k">${T('prof_phone')}</div><div class="v" dir="ltr" style="text-align:${LANG==='ar'?'right':'left'}">${RESIDENT.phone}</div></div>
-    <div class="kv"><div class="k">${T('prof_unit')}</div><div class="v">${L('Apartment','شقة')} ${RESIDENT.unit} · ${L('Floor','الدور')} ${NUM(3)}</div></div>
+    <div class="kv"><div class="k">${T('prof_email')}</div><div class="v" dir="ltr" style="text-align:${LANG==='ar'?'right':'left'}">${esc(shown(RESIDENT.email))}</div></div>
+    <div class="kv"><div class="k">${T('prof_phone')}</div><div class="v" dir="ltr" style="text-align:${LANG==='ar'?'right':'left'}">${esc(shown(RESIDENT.phone))}</div></div>
+    <div class="kv"><div class="k">${T('prof_unit')}</div><div class="v">${L('Apartment','شقة')} ${esc(RESIDENT.unit)} · ${L('Floor','الدور')} ${NUM(3)}</div></div>
     <div class="note">
       <span style="color:#A8811A;flex:none">${I('check',20)}</span>
       <p>${T('prof_verified')}</p>
@@ -1669,10 +1735,7 @@ function viewProfile(){
   </div>
 
   <div class="card tight">
-    ${menuRow('users', T('household'), NUM(3)+' '+L('people','أفراد'))}
-    ${menuRow('doc2', T('documents'), L('Lease, ID, receipts','العقد، الهوية، الإيصالات'))}
     ${menuRow('phone', T('emergency'), L('Manager, security, 24h line','المدير، الأمن، خط ٢٤ ساعة'), 'sheetContact()')}
-    ${menuRow('key', T('menu_id'), L('Show resident ID','عرض بطاقة الساكن'))}
   </div>
 
   <div class="card tight">
@@ -1683,41 +1746,40 @@ function viewProfile(){
     </div>
   </div>
 
-  <button class="btn danger" onclick="demo()" style="margin-bottom:10px">${I('logout',18)} ${T('logout')}</button>
+  <button class="btn danger" onclick="sbOut()" style="margin-bottom:10px">${I('logout',18)} ${T('logout')}</button>
   <img class="footer-lock" alt="Almaria Residence" src="${WORD_GOLD}">
   <div class="muted" style="text-align:center;padding:0 0 4px">${L('Prototype v1','نموذج تجريبي ١')} · ${T('web')}</div>
   `;
 }
+/* APP-06. `act` is optional, and without one this rendered a chevron, a pointer
+   cursor and a toast saying the action was not wired up. A row that cannot be
+   pressed must not look pressable — the chevron is the promise, not the
+   handler. */
 function menuRow(ico,t,sv,act){
-  return `<div class="menurow" onclick="${act||'demo()'}">
+  return `<div class="menurow"${act?` onclick="${act}"`:' style="cursor:default"'}>
     <span class="icobox" style="width:40px;height:40px;border-radius:12px;background:#F1F3F5;color:var(--ink-2)">${I(ico,20)}</span>
     <div class="grow"><div class="t">${t}</div><div class="sv">${sv}</div></div>
-    <span class="chev">${I('chev',18)}</span></div>`;
+    ${act?`<span class="chev">${I('chev',18)}</span>`:''}</div>`;
 }
 
 /* ---------------------------- DRAWER ---------------------------- */
 function renderDrawer(){
   const item = (ico,label,act) => `
-    <div class="menurow" onclick="${act||'closeAll();demo()'}">
+    <div class="menurow"${act?` onclick="${act}"`:' style="cursor:default"'}>
       <span style="color:var(--ink-2);flex:none">${I(ico,21)}</span>
       <div class="t">${label}</div>
-      <span class="chev">${I('chev',17)}</span></div>`;
+      ${act?`<span class="chev">${I('chev',17)}</span>`:''}</div>`;
   $('drawer').innerHTML = `
     <div class="dh">
       <div class="mk">${MARK('100%',30)}</div>
       <img class="lock" alt="Almaria Residence" src="${WORD_WHITE}">
       <div class="pic" style="width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800">${RESIDENT.initials}</div>
-      <div class="nm">${rname()}</div>
-      <div class="em">${L('Apartment','شقة')} ${RESIDENT.unit} · ${T('appName')}</div>
+      <div class="nm">${esc(rname())}</div>
+      <div class="em">${L('Apartment','شقة')} ${esc(RESIDENT.unit)} · ${T('appName')}</div>
     </div>
     <div class="dl">
-      ${item('key', T('menu_id'))}
-      ${item('qr', T('menu_gate'), "closeAll();sheetGatePass()")}
       ${item('gear', T('menu_req'), "go('svc');svcTab('open')")}
-      ${item('alert', T('menu_comp'))}
       ${item('card', T('menu_pay'), "go('pay')")}
-      ${item('users', T('menu_house'))}
-      ${item('doc2', T('menu_docs'))}
       ${item('phone', T('contact'), "closeAll();sheetContact()")}
       ${item('file', T('menu_info'), "closeAll();sheetContact()")}
       ${item('globe', T('prof_lang'), "setLang(LANG==='en'?'ar':'en')")}
@@ -1824,10 +1886,10 @@ try {
    which is checked, not assumed.
    ========================================================================== */
 const SB = (function(){
-  const BASE = 'https://oaxasgfdfxrkbllzwvna.supabase.co';
-  const KEY  = 'sb_publishable_WRR6q8UHhW7gIWp6NdP50w_rO6eDRVU';
-  const SKEY = 'almaria.sb.session.v1';
-  const TOPIC = 'realtime:almaria';
+  const BASE = ENV.base;
+  const KEY  = ENV.key;
+  const SKEY = ENV.prefix + '.sb.session.v1';
+  const TOPIC = 'realtime:' + ENV.prefix;
 
   let sess = null;
   try{ sess = JSON.parse(localStorage.getItem(SKEY) || 'null'); }catch(e){ sess = null; }
@@ -2027,22 +2089,68 @@ const LIVE = (function(){
     return {me: me && me[0], lease: leases && leases[0], wos, anns};
   }
 
+  /* The demonstration tenant and their lease, erased. Called at the top of
+     every paint, so a value can only reach the screen by coming back out of
+     the database on this pass. `initials` is a string because it is rendered
+     into an avatar rather than through `shown()`. */
+  function blankResident(){
+    RESIDENT.name_en = null;  RESIDENT.name_ar = null;
+    RESIDENT.email   = null;  RESIDENT.phone   = null;
+    RESIDENT.unit    = null;  RESIDENT.initials = '';
+    RESIDENT.type_en = null;  RESIDENT.type_ar = null;
+    RESIDENT.since_en = null; RESIDENT.since_ar = null;
+    RESIDENT.last_en = null;  RESIDENT.last_ar = null;
+  }
+  function blankLease(){
+    LEASE.annual = null; LEASE.inst = null;
+    LEASE.term_en = null; LEASE.term_ar = null;
+    LEASE.rows = [];
+  }
+
   function paint(d){
     if(!d.lease) throw new Error('no active tenancy is attached to this account');
     myLease = d.lease;
     const u = d.lease.units || {};
 
+    /* Blank the demonstration person BEFORE filling anything in.
+
+       This block used to read `RESIDENT.phone = d.me.phone || RESIDENT.phone`,
+       field by field, so every value the database did not supply kept the
+       invented one — and the invented one is a specific fictional tenant of
+       flat B-009 with a lease of their own. A real resident whose record had no
+       phone number was shown the demonstration number as theirs. One whose
+       contract value is not recorded — and one unit's deliberately is not,
+       because its contract disagrees with itself between numerals and words —
+       would have been shown the fictional tenant's annual rent, a figure
+       belonging to nobody, on the screen where they check what they owe.
+
+       (The figures themselves are deliberately not written here. SEC-01: the
+       last leak on this project was a real instalment amount inside a code
+       comment, and this file is served to anyone.)
+
+       Blanking first inverts the failure: a field the database does not answer
+       for is absent, and absent renders as "Not recorded". Adding a field to
+       the fixture can no longer leak it into a real session, because the
+       fixture is gone by the time anything is read. */
+    blankResident();
+    blankLease();
+
     if(d.me){
-      RESIDENT.name_en  = d.me.name_en || RESIDENT.name_en;
-      RESIDENT.name_ar  = d.me.name_ar || d.me.name_en || RESIDENT.name_ar;
-      RESIDENT.initials = (RESIDENT.name_en || '').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();
-      RESIDENT.phone    = d.me.phone || RESIDENT.phone;
+      RESIDENT.name_en  = d.me.name_en || null;
+      RESIDENT.name_ar  = d.me.name_ar || d.me.name_en || null;
+      RESIDENT.phone    = d.me.phone   || null;
     }
-    RESIDENT.email = SB.email() || RESIDENT.email;
-    RESIDENT.unit  = d.lease.unit_id;
+    RESIDENT.email = SB.email() || null;
+    RESIDENT.unit  = d.lease.unit_id || null;
+    /* Two real letters, from the name if there is one and otherwise from the
+       flat. Both are the resident's own; neither is anybody else's. */
+    RESIDENT.initials = (RESIDENT.name_en || RESIDENT.name_ar)
+      ? String(RESIDENT.name_en || RESIDENT.name_ar).trim().split(/\s+/)
+          .map(x => x[0]).join('').slice(0, 2).toUpperCase()
+      : String(RESIDENT.unit || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase();
     if(u.type){
       const beds = parseInt(u.type, 10) || 1;
-      RESIDENT.type_en = beds + (beds === 1 ? ' Bedroom' : ' Bedroom');
+      RESIDENT.type_en = beds + ' Bedroom';
       RESIDENT.type_ar = beds === 1 ? 'غرفة نوم' : beds === 2 ? 'غرفتان نوم' : NUM(beds) + ' غرف نوم';
     }
     if(d.lease.starts_on){
@@ -2053,8 +2161,12 @@ const LIVE = (function(){
 
     /* ---- the schedule, as the database holds it ---- */
     const rows = (d.lease.instalments || []).slice().sort((a,b)=>a.seq-b.seq);
-    LEASE.annual = N(d.lease.contract_value) || LEASE.annual;
-    LEASE.inst   = rows.length || LEASE.inst;
+    /* No `||`. A contract value the database holds as null is not recorded,
+       and a schedule of zero instalments is a schedule of zero instalments —
+       both are facts about this tenancy, and both used to be replaced by the
+       demonstration lease's own figures. */
+    LEASE.annual = N(d.lease.contract_value);
+    LEASE.inst   = rows.length;
     if(d.lease.starts_on && d.lease.ends_on){
       const s = new Date(d.lease.starts_on), e = new Date(d.lease.ends_on);
       LEASE.term_en = `${dEN(s)} – ${dEN(e)}`;
@@ -2095,7 +2207,13 @@ const LIVE = (function(){
     });
 
     /* ---- what the office has published ---- */
-    for(let i = POSTS.length - 1; i >= 0; i--) if(POSTS[i].linkId) POSTS.splice(i, 1);
+    /* This removed only the posts a PREVIOUS pass had added — the ones with a
+       linkId — and left the five hardcoded demonstration announcements in
+       place. So a signed-in resident read the office's real notices
+       interleaved with invented ones, in the same feed, in the same style,
+       with nothing to tell them apart. Everything goes; only what the office
+       published comes back. */
+    POSTS.length = 0;
     d.anns.forEach(a => {
       const at = a.published_at ? new Date(a.published_at) : new Date();
       POSTS.unshift({
@@ -2206,9 +2324,7 @@ function sbSheet(){
       (SB.rtState() === 'live' ? '، وتتحدّث فور تغييرها لدى الإدارة.' : '.'))}</div>
     <button class="btn ghost" style="margin-top:16px" onclick="sbOut()">${L('Sign out','تسجيل الخروج')}</button>
   ` : `
-    <div class="note">${L(
-      'You are looking at the demonstration apartment. Sign in with the details the office gave you to see your own.',
-      'تشاهد حالياً الشقة التجريبية. سجّل الدخول بالبيانات التي زوّدتك بها الإدارة لعرض شقتك.')}</div>
+    <div class="note">${T('lock_body')}</div>
     <div class="fgroup" style="margin-top:16px">
       <label class="f">${L('Email','البريد الإلكتروني')}</label>
       <input class="inp" id="sbMail" type="email" autocomplete="username" inputmode="email">
@@ -2247,10 +2363,40 @@ async function sbIn(){
   }
 }
 
-function sbOut(){ SB.signOut(); closeAll(); location.reload(); }
+/* SEC-03. The prominent Sign out button on Profile called demo() — a toast —
+   while the real path sat in a drawer most people never open. Somebody who
+   pressed the obvious button was told nothing and stayed signed in.
+   Both entry points now come here, and this is what "signed out" means:
+
+     * the session is dropped and the server told;
+     * the shared record this browser keeps for the resident is cleared, so a
+       reader of localStorage after the fact finds no requests or payments;
+     * every OTHER tab of either app is told, and drops its session too;
+     * the history entry is REPLACED, so Back cannot return to the signed-in
+       screen of the account that just left.  */
+const AUTH_EVENT = ENV.prefix + '.auth.event';
+function sbOut(){
+  try{ SB.signOut(); }catch(e){}
+  try{ LINK.reset(); }catch(e){}
+  try{ localStorage.setItem(AUTH_EVENT, 'out:' + Date.now()); }catch(e){}
+  REQUESTS.length = 0;
+  closeAll();
+  location.replace(location.pathname + location.search);
+}
+/* APP-10, in part. Two tabs share one localStorage session key and until now
+   kept entirely separate in-memory copies of it, so signing out of one left
+   the other holding a live session and showing the account's data. */
+window.addEventListener('storage', e => {
+  if(e.key === AUTH_EVENT) { location.replace(location.pathname + location.search); return; }
+  if(e.key === ENV.prefix + '.sb.session.v1' && !e.newValue)
+    location.replace(location.pathname + location.search);
+});
 
 /* ---------------------------- backend at boot ---------------------------- */
 (async function(){
+  /* Painted first and synchronously. The shell ships empty now, so without
+     this a visitor watches a blank page for as long as the network takes. */
+  try{ render(); }catch(e){ console.error('first paint', e); }
   if(!SB.configured()) return;
   try{
     if(await SB.ready()){

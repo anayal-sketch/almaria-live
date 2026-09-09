@@ -234,10 +234,46 @@ label.f{display:block;font-size:11.5px;font-weight:800;color:var(--ink-2);margin
   font-size:12px;font-weight:700;color:var(--gold-ink);display:flex;gap:9px;align-items:center;margin-bottom:16px
 }
 html[dir="rtl"] .flipi{transform:scaleX(-1)}
+/* MOB-01. Below 900px this was `.side{display:none}` and nothing else — the
+   sidebar is the console's only navigation, so on a phone there was no way to
+   leave the page you landed on. Staff use phones; that is not a degraded
+   experience, it is a dead end.
+
+   The sidebar becomes an off-canvas sheet rather than being replaced by a
+   second, cut-down navigation. One panel, built by one renderNav from one
+   NAVDEF: a destination added later cannot appear on the desktop and go missing
+   on the phone, and the role gates that hide Administration keep working
+   without being written twice. */
+.menubtn{
+  display:none; border:1px solid var(--line); background:#fff; border-radius:8px;
+  padding:8px 10px; color:var(--ink-2); cursor:pointer; align-items:center; flex:none
+}
+.menubtn:hover{border-color:var(--teal-600); color:var(--teal)}
+.navscrim{display:none}
 @media (max-width:900px){
   body{overflow:auto}
-  .side{display:none}
   .main{height:auto}
+  .side{
+    position:fixed; top:0; bottom:0; inset-inline-start:0; z-index:70;
+    height:auto; transform:translateX(-100%);
+    transition:transform .22s ease; box-shadow:0 0 40px rgba(0,0,0,.35)
+  }
+  /* The environment banner is pinned to the bottom of the viewport, so the
+     sheet stops above it rather than running underneath it. */
+  html.has-envbar .side{bottom:var(--envbar-h,32px)}
+  html[dir="rtl"] .side{transform:translateX(100%)}
+  body.navopen .side{transform:none}
+  .navscrim{
+    display:block; position:fixed; inset:0; background:rgba(0,41,59,.44); z-index:60;
+    opacity:0; pointer-events:none; transition:opacity .22s ease; border:0
+  }
+  body.navopen .navscrim{opacity:1; pointer-events:auto}
+  .menubtn{display:flex}
+  .top{padding:12px 14px; gap:10px}
+  .scroll{padding:16px 14px 40px}
+}
+@media (prefers-reduced-motion:reduce){
+  .side, .navscrim{transition:none}
 }
 
 .linkchip{text-decoration:none;display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;
@@ -262,8 +298,15 @@ tr.fromapp td:first-child::after{content:'';display:inline-block;width:6px;heigh
   <div class="foot" id="sideFoot"></div>
 </aside>
 
+<button class="navscrim" id="navscrim" type="button" tabindex="-1" aria-hidden="true" onclick="navClose()"></button>
+
 <div class="main">
   <header class="top">
+    <button class="menubtn" id="menuBtn" type="button" onclick="navToggle()"
+            aria-controls="nav" aria-expanded="false">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
     <div>
       <h1 id="pgTitle"></h1>
       <div class="sub" id="pgSub"></div>
@@ -310,6 +353,9 @@ const D={
   m_res:'Residents', m_rep:'Reports', m_ann:'Announcements', m_sup:'Suppliers',
   nav_admin:'Administration',
   m_roles:'Users and roles',
+  m_menu:'Sections',
+  lock_title:'Sign in to the management console',
+  lock_body:'The register, the leases, the maintenance log and the reports are read from the office system for the account you sign in with. Nothing is shown before that.',
   t_roles:'Users and roles', s_roles:'Who works here, and what each of them may do',
   ro_banner:'You are signed in as a viewer. You can read everything on these screens and change nothing. That is enforced by the database, not by this page.',
   ro_toast:'A viewer cannot change records. Ask an administrator to change your role.',
@@ -778,7 +824,29 @@ const D={
   m_fin:'Unit performance',
   t_fin:'Unit performance', s_fin:'Rent, arrears and maintenance cost by apartment — R8 + R14',
   f_billed:'Billed to date', f_collected:'Collected', f_outstanding:'Outstanding',
-  f_rate:'Collection rate', f_over30:'Overdue beyond 30 days', f_contracted:'Contracted rent, annual',
+  f_rate:'Collection rate', f_over30:'Overdue beyond 30 days',
+  f_over30_d:'needs collection action',
+  u_nolease:'Occupied, no lease on file',
+  rc_title:'This schedule disagrees with money already received',
+  rc_lead:'Nothing has been written. Every paid instalment below is kept exactly as it is — the database will not let it be changed. Read what the change does, then apply it or leave it.',
+  rc_unit:'Flat', rc_seq:'Instalment', rc_what:'What it means',
+  rc_kept:'On file', rc_proposed:'In the new schedule',
+  rc_apply:'Apply, keeping every payment', rc_cancel:'Leave it as it is',
+  rc_applied:'Applied. Payments were kept.',
+  rc_import_lead:'This is an import, so it is applied whole or not at all. {h} of {n} apartments in the file disagree with payments already received. Nothing from this import has been written — not these apartments and not the others.',
+  rc_apply_import:'Apply the whole import, keeping every payment',
+  rc_cancel_import:'Discard this import',
+  rc_applied_import:'Import applied. Payments were kept.',
+  rc_none:'No changes were held.',
+  rc_summary:'{n} unpaid removed · {u} unpaid changed · {i} added · {k} paid kept',
+  rc_k_beyond:'Paid, but the new schedule has no instalment with this number. It stays.',
+  rc_k_amount:'Paid at a different amount from the one proposed. The amount received stays.',
+  rc_k_due:'Paid against a different due date from the one proposed. The date on file stays.',
+  rc_k_noreceipt:'Marked paid with no receipt reference, so it will be left unpaid. Add the receipt to settle it.',
+  rc_k_total:'The instalments no longer add up to the contract value.',
+  rc_k_other:'Reported by the database.',
+  rc_receipt:'Receipt', rc_none_ref:'none recorded',
+  f_contracted:'Contracted rent, annual',
   f_ageing:'Arrears ageing', f_ageing_d:'Outstanding balance by days past the due date',
   f_arr:'Collections arrears', f_arr_d:'Every apartment with a billed amount unpaid, aged from the oldest instalment outstanding',
   f_arr_due:'Due date', f_arr_age:'Age in days', f_arr_none:'Nothing outstanding — every billed instalment is settled',
@@ -796,7 +864,6 @@ const D={
   f_credit:'Paid in advance', f_credit_d:'Collected ahead of the due date', f_ahead:'Ahead',
   e_wo:'No work orders match', e_wo_d:'Clear the search or choose a different filter.',
   e_arr:'No apartment is in arrears', e_arr_d:'Every billed instalment has been collected.',
-  demo:'Units, areas, leases, contract values, payment schedules, arrears and occupancy are the real register at 19 August 2026. Tenant names are substituted and no identity numbers are carried. Maintenance comes from the invoice registers kept by the office, imported 29 August 2026 — 100 lines, SAR 334,019, December 2024 to June 2026. An invoice carries no response or close time, so those jobs are excluded from SLA and average-close rather than given an invented one.',
   seriesnote:'Series colours use a contrast- and colour-blindness-validated palette rather than the brand gold, which fails those checks as a data colour. Brand colour is kept for interface chrome.'
  },
  ar:{
@@ -806,6 +873,9 @@ const D={
   m_res:'السكان', m_rep:'التقارير', m_ann:'الإعلانات', m_sup:'الموردون',
   nav_admin:'الإدارة',
   m_roles:'المستخدمون والصلاحيات',
+  m_menu:'الأقسام',
+  lock_title:'سجّل الدخول إلى وحدة الإدارة',
+  lock_body:'السجل والعقود وسجل الصيانة والتقارير تُقرأ من نظام الإدارة بحسب الحساب الذي تسجّل به الدخول. لا يُعرض شيء قبل ذلك.',
   t_roles:'المستخدمون والصلاحيات', s_roles:'من يعمل هنا، وما الذي يستطيع كل واحد فعله',
   ro_banner:'أنت مسجّل الدخول بصلاحية اطّلاع. تستطيع قراءة كل ما في هذه الشاشات ولا تستطيع تعديل شيء. هذا يُطبَّق في قاعدة البيانات لا في هذه الصفحة.',
   ro_toast:'صلاحية الاطّلاع لا تسمح بالتعديل. اطلب من مدير النظام تغيير صلاحيتك.',
@@ -1263,7 +1333,29 @@ const D={
   m_fin:'أداء الوحدات',
   t_fin:'أداء الوحدات', s_fin:'الإيجار والمتأخرات وتكلفة الصيانة لكل شقة — تقرير ٨ و١٤',
   f_billed:'المفوتر حتى تاريخه', f_collected:'المحصّل', f_outstanding:'المستحق',
-  f_rate:'نسبة التحصيل', f_over30:'متأخر أكثر من ٣٠ يوماً', f_contracted:'الإيجار التعاقدي السنوي',
+  f_rate:'نسبة التحصيل', f_over30:'متأخر أكثر من ٣٠ يوماً',
+  f_over30_d:'تحتاج إجراء تحصيل',
+  u_nolease:'مشغولة بلا عقد في الملف',
+  rc_title:'هذا الجدول يخالف مبالغ مقبوضة فعلاً',
+  rc_lead:'لم يُكتب شيء بعد. كل قسط مسدَّد أدناه يبقى كما هو تماماً — قاعدة البيانات لا تسمح بتغييره. اطّلع على أثر التغيير ثم طبّقه أو اتركه.',
+  rc_unit:'الشقة', rc_seq:'القسط', rc_what:'المعنى',
+  rc_kept:'المثبت في السجل', rc_proposed:'في الجدول الجديد',
+  rc_apply:'طبّق مع الإبقاء على كل دفعة', rc_cancel:'اتركه كما هو',
+  rc_applied:'تم التطبيق مع الإبقاء على الدفعات.',
+  rc_import_lead:'هذا استيراد، ويُطبَّق كاملاً أو لا يُطبَّق. {h} من {n} شقة في الملف تخالف مبالغ مقبوضة فعلاً. لم يُكتب أي شيء من هذا الاستيراد — لا هذه الشقق ولا غيرها.',
+  rc_apply_import:'طبّق الاستيراد كاملاً مع الإبقاء على كل دفعة',
+  rc_cancel_import:'تجاهل هذا الاستيراد',
+  rc_applied_import:'تم تطبيق الاستيراد مع الإبقاء على الدفعات.',
+  rc_none:'لا تغييرات معلّقة.',
+  rc_summary:'{n} غير مسدَّد محذوف · {u} غير مسدَّد معدَّل · {i} مضاف · {k} مسدَّد محفوظ',
+  rc_k_beyond:'مسدَّد، ولا يوجد في الجدول الجديد قسط بهذا الرقم. يبقى كما هو.',
+  rc_k_amount:'سُدِّد بمبلغ يختلف عن المقترح. المبلغ المقبوض يبقى.',
+  rc_k_due:'سُدِّد مقابل تاريخ استحقاق يختلف عن المقترح. التاريخ المثبت يبقى.',
+  rc_k_noreceipt:'مؤشَّر كمسدَّد بلا رقم سند قبض، لذلك سيبقى غير مسدَّد. أضف السند لتسويته.',
+  rc_k_total:'مجموع الأقساط لم يعد مطابقاً لقيمة العقد.',
+  rc_k_other:'مبلَّغ من قاعدة البيانات.',
+  rc_receipt:'سند القبض', rc_none_ref:'غير مسجَّل',
+  f_contracted:'الإيجار التعاقدي السنوي',
   f_ageing:'أعمار المتأخرات', f_ageing_d:'الرصيد المستحق حسب الأيام بعد تاريخ الاستحقاق',
   f_arr:'متأخرات التحصيل', f_arr_d:'كل شقة عليها مبلغ مفوتر غير محصّل، محسوبة من أقدم دفعة متأخرة',
   f_arr_due:'تاريخ الاستحقاق', f_arr_age:'أعمار الديون بالأيام', f_arr_none:'لا توجد متأخرات — جميع الدفعات المفوترة محصّلة',
@@ -1281,7 +1373,6 @@ const D={
   f_credit:'مدفوع مقدماً', f_credit_d:'محصّل قبل تاريخ الاستحقاق', f_ahead:'مقدماً',
   e_wo:'لا توجد أوامر عمل مطابقة', e_wo_d:'امسح البحث أو اختر تصفية أخرى.',
   e_arr:'لا توجد شقة عليها متأخرات', e_arr_d:'تم تحصيل جميع الدفعات المفوترة.',
-  demo:'الوحدات والمساحات والعقود وقيمها وجداول الدفعات والمتأخرات ونسبة الإشغال هي السجل الفعلي حتى ١٩ أغسطس ٢٠٢٦. أسماء المستأجرين مستبدلة ولا تتضمن أي أرقام هوية. أرقام الصيانة مأخوذة من سجلات فواتير الإدارة نفسها، وقد أُدرجت في ٢٩ أغسطس ٢٠٢٦ — ١٠٠ بنداً بقيمة ٣٣٤٬٠١٩ ريالاً من ديسمبر ٢٠٢٤ حتى يونيو ٢٠٢٦. والفاتورة لا تحمل وقت بلاغ ولا وقت إغلاق، لذا تُستثنى تلك الأعمال من مؤشر الاستجابة ومتوسط الإغلاق بدلاً من منحها وقتاً مُفترضاً.',
   seriesnote:'ألوان الرسوم تستخدم لوحة مُتحقق منها لتباين ولعمى الألوان بدلاً من الذهبي المؤسسي الذي لا يجتاز هذه الاختبارات كلون بيانات. اللون المؤسسي مخصص لواجهة النظام.'
  }
 };
@@ -1348,12 +1439,67 @@ const CAT_TECH={ac:['Mostafa A.','Coolair Est.'],lift:['Otis Service'],clean:['B
  pest:['Riyadh Pest Co.'],plumb:['Sayed M.','Ramy H.'],elec:['Ramy H.','Mostafa A.'],
  appl:['Mostafa A.'],carp:['Sayed M.'],alum:['Sayed M.'],paint:['Sayed M.'],waste:['Belda Housekeeping'],wifi:['Ramy H.']};
 
-const TODAY=new Date(2026,7,19,18,0);
+/* APP-04. This was frozen at 19 August 2026 and every ageing bucket, arrears
+   figure, expiry, forecast and report window measured from it. Signed in on
+   9 September the console still said "to 19 Aug 2026": the work-order log showed
+   94 of 99 records, its cost total read SAR 198,491 against SAR 210,821 actually
+   on file, and requests raised on the 2nd and 4th showed an age of 0h because
+   the clock predated them.
+
+   The reporting date is now today, in the building's own timezone, and it is a
+   let rather than a const so a historical view can move it deliberately. Riyadh
+   does not observe daylight saving, so a fixed +03:00 offset is correct here and
+   the boundary is the building's midnight rather than the reader's. */
+const REPORT_TZ_OFFSET_MIN = 3 * 60;          /* Asia/Riyadh, no DST */
+function businessNow(){
+  const t = new Date();
+  return new Date(t.getTime() + (REPORT_TZ_OFFSET_MIN + t.getTimezoneOffset()) * 60000);
+}
+let TODAY = businessNow();
+/* Kept current without a reload: a console left open overnight otherwise keeps
+   yesterday's date and quietly reports yesterday's arrears. */
+setInterval(function(){
+  const n = businessNow();
+  if(n.toDateString() !== TODAY.toDateString()){
+    TODAY = n;
+    try{ if(typeof recompute === 'function') recompute();
+         if(typeof render === 'function') render(); }catch(e){}
+  } else { TODAY = n; }
+}, 60000);
+
+/* DATA-02. Date.setMonth overflows whenever the day does not exist in the
+   target month, so a lease starting 31 January generated instalments due
+   3 March, 3 May and 3 July — three of twelve rows on the wrong side of a
+   month boundary, and every arrears calculation downstream of them wrong by a
+   few days. The day is clamped to the last day of the target month, which is
+   what a rent schedule means. This is the same rule as add_months_clamped in
+   Postgres, and the two must agree: the console previews a schedule the
+   database then generates. */
+function addMonthsClamped(d, n){
+  const x = new Date(d);
+  const day = x.getDate();
+  x.setDate(1);
+  x.setMonth(x.getMonth() + n);
+  const last = new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate();
+  x.setDate(Math.min(day, last));
+  return x;
+}
 
 /* Almaria Residence — canonical register, extracted from بيان ايجارات الشقق 19.xlsx (19 Aug 2026).
    Units, areas, floors, contract values, payment schedules and occupancy are the real figures.
    Tenant names are substituted; no identity numbers, nationalities or job titles are carried. */
-const REGISTER=[{"id": "A-001", "type": "3BR", "area": 136, "floor": 0, "let": false, "tenant": null, "tenantAr": null, "value": null, "start": null, "end": null, "paid": null, "remain": 0, "inst": []}, {"id": "A-002", "type": "3BR", "area": 150, "floor": 0, "let": true, "tenant": "Sami Fares", "tenantAr": "سامي فارس", "value": 160000, "start": "2025-09-15", "end": "2026-09-14", "paid": 160000, "remain": 0, "inst": [{"n": 1, "amt": 40000.0, "due": "2025-09-15", "paid": true}, {"n": 2, "amt": 40000.0, "due": "2025-09-15", "paid": true}, {"n": 3, "amt": 80000.0, "due": "2026-03-15", "paid": true}]}, {"id": "A-003", "type": "2BR", "area": 116, "floor": 0, "let": false, "tenant": null, "tenantAr": null, "value": 108750, "start": "2025-01-08", "end": "2026-07-31", "paid": null, "remain": null, "inst": []}, {"id": "A-004", "type": "2BR", "area": 126, "floor": 0, "let": false, "tenant": null, "tenantAr": null, "value": null, "start": null, "end": null, "paid": null, "remain": 0, "inst": []}, {"id": "A-005", "type": "3BR", "area": 146, "floor": 0, "let": true, "tenant": "Rana Rahman", "tenantAr": "رنا رحمن", "value": 150000, "start": "2026-06-01", "end": "2027-05-31", "paid": 75000, "remain": 75000, "inst": [{"n": 1, "amt": 75000.0, "due": "2026-06-01", "paid": true}, {"n": 2, "amt": 75000.0, "due": "2026-12-01", "paid": false}]}, {"id": "A-006", "type": "3BR", "area": 151, "floor": 0, "let": true, "tenant": "Nabil Hamdan", "tenantAr": "نبيل حمدان", "value": 150000, "start": "2026-05-15", "end": "2027-05-14", "paid": 150000, "remain": 0, "inst": [{"n": 1, "amt": 75000.0, "due": "2026-04-28", "paid": true}, {"n": 2, "amt": 75000.0, "due": "2026-06-30", "paid": true}]}, {"id": "A-101", "type": "3BR", "area": 150, "floor": 1, "let": true, "tenant": "Lina Nasser", "tenantAr": "لينا ناصر", "value": 175000, "start": "2026-02-11", "end": "2027-02-10", "paid": 175000, "remain": 0, "inst": [{"n": 1, "amt": 175000.0, "due": "2026-02-11", "paid": true}]}, {"id": "A-102", "type": "3BR", "area": 154, "floor": 1, "let": true, "tenant": "Yusuf Aziz", "tenantAr": "يوسف عزيز", "value": 123750, "start": "2025-12-10", "end": "2026-06-09", "paid": 123750, "remain": 0, "inst": [{"n": 1, "amt": 41250.0, "due": "2025-12-10", "paid": true}, {"n": 2, "amt": 13750.0, "due": "2026-03-12", "paid": true}, {"n": 3, "amt": 13750.0, "due": "2026-04-13", "paid": true}, {"n": 4, "amt": 13750.0, "due": "2026-05-07", "paid": true}, {"n": 5, "amt": 13750.0, "due": "2026-06-07", "paid": true}, {"n": 6, "amt": 13750.0, "due": "2026-07-07", "paid": true}, {"n": 7, "amt": 13750.0, "due": "2026-08-07", "paid": true}]}, {"id": "A-103", "type": "1BR", "area": 46, "floor": 1, "let": true, "tenant": "Dina Younes", "tenantAr": "دينا يونس", "value": 110000, "start": "2025-08-09", "end": "2026-09-07", "paid": 109998, "remain": 2, "inst": [{"n": 1, "amt": 9166.0, "due": "2025-09-07", "paid": true}, {"n": 2, "amt": 9166.0, "due": "2025-10-07", "paid": true}, {"n": 3, "amt": 9166.0, "due": "2025-11-07", "paid": true}, {"n": 4, "amt": 27500.0, "due": "2025-12-08", "paid": true}, {"n": 5, "amt": 27500.0, "due": "2026-03-08", "paid": true}, {"n": 6, "amt": 27500.0, "due": "2026-06-08", "paid": true}]}, {"id": "A-104", "type": "3BR", "area": 156, "floor": 1, "let": false, "tenant": null, "tenantAr": null, "value": null, "start": null, "end": null, "paid": null, "remain": 0, "inst": []}, {"id": "A-105", "type": "2BR", "area": 142, "floor": 0, "let": false, "tenant": null, "tenantAr": null, "value": 220000, "start": "2024-01-12", "end": "2025-11-30", "paid": null, "remain": null, "inst": []}, {"id": "A-106", "type": "1BR", "area": 46, "floor": 0, "let": true, "tenant": "Tarek Barakat", "tenantAr": "طارق بركات", "value": 125000, "start": "2025-08-27", "end": "2026-08-26", "paid": 125000, "remain": 0, "inst": [{"n": 1, "amt": 60000.0, "due": "2025-09-24", "paid": true}, {"n": 2, "amt": 60000.0, "due": "2025-09-24", "paid": true}, {"n": 3, "amt": 5000.0, "due": "2025-09-25", "paid": true}]}, {"id": "A-107", "type": "1BR", "area": 46, "floor": 0, "let": true, "tenant": "Farah Qasim", "tenantAr": "فرح قاسم", "value": 110000, "start": "2026-01-18", "end": "2027-01-17", "paid": 82500, "remain": 27500, "inst": [{"n": 1, "amt": 27500.0, "due": "2026-01-18", "paid": true}, {"n": 2, "amt": 27500.0, "due": "2026-04-18", "paid": true}, {"n": 3, "amt": 27500.0, "due": "2026-07-18", "paid": true}, {"n": 4, "amt": 27500.0, "due": "2026-10-18", "paid": false}]}, {"id": "A-201", "type": "3BR", "area": 151, "floor": 2, "let": true, "tenant": "Basel Darwish", "tenantAr": "باسل درويش", "value": 190000, "start": "2026-01-24", "end": "2027-01-23", "paid": 190000, "remain": 0, "inst": [{"n": 1, "amt": 95000.0, "due": "2026-01-27", "paid": true}, {"n": 2, "amt": 95000.0, "due": "2026-01-29", "paid": true}]}, {"id": "A-202", "type": "3BR", "area": 154, "floor": 2, "let": false, "tenant": null, "tenantAr": null, "value": null, "start": null, "end": null, "paid": null, "remain": 0, "inst": []}, {"id": "A-203", "type": "1BR", "area": 46, "floor": 2, "let": false, "tenant": null, "tenantAr": null, "value": 82500, "start": "2025-11-15", "end": "2026-05-14", "paid": null, "remain": null, "inst": []}, {"id": "A-204", "type": "3BR", "area": 156, "floor": 2, "let": false, "tenant": null, "tenantAr": null, "value": 170000, "start": "2026-08-10", "end": "2027-08-09", "paid": 0, "remain": 170000, "inst": []}, {"id": "A-205", "type": "2BR", "area": 142, "floor": 2, "let": true, "tenant": "Karim Fares", "tenantAr": "كريم فارس", "value": 160000, "start": "2026-01-01", "end": "2026-12-31", "paid": 0, "remain": 160000, "inst": [{"n": 1, "amt": 160000.0, "due": "2026-12-31", "paid": false}]}, {"id": "A-206", "type": "1BR", "area": 46, "floor": 2, "let": true, "tenant": "Mona Shaheen", "tenantAr": "منى شاهين", "value": 52708, "start": "2026-01-01", "end": "2026-12-31", "paid": 0, "remain": 52708, "inst": [{"n": 1, "amt": 52708.0, "due": "2026-12-31", "paid": false}]}, {"id": "A-207", "type": "1BR", "area": 46, "floor": 2, "let": true, "tenant": "Rami Khoury", "tenantAr": "رامي خوري", "value": 115000, "start": "2025-11-01", "end": "2026-10-31", "paid": 114980, "remain": 20, "inst": [{"n": 1, "amt": 28750.0, "due": "2025-11-01", "paid": true}, {"n": 2, "amt": 28750.0, "due": "2026-02-01", "paid": true}, {"n": 3, "amt": 28750.0, "due": "2026-05-01", "paid": true}, {"n": 4, "amt": 28730.0, "due": "2026-08-01", "paid": true}]}, {"id": "A-301", "type": "2BR", "area": 140, "floor": 3, "let": false, "tenant": null, "tenantAr": null, "value": null, "start": null, "end": null, "paid": null, "remain": 0, "inst": []}, {"id": "A-302", "type": "2BR", "area": 140, "floor": 3, "let": false, "tenant": null, "tenantAr": null, "value": null, "start": null, "end": null, "paid": null, "remain": 0, "inst": []}, {"id": "B-007", "type": "1BR", "area": 130, "floor": 0, "let": true, "tenant": "Hala Nasser", "tenantAr": "هالة ناصر", "value": 120000, "start": "2025-08-18", "end": "2026-09-17", "paid": 110770, "remain": 9230, "inst": [{"n": 1, "amt": 15000.0, "due": "2025-07-28", "paid": true}, {"n": 2, "amt": 40385.0, "due": "2025-08-18", "paid": true}, {"n": 3, "amt": 55485.0, "due": "2026-03-20", "paid": true}, {"n": 4, "amt": 9130.0, "due": "2026-09-02", "paid": false}]}, {"id": "B-008", "type": "2BR", "area": 112, "floor": 0, "let": true, "tenant": "Ziad Aziz", "tenantAr": "زياد عزيز", "value": 145000, "start": "2025-08-16", "end": "2026-08-15", "paid": 145000, "remain": 0, "inst": [{"n": 1, "amt": 15000.0, "due": "2025-06-23", "paid": true}, {"n": 2, "amt": 15000.0, "due": "2025-08-14", "paid": true}, {"n": 3, "amt": 42500.0, "due": "2025-09-01", "paid": true}, {"n": 4, "amt": 72500.0, "due": "2026-02-16", "paid": true}]}, {"id": "B-009", "type": "2BR", "area": 48, "floor": 0, "let": true, "tenant": "Sara Younes", "tenantAr": "سارة يونس", "value": 155000, "start": "2026-07-05", "end": "2027-07-04", "paid": 25835, "remain": 129165, "inst": [{"n": 1, "amt": 12917.0, "due": "2026-07-05", "paid": true}, {"n": 2, "amt": 12918.0, "due": "2026-08-05", "paid": true}, {"n": 3, "amt": 12916.0, "due": "2026-09-05", "paid": false}, {"n": 4, "amt": 12918.0, "due": "2026-10-05", "paid": false}, {"n": 5, "amt": 12917.0, "due": "2026-11-05", "paid": false}, {"n": 6, "amt": 12916.0, "due": "2026-12-05", "paid": false}, {"n": 7, "amt": 12917.0, "due": "2027-01-05", "paid": false}, {"n": 8, "amt": 12917.0, "due": "2027-02-05", "paid": false}, {"n": 9, "amt": 12917.0, "due": "2027-03-05", "paid": false}, {"n": 10, "amt": 12917.0, "due": "2027-04-05", "paid": false}, {"n": 11, "amt": 12917.0, "due": "2027-05-05", "paid": false}, {"n": 12, "amt": 12916.0, "due": "2027-06-05", "paid": false}]}, {"id": "B-108", "type": "3BR", "area": 154, "floor": 0, "let": true, "tenant": "Noor Foundation", "tenantAr": "مؤسسة نور", "value": 59064, "start": "2026-05-02", "end": "2026-07-31", "paid": 19688, "remain": 39376, "inst": [{"n": 1, "amt": 19688.0, "due": "2026-05-02", "paid": true}, {"n": 2, "amt": 39376.0, "due": "2026-07-02", "paid": false}]}, {"id": "B-109", "type": "2BR", "area": 141, "floor": 0, "let": true, "tenant": "Salma Mansour", "tenantAr": "سلمى منصور", "value": 160000, "start": "2025-12-03", "end": "2026-12-02", "paid": 106667, "remain": 53333, "inst": [{"n": 1, "amt": 53334.0, "due": "2025-12-03", "paid": true}, {"n": 2, "amt": 53333.0, "due": "2026-04-03", "paid": true}, {"n": 3, "amt": 53333.0, "due": "2026-08-13", "paid": false}]}, {"id": "B-110", "type": "1BR", "area": 46, "floor": 0, "let": true, "tenant": "Omar Barakat", "tenantAr": "عمر بركات", "value": 120000, "start": "2025-11-01", "end": "2026-11-01", "paid": 60000, "remain": 60000, "inst": [{"n": 1, "amt": 10000.0, "due": "2025-11-01", "paid": true}, {"n": 2, "amt": 10000.0, "due": "2025-12-01", "paid": true}, {"n": 3, "amt": 10000.0, "due": "2026-01-01", "paid": true}, {"n": 4, "amt": 10000.0, "due": "2026-02-01", "paid": true}, {"n": 5, "amt": 10000.0, "due": "2026-03-01", "paid": true}, {"n": 6, "amt": 10000.0, "due": "2026-04-01", "paid": true}, {"n": 7, "amt": 10000.0, "due": "2026-05-01", "paid": false}, {"n": 8, "amt": 10000.0, "due": "2026-06-01", "paid": false}, {"n": 9, "amt": 10000.0, "due": "2026-07-01", "paid": false}, {"n": 10, "amt": 10000.0, "due": "2026-08-01", "paid": false}, {"n": 11, "amt": 10000.0, "due": "2026-09-01", "paid": false}, {"n": 12, "amt": 10000.0, "due": "2026-10-01", "paid": false}]}, {"id": "B-111", "type": "3BR", "area": 154, "floor": 0, "let": true, "tenant": "Noor Foundation", "tenantAr": "مؤسسة نور", "value": 59064, "start": "2026-05-02", "end": "2026-07-31", "paid": 19688, "remain": 39376, "inst": [{"n": 1, "amt": 19688.0, "due": "2026-05-02", "paid": true}, {"n": 2, "amt": 39376.0, "due": "2026-07-02", "paid": false}]}, {"id": "B-112", "type": "3BR", "area": 145, "floor": 0, "let": true, "tenant": "Noor Foundation", "tenantAr": "مؤسسة نور", "value": 59064, "start": "2026-05-02", "end": "2026-07-31", "paid": 19688, "remain": 39376, "inst": [{"n": 1, "amt": 19688.0, "due": "2026-05-02", "paid": true}, {"n": 2, "amt": 39376.0, "due": "2026-07-02", "paid": false}]}, {"id": "B-208", "type": "3BR", "area": 154, "floor": 2, "let": false, "tenant": null, "tenantAr": null, "value": null, "start": null, "end": null, "paid": null, "remain": 0, "inst": []}, {"id": "B-209", "type": "2BR", "area": 141, "floor": 2, "let": false, "tenant": null, "tenantAr": null, "value": 40000, "start": "2026-08-11", "end": "2026-11-10", "paid": null, "remain": null, "inst": []}, {"id": "B-210", "type": "1BR", "area": 46, "floor": 2, "let": true, "tenant": "Dina Saleh", "tenantAr": "دينا صالح", "value": 115000, "start": "2025-09-15", "end": "2026-09-14", "paid": 115000, "remain": 0, "inst": [{"n": 1, "amt": 115000.0, "due": "2025-09-16", "paid": true}]}, {"id": "B-211", "type": "3BR", "area": 154, "floor": 2, "let": false, "tenant": null, "tenantAr": null, "value": null, "start": null, "end": null, "paid": null, "remain": 0, "inst": []}, {"id": "B-212", "type": "3BR", "area": 145, "floor": 2, "let": false, "tenant": null, "tenantAr": null, "value": null, "start": null, "end": null, "paid": null, "remain": 0, "inst": []}, {"id": "B-303", "type": "2BR", "area": 140, "floor": 3, "let": true, "tenant": "Tarek Khoury", "tenantAr": "طارق خوري", "value": 220000, "start": "2026-03-05", "end": "2027-03-04", "paid": 100000, "remain": 120000, "inst": [{"n": 1, "amt": 40000.0, "due": "2026-02-15", "paid": true}, {"n": 2, "amt": 20000.0, "due": "2026-03-05", "paid": true}, {"n": 3, "amt": 40000.0, "due": "2026-06-05", "paid": true}, {"n": 4, "amt": 60000.0, "due": "2026-09-05", "paid": false}, {"n": 5, "amt": 60000.0, "due": "2026-12-05", "paid": false}]}, {"id": "B-304", "type": "2BR", "area": 140, "floor": 3, "let": false, "tenant": null, "tenantAr": null, "value": null, "start": null, "end": null, "paid": null, "remain": 0, "inst": []}];
+/* No embedded register. Ahmed, 9 September: "if signed out no information to
+   show, i have to be signed in."
+
+   What stood here was a complete rent roll for 39 flats — tenant names, annual
+   values, instalment schedules, who had paid — served to anyone who opened the
+   URL. It was generated data, and generating it was the fix for SEC-01, where
+   the REAL register had been embedded in the same place. But a convincing
+   forgery of a building is its own hazard: it can be screenshotted, forwarded,
+   and mistaken for the asset. The console now reads the register from Postgres
+   under the signed-in member of staff's own access rules, and shows nothing at
+   all until it has. */
+const REGISTER=[];
 
 /* Units come from the real register. Tenant names are substituted; occupancy,
    apartment types, areas, floors, contract values and payment schedules are actual. */
@@ -1363,7 +1509,9 @@ const UNITS=REGISTER.map(r=>({
   rent:r.value||0, leaseStart:r.start?new Date(r.start):null, leaseEnd:r.end?new Date(r.end):null,
   inst:(r.inst||[]).map(x=>({q:x.n, amt:x.amt, due:x.due?new Date(x.due):null,
         billed: x.due? new Date(x.due)<=TODAY : false, paid:x.paid,
-        paidOn: x.paid && x.due ? new Date(x.due) : null})),
+        /* The date it was actually paid, or nothing. Never the due date:
+           that is a guess wearing a record's clothes — DATA-07. */
+        paidOn: x.on ? new Date(x.on) : null, ref: x.ref || null})),
   sheetPaid:r.paid, sheetRemain:r.remain
 }));
 /* app-account state is the only invented field here — no such system exists yet */
@@ -1398,10 +1546,15 @@ const DESCS={
 const WOS=[];
 
 /* ---------------------------------------------------------------------
-   The office's own cost registers, imported 29 Aug 2026 from
-   اعمال الصيانة / العقود الخارجية / العمالة الخارجية.
-   100 lines, SAR 334,019, Dec 2024 - Jun 2026, reconciled to each
-   register's own stated total to the halala.
+   Generated demonstration invoices — SEC-01, 8 September 2026.
+
+   This array used to be the office's own cost registers, imported from
+   اعمال الصيانة / العقود الخارجية / العمالة الخارجية and reconciled to each
+   register's stated total to the halala. It was also served to anyone who
+   opened this page, which is why it is no longer here. What follows comes from
+   tool/make_demo_data.py: same shape, same categories, same date range,
+   invented amounts and invented suppliers. The real registers are read from
+   building_costs after signing in.
 
    These are INVOICES. They carry no requested-at and no closed-at, so they
    are replayed through logJobAdd(), which marks every one noSla: they build
@@ -1409,7 +1562,13 @@ const WOS=[];
    average-close. A dash for the unit means the invoice named no flat. 94 of
    the 100 did not, and a flat is never guessed.
    --------------------------------------------------------------------- */
-const COST_LOG=[{"d":"2025-01-21","c":"gen","u":"A-105","s":"","t":"مصاريف خدمات شقة 105 المستأجر اليابانى","m":52000.0,"i":""},{"d":"2025-03-22","c":"plumb","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 085- صيانة مجموعة مضخات المياة - مؤسسة دانة الدرة للمقاولات العامة","m":21505.0,"i":"085-"},{"d":"2025-03-22","c":"ac","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 086- تركيب ترموستات مع تامين اعمال بمبنى الشقق - مؤسسة دانة الدرة للمقاولات العامة","m":1150.0,"i":"086-"},{"d":"2025-04-14","c":"plumb","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 091- اعمال المياة والكهرباء لحوض الزراعة - مؤسسة دانة الدرة للمقاولات العامة","m":7000.0,"i":"091-"},{"d":"2025-04-15","c":"waste","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 094- توريد حاوية لترحيل مخلفات - مؤسسة دانة الدرة للمقاولات العامة","m":2200.0,"i":"094-"},{"d":"2025-04-16","c":"elec","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 106- اعمال تمديد اسلاك وكاميرات واعمال متفرقة - مؤسسة دانة الدرة للمقاولات العامة","m":37950.0,"i":"106-"},{"d":"2025-06-02","c":"paint","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 101-تركيب بلاط اسمنتي - مؤسسة دانة الدرة للمقاولات العامة","m":1840.0,"i":"101-"},{"d":"2025-06-22","c":"clean","u":"—","s":"","t":"فواتير مغاسل مخدات وشراشف شقق المارية","m":156.0,"i":""},{"d":"2025-07-06","c":"ac","u":"—","s":"","t":"تعبئة فريون للتكييف في شقق المارية","m":2824.0,"i":""},{"d":"2025-07-29","c":"gen","u":"—","s":"","t":"اغراض ميكانيكية لمبنى الشقق","m":221.0,"i":""},{"d":"2025-07-29","c":"ac","u":"—","s":"","t":"عدد 5 ترموستات مبنى الشقق","m":1265.0,"i":""},{"d":"2025-07-29","c":"gen","u":"—","s":"","t":"عدد 5 علبة لوح استيكر مع عروف","m":600.0,"i":""},{"d":"2025-07-29","c":"elec","u":"—","s":"","t":"خرطوم درجة حرارة مع انوار ليد","m":2300.0,"i":""},{"d":"2025-08-04","c":"paint","u":"—","s":"","t":"قص واصلاح عربات الحديد وطلاء الايبوكسي","m":1208.0,"i":""},{"d":"2025-08-04","c":"elec","u":"—","s":"","t":"محول+سلك تمديد","m":598.0,"i":""},{"d":"2025-08-04","c":"elec","u":"—","s":"","t":"عربة نفايات + ريليهات لمبنى الشقق","m":1483.0,"i":""},{"d":"2025-08-05","c":"gen","u":"—","s":"","t":"حوالة صادرة الى اديل احمد رسوم تقديم خدمات لمبنى الشقق","m":5000.0,"i":""},{"d":"2025-08-06","c":"carp","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 108- اعمال صيانة باب خشبي - مؤسسة دانة الدرة للمقاولات العامة","m":1495.0,"i":"108-"},{"d":"2025-08-27","c":"paint","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 110 - صيانة جبس ودهانات  - مؤسسة دانة الدرة للمقاولات العامة","m":2760.0,"i":"110"},{"d":"2025-09-01","c":"gen","u":"—","s":"MinaTech Trading","t":"فاتورة رقم 965  اغراض ميكانيكة شقق المارية - شركة مينا تك للتجارة","m":149.5,"i":"965"},{"d":"2025-09-01","c":"gen","u":"—","s":"Fayafi Najd Ltd","t":"فاتورة رقم 101 اغراض ميكانيكة شقق المارية - شركة فيافي نجد المحدودة","m":276.0,"i":"101"},{"d":"2025-09-01","c":"ac","u":"—","s":"","t":"سداد رسوم تعبئة فريون لشقق المارية","m":2824.0,"i":""},{"d":"2025-09-01","c":"plumb","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 111- اصلاح وصيانة خطوط الصرف الصحي - مؤسسة دانة الدرة للمقاولات العامة","m":3680.0,"i":"111-"},{"d":"2025-09-08","c":"carp","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 112- اصلاح جبمسبورد وباب وتثبيت سرير - مؤسسة دانة الدرة للمقاولات العامة","m":2070.0,"i":"112-"},{"d":"2025-09-21","c":"plumb","u":"—","s":"","t":"وايت مياهخ - تعبئة خزان مبنى الشقق","m":200.0,"i":""},{"d":"2025-09-21","c":"plumb","u":"—","s":"","t":"فلتر مياه لقشة الشيخ","m":799.0,"i":""},{"d":"2025-09-21","c":"gen","u":"—","s":"","t":"اغراض ميكانيكية - شقق المارية","m":490.0,"i":""},{"d":"2025-09-22","c":"plumb","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 116- اعمال سباكة وديكور للشقق - مؤسسة دانة الدرة للمقاولات العامة","m":1610.0,"i":"116-"},{"d":"2025-10-08","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 121 - صيانة عامة وقطع غيار للشقق - مؤسسة دانة الدرة للمقاولات العامة","m":1610.0,"i":"121"},{"d":"2025-10-08","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 122 - صيانة عامة وقطع غيار للشقق - مؤسسة دانة الدرة للمقاولات العامة","m":1955.0,"i":"122"},{"d":"2025-10-13","c":"carp","u":"—","s":"","t":"تركيب عدد 2 بارتشن خشب - شقق المارية","m":2530.0,"i":""},{"d":"2025-10-13","c":"carp","u":"—","s":"","t":"رسوم تركيب فايبر للبارتشن - شقق المارية","m":1580.0,"i":""},{"d":"2025-10-13","c":"ac","u":"—","s":"","t":"قيمة ثلاجة + مكيف - شقق المارية","m":2409.0,"i":""},{"d":"2025-10-30","c":"ac","u":"—","s":"Al-Tawreedat Al-Khususiyah Trading","t":"فاتورة رقم 2451 - مؤسسة التوريدات الخصوصية للتجارة - فريون لوحدات التكييف الخاص بالشقق","m":2200.0,"i":"2451"},{"d":"2025-10-30","c":"elec","u":"—","s":"MinaTech Trading","t":"فاتورة رقم 1774 - شركة ميناتيك للتجارة - اجهزة الريسيفر الخاص بالشقق","m":700.0,"i":"1774"},{"d":"2025-10-30","c":"elec","u":"—","s":"MinaTech Trading","t":"فاتورة رقم 1775 - شركة ميناتيك للتجارة - كابلات وريسيفرات الخاصة بالشقق","m":280.0,"i":"1775"},{"d":"2025-10-30","c":"plumb","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 137 - مؤسسة دانة الدرة - توريد وتركيب سخان خزف","m":1600.0,"i":"137"},{"d":"2025-11-01","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 116- صيانة عامة وقطع غيار للشقق - مؤسسة دانة الدرة للمقاولات العامة","m":1400.0,"i":"116-"},{"d":"2025-11-01","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 119- صيانة عامة وقطع غيار للشقق - مؤسسة دانة الدرة للمقاولات العامة","m":1200.0,"i":"119-"},{"d":"2025-11-01","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 124- صيانة عامة وقطع غيار للشقق - مؤسسة دانة الدرة للمقاولات العامة","m":3200.0,"i":"124-"},{"d":"2025-11-01","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 125- صيانة عامة وقطع غيار للشقق - مؤسسة دانة الدرة للمقاولات العامة","m":600.0,"i":"125-"},{"d":"2025-11-01","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 126- صيانة عامة وقطع غيار للشقق - مؤسسة دانة الدرة للمقاولات العامة","m":1800.0,"i":"126-"},{"d":"2025-11-01","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 129- صيانة عامة وقطع غيار للشقق - مؤسسة دانة الدرة للمقاولات العامة","m":700.0,"i":"129-"},{"d":"2025-11-01","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 130- صيانة عامة وقطع غيار للشقق - مؤسسة دانة الدرة للمقاولات العامة","m":700.0,"i":"130-"},{"d":"2025-11-01","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 131- صيانة عامة وقطع غيار للشقق - مؤسسة دانة الدرة للمقاولات العامة","m":1000.0,"i":"131-"},{"d":"2025-11-01","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 132- صيانة عامة وقطع غيار للشقق - مؤسسة دانة الدرة للمقاولات العامة","m":800.0,"i":"132-"},{"d":"2025-11-09","c":"elec","u":"A-205","s":"","t":"تركيب كاميرات - شقة 205","m":670.0,"i":""},{"d":"2025-11-09","c":"gen","u":"A-005","s":"","t":"تركيب زرع للاحواض شقة 005","m":4050.0,"i":""},{"d":"2025-11-20","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 068 - اجور ومصنعيات اعمال - مؤسسة دانة الدرة","m":2700.0,"i":"068"},{"d":"2025-11-20","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 070- اجور ومصنعيات اعمال - مؤسسة دانة الدرة","m":2100.0,"i":"070-"},{"d":"2025-11-20","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 073- اجور ومصنعيات اعمال - مؤسسة دانة الدرة","m":1700.0,"i":"073-"},{"d":"2025-11-20","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 074- اجور ومصنعيات اعمال - مؤسسة دانة الدرة","m":1000.0,"i":"074-"},{"d":"2025-11-20","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 075- اجور ومصنعيات اعمال - مؤسسة دانة الدرة","m":9500.0,"i":"075-"},{"d":"2025-11-20","c":"lift","u":"—","s":"","t":"تركيب زوايا حول منطقة المصاعد - مبنى الشقق","m":920.0,"i":""},{"d":"2025-11-20","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 077- اجور ومصنعيات اعمال - مؤسسة دانة الدرة","m":1300.0,"i":"077-"},{"d":"2025-11-20","c":"gen","u":"—","s":"Dana Al-Durra General Contracting","t":"فاتورة رقم 078- اجور ومصنعيات اعمال - مؤسسة دانة الدرة","m":3300.0,"i":"078-"},{"d":"2025-12-16","c":"carp","u":"—","s":"","t":"فاتورة 46142 شراء كرسى بار","m":230.0,"i":"46142"},{"d":"2025-12-16","c":"carp","u":"—","s":"","t":"فاتورة 46093 شراء كرسى بار","m":230.0,"i":"46093"},{"d":"2025-12-31","c":"carp","u":"—","s":"","t":"تركيب 2 بارتيشن فايبر + خشب","m":5730.0,"i":""},{"d":"2026-02-16","c":"appl","u":"A-207","s":"","t":"فاتورة كشف اعطال الثلاجة في الشقة رقم 207- تم سدادها عن طريق المهندس محمد محيي","m":230.0,"i":""},{"d":"2026-03-01","c":"carp","u":"—","s":"","t":"شراء ستارة في البينت هاوس 303","m":283.0,"i":""},{"d":"2026-04-26","c":"elec","u":"—","s":"","t":"رسوم اعادة برمجة النظام الخاص بابواب الشقق","m":1380.0,"i":""},{"d":"2026-05-24","c":"appl","u":"B-109","s":"","t":"فاتورة رقم 143 - صيانة غسالة بشقة رقم 109","m":575.0,"i":"143"},{"d":"2026-05-24","c":"gen","u":"B-303","s":"","t":"فاتورة رقم 152- اعمال صيانة بشقة رقم 303","m":575.0,"i":"152-"},{"d":"2025-06-30","c":"gen","u":"—","s":"Sakan Arabia for Construction & Maintenance (Supercle)","t":"فاتورة رقم 34898 عدد ثلاث زيارات لمبنى الشقق من شركة سكن العربية للانشاء والصيانة (سوبركل)","m":750.0,"i":"34898"},{"d":"2025-07-31","c":"clean","u":"—","s":"Sakan Arabia for Construction & Maintenance (Supercle)","t":"فاتورة رقم 35193 نظافة مبنى الشقق شهر يوليو 2025 من شركة سكن العربية للانشاء والصيانة (سوبركل)","m":1000.0,"i":"35193"},{"d":"2025-08-07","c":"lift","u":"—","s":"KONE Erico Ltd","t":"فاتورة رقم 62039479 صيانة دورية للمصاعد - كوني اريكو المحدودة","m":8214.97,"i":"62039479"},{"d":"2025-08-31","c":"clean","u":"—","s":"Sakan Arabia for Construction & Maintenance (Supercle)","t":"فاتورة رقم 25412 نظافة مبنى الشقق شهر اغسطس 2025 من شركة سكن العربية للانشاء والصيانة (سوبركل)","m":1000.0,"i":"25412"},{"d":"2025-10-31","c":"clean","u":"—","s":"Sakan Arabia for Construction & Maintenance (Supercle)","t":"فاتورة رقم 36388 نظافة مبنى الشقق شهر اكتوبر 2025 من شركة سكن العربية للانشاء والصيانة (سوبركل)","m":1000.0,"i":"36388"},{"d":"2025-11-30","c":"clean","u":"—","s":"Sakan Arabia for Construction & Maintenance (Supercle)","t":"فاتورة رقم 36603 نظافة مبنى الشقق شهر نوفمبر 2025 من شركة سكن العربية للانشاء والصيانة (سوبركل)","m":1000.0,"i":"36603"},{"d":"2026-01-31","c":"clean","u":"—","s":"Sakan Arabia for Construction & Maintenance (Supercle)","t":"فاتورة رقم 3369 نظافة شهر يناير 2026 - شركة سكن العربية للانشاء والصيانة (سوبركل)","m":1000.0,"i":"3369"},{"d":"2026-02-28","c":"clean","u":"—","s":"Sakan Arabia for Construction & Maintenance (Supercle)","t":"فاتورة رقم 37737 نظافة شهر فبراير 2026 - شركة سكن العربية للانشاء والصيانة (سوبركل)","m":1000.0,"i":"37737"},{"d":"2026-04-30","c":"clean","u":"—","s":"Sakan Arabia for Construction & Maintenance (Supercle)","t":"فاتورة رقم 38550 نظافة شهر ابريل 2026 - شركة سكن العربية للانشاء والصيانة (سوبركل)","m":1000.0,"i":"38550"},{"d":"2026-05-31","c":"clean","u":"—","s":"Sakan Arabia for Construction & Maintenance (Supercle)","t":"فاتورة رقم 38767 نظافة شهر مايو 2026 - شركة سكن العربية للانشاء والصيانة (سوبركل)","m":1000.0,"i":"38767"},{"d":"2026-06-30","c":"clean","u":"—","s":"Sakan Arabia for Construction & Maintenance (Supercle)","t":"فاتورة رقم 39152 نظافة شهر يونيو 2026 - شركة سكن العربية للانشاء والصيانة (سوبركل)","m":1000.0,"i":"39152"},{"d":"2024-12-31","c":"sec","u":"—","s":"","t":"فاتورة رقم 01226- عدد 3 افراد حراسة 8 ساعة يوميا - شهر ديسمبر 2024","m":12300.0,"i":"01226-"},{"d":"2025-01-18","c":"sec","u":"—","s":"","t":"فاتورة رقم 01263- عدد 3 افراد حراسة 8 ساعة يوميا - شهر يناير 2025","m":6969.99,"i":"01263-"},{"d":"2025-03-31","c":"sec","u":"—","s":"Saad Al-Jazeera Security Guarding","t":"فاتورة رقم 784- رجل امن 8 ساعات للشقق السكنية-شركة سعد الجزيرة للحراسات الأمنية","m":4200.0,"i":"784-"},{"d":"2025-04-30","c":"sec","u":"—","s":"","t":"فاتورة رقم 1077 - حراسة رجل امن شهر ابريل 2025","m":4200.0,"i":"1077"},{"d":"2025-05-20","c":"sec","u":"—","s":"","t":"فاتورة رقم 1267 - حراسة رجل امن شهر مايو 2025 عدد 19 يوم","m":2660.0,"i":"1267"},{"d":"2025-05-27","c":"clean","u":"—","s":"","t":"فاتورة رقم 458 رواتب عمال نظافة شهر مايو 2025","m":5600.0,"i":"458"},{"d":"2025-07-06","c":"gen","u":"—","s":"","t":"اضافي عمال الفوربوينتس في شقق المارية شهر مايو 2025","m":374.0,"i":""},{"d":"2025-07-06","c":"gen","u":"—","s":"","t":"اضافي عمال الفوربوينتس في شقق المارية شهر يونيو 2025","m":636.0,"i":""},{"d":"2025-07-11","c":"clean","u":"—","s":"","t":"فاتورة رقم 483 رواتب عمال نظافة شهر يونيو  2025","m":9200.0,"i":"483"},{"d":"2025-07-25","c":"sec","u":"—","s":"","t":"فاتورة رقم 487 رواتب 2 عمال + عامل الامن شهر يوليو 2025","m":8419.35,"i":"487"},{"d":"2025-08-04","c":"gen","u":"—","s":"","t":"صرف اضافي عمال الشقق - شهر يوليو 2025","m":1192.0,"i":""},{"d":"2025-09-01","c":"sec","u":"—","s":"","t":"فاتورة رقم 509 -رواتب 2 عمال + عامل الامن شهر اغسطس 2025","m":9890.0,"i":"509"},{"d":"2025-09-28","c":"sec","u":"—","s":"","t":"فاتورة رقم 522 -رواتب 2 عمال + عامل الامن شهر سبتمبر 2025","m":8165.0,"i":"522"},{"d":"2025-10-13","c":"gen","u":"—","s":"","t":"اوفر تايم عدد 4 فني شهر سبتمبر 2025 - شقق المارية","m":874.0,"i":""},{"d":"2025-10-30","c":"gen","u":"—","s":"","t":"صرف بدل عمل وقت اضافي - عمال شقق المارية","m":473.4,"i":""},{"d":"2025-12-02","c":"gen","u":"—","s":"","t":"اصافي عمال الشقق السكنية","m":1104.0,"i":""},{"d":"2026-01-15","c":"gen","u":"—","s":"","t":"صرف اضافي عمال الفندق في الشقق السكنية شهر ديسمبر 2025","m":1867.0,"i":""},{"d":"2026-02-01","c":"clean","u":"—","s":"","t":"فاتورة رقم 588 - رواتب عمال الهاوس كيبنج شهر يناير 2026","m":5600.0,"i":"588"},{"d":"2026-02-08","c":"gen","u":"—","s":"","t":"صرف اضافي عمال الفندق في الشقق السكنية شهر يناير 2026","m":1080.23,"i":""},{"d":"2026-02-26","c":"gen","u":"—","s":"","t":"صرف اضافي عمال الفندق في الشقق السكنية شهر فبراير 2026","m":2420.36,"i":""},{"d":"2026-03-26","c":"gen","u":"—","s":"","t":"صرف اضافي عمال الفندق في الشقق السكنية شهر مارس 2026","m":1225.94,"i":""},{"d":"2026-04-27","c":"clean","u":"—","s":"","t":"فاتورة رقم 628- رواتب عمال الهاوس كيبنج شهر ابريل 2026","m":1717.33,"i":"628-"},{"d":"2026-04-30","c":"gen","u":"—","s":"","t":"بدل ساعات اضافية - عمال الفندق في شقق المارية شهر ابريل 2026","m":2714.84,"i":""},{"d":"2026-05-30","c":"gen","u":"—","s":"","t":"بدل ساعات اضافية - عمال الفندق في شقق المارية شهر مايو 2026","m":2416.54,"i":""},{"d":"2026-06-30","c":"gen","u":"—","s":"","t":"بدل ساعات اضافية - عمال الفندق في شقق المارية شهر يونية 2026","m":2363.55,"i":""}];
+/* Read from building_costs. See REGISTER above.
+
+   97 invented maintenance lines with invented suppliers and invented Arabic
+   descriptions used to stand here, totalling a figure that matched the real
+   log's to the halala — which is what made it convincing, and what made it
+   dangerous. */
+const COST_LOG = [];
 
 
 /* ==========================================================================
@@ -1423,9 +1582,117 @@ const COST_LOG=[{"d":"2025-01-21","c":"gen","u":"A-105","s":"","t":"مصاريف
    read/write with table queries is the only change needed to make this
    sync across devices — no calling code moves.
    ========================================================================== */
+/* ==========================================================================
+   ENVIRONMENT — the one place that says which building's records this build
+   is allowed to touch.
+
+   The 8 September staging audit found the staging build sharing production's
+   backend, its session key and its shared-record key, on the same origin. A
+   production session loaded in staging, and a staging write reached the
+   production database. A path segment is not an environment.
+
+   Three things make it real, and all three are here:
+
+     1. A separate Supabase project. Staging has its own database, its own
+        auth users and its own keys — seeded with generated data only.
+     2. Storage namespaced by environment, so a session or a shared demo
+        record from one never resolves in the other, same origin or not.
+     3. A boot assertion. A build that is labelled staging and pointed at the
+        production project refuses to start, and says so, rather than writing
+        to the wrong building's records and being found out later.
+
+   To produce the staging build, tool/make_env.mjs rewrites this block. It is
+   never edited by hand in two places, because that is how the two drift.
+   ========================================================================== */
+const ENV = {
+  name:    'production',
+  label_en:'', label_ar:'',
+  base:    'https://oaxasgfdfxrkbllzwvna.supabase.co',
+  key:     'sb_publishable_WRR6q8UHhW7gIWp6NdP50w_rO6eDRVU',
+  prefix:  'almaria',
+  /* The project ref this build is FORBIDDEN to talk to. Naming the forbidden
+     one rather than the permitted one is deliberate: a copy-paste that changes
+     the URL and forgets the label is exactly the mistake being guarded, and
+     this catches it in the direction it actually happens. */
+  forbid:  null
+};
+(function assertEnvironment(){
+  const ref = (ENV.base.match(/https:\/\/([a-z0-9]+)\.supabase\.co/) || [])[1] || '';
+  if(ENV.forbid && ref === ENV.forbid){
+    document.addEventListener('DOMContentLoaded', function(){
+      document.body.innerHTML =
+        '<div style="font:16px/1.6 system-ui;padding:40px;max-width:46em;margin:0 auto">'
+        + '<h1 style="font-size:20px">This build is misconfigured and will not start</h1>'
+        + '<p>It is labelled <b>' + ENV.name + '</b> but is pointed at the '
+        + '<b>production</b> database. Nothing has been read or written.</p>'
+        + '<p>Point it at its own project, or relabel it. A staging build must '
+        + 'never write to the building’s real records.</p></div>';
+    });
+    throw new Error('environment misconfigured: ' + ENV.name + ' build pointed at production');
+  }
+})();
+
+/* A non-production build says so on every screen, permanently. A banner that
+   can be dismissed is a banner that is dismissed on the first morning and never
+   seen again, which is how somebody ends up believing a test figure.
+
+   MOB-04, found by the 8 September audit: the first version was
+   position:fixed;bottom:0 with body.paddingBottom to compensate. The resident
+   shell is position:fixed;inset:0 on a phone, so padding on the body reserved
+   nothing and the bar covered the tab labels — 48px of it, over a tab bar
+   occupying y=770-844 at 390x844. pointer-events:none meant automation still
+   clicked through and every navigation test passed while a person could not
+   read the tabs. A warning that hides the controls is its own defect.
+
+   It now measures itself and the app shell gives up exactly that much room.
+
+   MOB-05, same audit: the text stayed English after switching to Arabic,
+   because the repaint returned early whenever the element already existed. It
+   now re-reads the language every tick and follows the document's direction. */
+(function environmentBanner(){
+  if(ENV.name === 'production') return;
+  const css = document.createElement('style');
+  css.textContent =
+    '#envbar{position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#7a2418;'
+    + 'color:#fff;font:600 12px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;'
+    + 'letter-spacing:.03em;text-align:center;box-sizing:border-box;'
+    + 'padding:6px 12px calc(6px + env(safe-area-inset-bottom,0px));'
+    + 'box-shadow:0 -1px 0 rgba(0,0,0,.25);pointer-events:none}'
+    /* The shell gives up the bar's measured height rather than overlapping it. */
+    + 'html.has-envbar body{padding-bottom:var(--envbar-h,32px)}'
+    + '@media (max-width:820px){html.has-envbar .phone{bottom:var(--envbar-h,32px)!important;'
+    + 'height:auto!important}}';
+  const paint = function(){
+    let b = document.getElementById('envbar');
+    if(!b){
+      if(!document.body) return;
+      if(!css.parentNode) document.head.appendChild(css);
+      b = document.createElement('div');
+      b.id = 'envbar';
+      b.setAttribute('role', 'status');
+      document.body.appendChild(b);
+      document.documentElement.classList.add('has-envbar');
+    }
+    /* Re-read every tick: the language toggle rewrites the document. */
+    const ar = (document.documentElement.getAttribute('lang') === 'ar');
+    const want = ar ? ENV.label_ar : ENV.label_en;
+    if(b.textContent !== want) b.textContent = want;
+    b.dir = ar ? 'rtl' : 'ltr';
+    /* Reserve what it actually occupies, not what it was assumed to be. */
+    const h = Math.ceil(b.getBoundingClientRect().height);
+    if(h && document.documentElement.style.getPropertyValue('--envbar-h') !== h + 'px')
+      document.documentElement.style.setProperty('--envbar-h', h + 'px');
+  };
+  if(document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', paint);
+  else paint();
+  setInterval(function(){ try{ paint(); }catch(e){} }, 700);
+  window.addEventListener('resize', function(){ try{ paint(); }catch(e){} });
+})();
+
 const LINK = (function(){
-  const KEY = 'almaria.link.v1';
-  const CHAN = 'almaria.link';
+  const KEY = ENV.prefix + '.link.v1';
+  const CHAN = ENV.prefix + '.link';
   const BLANK = () => ({v:1, rev:0, at:0, by:'', wo:{}, newWO:[], anns:[], pay:{}});
 
   let cache = null, subs = [], bc = null, ok = true;
@@ -1541,7 +1808,7 @@ function LINK_apply(s){
     if(c.value && c.n && c.start){
       const rows=[]; let left=c.value;
       for(let i=0;i<c.n;i++){
-        const d=new Date(c.start); d.setMonth(d.getMonth()+i);
+        const d=addMonthsClamped(c.start, i);
         const amt = i===c.n-1 ? left : Math.round(c.value/c.n);
         left -= amt;
         rows.push({q:i+1, amt, due:d, billed:d<=TODAY, paid:false, paidOn:null});
@@ -1613,7 +1880,7 @@ const isOpenWO=w=>['submitted','assigned','progress','hold'].includes(w.status);
 /* ---------- rent ledger ----------
    Instalments, amounts and due dates are the real schedule from the register.
    Payment status is reconstructed from the sheet's own collected totals. */
-const addM=(d,n)=>{const x=new Date(d);x.setMonth(x.getMonth()+n);return x;};
+const addM=(d,n)=>addMonthsClamped(d,n);
 UNITS.forEach(u=>{
   if(!u.occupied) return;
   const unpaidBilled=u.inst.filter(x=>x.billed&&!x.paid);
@@ -1638,14 +1905,8 @@ const PPM=[];
 const SUPPLIERS=[];
 /* supplier aggregates are derived — see recompute() */
 
-const ANNS=[
- {en:'Water tank cleaning — Thursday 20 August',ar:'تنظيف خزانات المياه — الخميس ٢٠ أغسطس',aud:'all',st:'published',date:'2026-08-18',ok:true},
- {en:'Elevator annual maintenance — lift B',ar:'الصيانة السنوية للمصاعد — المصعد (ب)',aud:'all',st:'published',date:'2026-08-15',ok:true},
- {en:'Rooftop pool — extended summer hours',ar:'مسبح السطح — تمديد ساعات الصيف',aud:'all',st:'published',date:'2026-08-10',ok:true},
- {en:'Visitor parking — new registration at the gate',ar:'مواقف الزوار — تسجيل جديد عند البوابة',aud:'all',st:'published',date:'2026-08-02',ok:true},
- {en:'Floor 3 corridor painting — Sunday',ar:'',aud:'floor3',st:'draft',date:'—',ok:false},
- {en:'Quarterly A/C filter service schedule',ar:'جدول تنظيف فلاتر التكييف الربع سنوي',aud:'all',st:'scheduled',date:'2026-08-24',ok:true}
-];
+/* Read from the announcements table. See REGISTER above. */
+const ANNS=[];
 
 /* ------------------------------ derived figures ------------------------------ */
 /* One definition of "breached", used by the queue, the panels and the SLA figures alike.
@@ -1907,7 +2168,7 @@ function impDate(v){
   return isNaN(d) ? null : d.toISOString().slice(0,10);
 }
 
-/* an instalment cell is "40,000" over "15-9-2025" on two lines */
+/* an instalment cell is an amount over a date on two lines */
 function impInstalment(v){
   if(v === null || v === undefined || v === '') return null;
   const parts = String(v).split(/[\n\r]+/).map(x=>x.trim()).filter(Boolean);
@@ -2224,9 +2485,30 @@ function importPreviewHtml(res){
   <div class="note" style="margin-top:10px">${T('imp_apply_note')}</div>`;
 }
 
-function importApply(){
+async function importApply(){
   const res = IMP.result; if(!res) return;
   LINK.commit(s => { s.register = res.rows; s.registerFrom = IMP.file; s.registerAt = Date.now(); }, 'console');
+
+  /* DATA-01. "Register replaced — 37 apartments loaded" used to fire here,
+     unconditionally, while the write was still in flight — so the sentence
+     appeared over a database that had refused it, and the screen was repainted
+     with a register Postgres did not hold. Wait for the outcome first.
+
+     LINK.settled exists only in live mode; offline there is nothing to wait for
+     and nothing that can be refused, so the demo path falls straight through. */
+  let out = null;
+  try{ out = LINK.settled ? await LINK.settled() : null; }
+  catch(e){ console.error('importApply', e); }
+
+  if(out && (out.held || out.failed)){
+    /* The reconciliation panel is open and explains itself. Two things must not
+       happen here: the screen must not be repainted from a file the database
+       has not taken, and the shared record must not keep claiming an import
+       that did not land — the other console in the office reads that record. */
+    LINK.commit(s => { delete s.register; delete s.registerFrom; delete s.registerAt; }, 'console');
+    return;
+  }
+
   applyRegister(res.rows);
   closeDrawer(); render();
   toast(T('imp_done').replace('{n}', NUM(res.rows.length)));
@@ -2240,7 +2522,9 @@ function applyRegister(rows){
     rent:r.value||0, leaseStart:r.start?new Date(r.start):null, leaseEnd:r.end?new Date(r.end):null,
     inst:(r.inst||[]).map(x=>({q:x.n, amt:x.amt, due:x.due?new Date(x.due):null,
           billed: x.due? new Date(x.due)<=TODAY : false, paid:x.paid,
-          paidOn: x.paid && x.due ? new Date(x.due) : null})),
+          /* The date it was actually paid, or nothing. Never the due date:
+             that is a guess wearing a record's clothes — DATA-07. */
+          paidOn: x.on ? new Date(x.on) : null, ref: x.ref || null})),
     sheetPaid:r.paid, sheetRemain:r.remain
   }));
   const keep = {};
@@ -2265,8 +2549,17 @@ function applyRegister(rows){
 
 /* ------------------------------ helpers ------------------------------ */
 const $=id=>document.getElementById(id);
+/* A date that is not known is '—', the same em dash this console uses
+   everywhere else for "no value recorded". It used to throw: five flats in the
+   register are marked occupied with no active lease, so `leaseEnd` is null for
+   them, and `.getDate()` on null took the Units and Residents pages down —
+   header updated, body left showing the previous screen, language toggle dead
+   until you navigated away. An unknown date is a fact about the data, not a
+   fault in the page. Where it means something more than "unknown", the caller
+   says so: see the Units register below. */
 const fmtD=d=>{const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
  const mAr=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+ if(!(d instanceof Date) || isNaN(d)) return '—';
  return NUM(d.getDate())+' '+L(m[d.getMonth()],mAr[d.getMonth()])+' '+NUM(d.getFullYear());};
 const ageH=workedH;
 
@@ -2283,6 +2576,114 @@ const techName=w=>L(w.tech,w.tech_ar);
 function toast(m){const e=$('toast');e.innerHTML=I('check',17,2.2)+'<span>'+m+'</span>';e.classList.add('on');
  clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),3600);}
 function closeDrawer(){$('drawer').classList.remove('on');$('scrim').classList.remove('on');}
+
+/* ------------------------ schedule reconciliation ------------------------ */
+/* DATA-01's other half. The database now refuses to destroy payment history,
+   which turns what used to be silent data loss into a refusal — and a refusal
+   nobody is shown is its own bug. Every held write lands here, named, with what
+   is on file beside what was proposed, and the operator decides. */
+let HELD = [];
+/* A held import, kept whole. Separate from HELD because it is answered as one
+   act — see saveRegister for why an import is not applied in pieces. */
+let HELD_IMPORT = null;
+function rcWhat(c){
+  const k = {paid_row_beyond_new_schedule:'rc_k_beyond', paid_amount_differs:'rc_k_amount',
+             paid_due_date_differs:'rc_k_due', paid_flag_without_receipt:'rc_k_noreceipt',
+             total_differs_from_contract:'rc_k_total'}[c.kind];
+  return k ? T(k) : T('rc_k_other');
+}
+function rcVal(v){
+  if(v === null || v === undefined || v === '') return '—';
+  if(typeof v === 'number') return money(v);
+  /* PostgREST returns numeric as a JSON string, so an amount arrives as
+     "12917.00" and must not be printed raw beside formatted ones. */
+  if(typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) return money(Number(v));
+  return esc(String(v));
+}
+/* One flat's held write, rendered. `buttons` is the caller's, because what may
+   be done about it differs: a single lease edit can be accepted on its own, and
+   a flat inside a held import cannot — the import is accepted whole or not at
+   all, so its sections carry no button of their own. */
+function rcSection(r, buttons){
+  const rows = (r.conflicts || []).map(c => `<tr>
+      <td>${c.seq === undefined ? '—' : esc(String(c.seq))}</td>
+      <td>${rcWhat(c)}</td>
+      <td class="num">${rcVal(c.kept !== undefined ? c.kept
+                        : (c.amount !== undefined ? c.amount
+                        : (c.scheduled !== undefined ? c.scheduled : c.due_on)))}</td>
+      <td class="num">${rcVal(c.proposed !== undefined ? c.proposed
+                        : (c.contract !== undefined ? c.contract : null))}</td>
+      <td>${c.receipt_ref ? esc(String(c.receipt_ref))
+                          : '<span class="muted">' + T('rc_none_ref') + '</span>'}</td>
+    </tr>`).join('');
+  const sum = T('rc_summary').replace('{n}', r.deleted_unpaid || 0)
+                             .replace('{u}', r.updated || 0)
+                             .replace('{i}', r.inserted || 0)
+                             .replace('{k}', r.kept_paid || 0);
+  return `<section style="margin-bottom:22px">
+    <h3 style="margin:0 0 4px">${T('rc_unit')} ${esc(String(r.unit || '—'))}</h3>
+    <p class="muted" style="margin:0 0 10px">${esc(sum)}</p>
+    <div style="overflow-x:auto"><table class="tbl"><thead><tr>
+      <th>${T('rc_seq')}</th><th>${T('rc_what')}</th>
+      <th class="num">${T('rc_kept')}</th><th class="num">${T('rc_proposed')}</th>
+      <th>${T('rc_receipt')}</th></tr></thead><tbody>${rows}</tbody></table></div>
+    ${buttons ? `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">${buttons}</div>` : ''}
+  </section>`;
+}
+function openReconcile(receipts, batch){
+  HELD = (receipts || []).filter(Boolean);
+  HELD_IMPORT = batch || null;
+  if(!HELD.length && !HELD_IMPORT){ toast(T('rc_none')); return; }
+  const singles = HELD.map((r, ri) => rcSection(r,
+      `<button class="btn primary" onclick="rcApply(${ri})">${T('rc_apply')}</button>
+       <button class="btn" onclick="closeDrawer()">${T('rc_cancel')}</button>`)).join('');
+  let imported = '';
+  if(HELD_IMPORT){
+    const held = (HELD_IMPORT.receipts || []).filter(Boolean);
+    const total = ((HELD_IMPORT.plan || {}).leases || []).length;
+    imported = `<div class="warnbox" style="margin:0 0 16px">${I('alert',16,2.2)}<span>${
+        esc(T('rc_import_lead').replace('{h}', NUM(held.length)).replace('{n}', NUM(total)))
+      }</span></div>`
+      + held.map(r => rcSection(r, '')).join('')
+      + `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+           <button class="btn primary" onclick="rcApplyImport()">${T('rc_apply_import')}</button>
+           <button class="btn" onclick="closeDrawer()">${T('rc_cancel_import')}</button>
+         </div>`;
+  }
+  openDrawer(T('rc_title'),
+    `<p class="muted" style="margin:0 0 16px">${T('rc_lead')}</p>${singles}${imported}`);
+}
+async function rcApply(i){
+  const r = HELD[i];
+  if(!r) return;
+  try{
+    await LIVE.applyHeld(r);
+    HELD[i] = null;
+    closeDrawer();
+    toast(T('rc_applied'));
+  }catch(e){
+    toast(L('The database refused that change: ' + (e && e.message || ''),
+            'رفضت قاعدة البيانات هذا التغيير: ' + (e && e.message || '')));
+  }
+}
+/* The whole import, accepted. Until this runs, no part of the import exists in
+   Postgres — not the schedules and not the unit rows either. */
+async function rcApplyImport(){
+  const b = HELD_IMPORT;
+  if(!b) return;
+  try{
+    await LIVE.applyRegisterHeld(b);
+    HELD_IMPORT = null;
+    closeDrawer();
+    if(typeof applyRegister === 'function' && b.plan && b.plan.rows)
+      applyRegister(b.plan.rows);
+    render();
+    toast(T('rc_applied_import'));
+  }catch(e){
+    toast(L('The database refused that change: ' + (e && e.message || ''),
+            'رفضت قاعدة البيانات هذا التغيير: ' + (e && e.message || '')));
+  }
+}
 function openDrawer(title,body){
  $('drawer').innerHTML=`<div class="dh"><h2>${title}</h2><div style="flex:1"></div>
    <button class="x" onclick="closeDrawer()">${I('x',20,2)}</button></div><div class="db">${body}</div>`;
@@ -2456,10 +2857,69 @@ function renderNav(){
   return `<button class="${PAGE===id?'on':''}" onclick="go('${id}')">${I(ic,17)}<span>${T(k)}</span>${c?`<span class="cnt">${NUM(c)}</span>`:''}</button>`;
  }).join('');
 }
-function go(p){PAGE=p;closeDrawer();render();$('scroll')&&0;$('page').scrollTop=0;}
+/* MOB-01. The sheet only exists below 900px, but these are unconditional: a
+   narrow desktop window is the same case, and a state that depends on which
+   media query happened to match at the time is a state that gets stuck open. */
+function navSet(open){
+ document.body.classList.toggle('navopen', !!open);
+ const b=$('menuBtn'); if(b) b.setAttribute('aria-expanded', open?'true':'false');
+ const s=$('navscrim'); if(s) s.setAttribute('aria-hidden', open?'false':'true');
+}
+function navToggle(){ navSet(!document.body.classList.contains('navopen')); }
+function navClose(){ navSet(false); }
+document.addEventListener('keydown', e => {
+ if(e.key==='Escape' && document.body.classList.contains('navopen')) navClose();
+});
+
+/* Choosing a destination closes the sheet. Leaving it open over the page the
+   operator just asked for is the commonest way an off-canvas nav goes wrong. */
+function go(p){PAGE=p;closeDrawer();navClose();render();$('page').scrollTop=0;}
+
+/* There is no signed-out console.
+
+   Everything the console reads is behind RLS and a staff claim, so the gate is
+   a courtesy — the database is what refuses. What it replaces is not: the page
+   used to open on a complete rent roll for 39 flats with invented tenants and
+   invented money, and a convincing forgery of a building is the kind of thing
+   that gets screenshotted and forwarded. */
+function unlocked(){
+  try { return SB.configured() && SB.signedIn() && SB.isStaff(); }
+  catch (e) { return false; }
+}
+function renderLocked(){
+  navClose();
+  $('nav').innerHTML = '';
+  /* Nobody is signed in, so the header must not show an identity or a
+     connection. The avatar was a fixed "MS" and the chip was green — both
+     stating something about a session that does not exist. */
+  for(const sel of ['.who', '#linkdot']){
+    const e = document.querySelector(sel); if(e) e.style.display = 'none';
+  }
+  $('pgTitle').textContent = T('lock_title');
+  $('pgSub').textContent = '';
+  $('whoNm').textContent = ''; $('whoRl').textContent = '';
+  $('brandSub').textContent = T('console');
+  $('sideFoot').textContent = '';
+  for(const id of ['expBtn','impBtn']){ const e=$(id); if(e) e.style.display='none'; }
+  $('page').innerHTML = `
+    <div class="card" style="max-width:640px;margin:6vh auto 0">
+      <div class="bd" style="text-align:center;padding:34px 26px">
+        <h2 style="margin:0 0 8px;font-size:19px;font-weight:800">${T('lock_title')}</h2>
+        <p class="muted" style="margin:0 0 20px;line-height:1.65">${T('lock_body')}</p>
+        <button class="btn pri" onclick="sbOpen()">${I('key',16,2.2)} ${
+          L('Sign in','تسجيل الدخول')}</button>
+      </div>
+    </div>`;
+}
 
 function render(){
+ if(!unlocked()) return renderLocked();
+ for(const id of ['expBtn','impBtn']){ const e=$(id); if(e) e.style.display=''; }
+ for(const sel of ['.who', '#linkdot']){
+   const e = document.querySelector(sel); if(e) e.style.display = '';
+ }
  renderNav();
+ const mb=$('menuBtn'); if(mb) mb.setAttribute('aria-label', T('m_menu'));
  $('pgTitle').textContent=T('t_'+PAGE);
  $('pgSub').textContent=T('s_'+PAGE);
  $('whoNm').textContent=T('who'); $('whoRl').textContent=T('role');
@@ -2474,7 +2934,7 @@ function render(){
    el.classList.toggle('off',!on);
    lbl.textContent = on ? T('link_on') : T('link_off');
  })();
- $('sideFoot').textContent=L('Prototype · demonstration data','نموذج تجريبي · بيانات توضيحية');
+ $('sideFoot').textContent=L('Almaria Residence · management console','مجمّع المارية · وحدة الإدارة');
  const f={over:pgOver,wo:pgWO,ppm:pgPPM,units:pgUnits,res:pgRes,rep:pgRep,fin:pgFin,
           ann:pgAnn,sup:pgSup,crm:pgCRM,pipe:pgPipe,todo:pgTodo,roles:pgRoles}[PAGE]
           || pgOver;
@@ -2497,8 +2957,6 @@ function pgOver(){
  const due=PPM.filter(p=>new Date(p.next)<=new Date(2026,8,15)).sort((a,b)=>new Date(a.next)-new Date(b.next));
  const today=OPEN.filter(w=>w.status==='assigned'||w.status==='progress').slice(0,5);
  return `
- <div class="demo">${I('alert',15,2.2)}<span>${T('demo')}</span></div>
-
  ${NOLOG()?`
  <div class="card mb"><div class="bd">
    <div class="warnbox">${I('alert',16,2.2)}<span>${T('nolog_note')}</span></div>
@@ -2546,7 +3004,7 @@ function pgOver(){
      <div style="display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--grid);cursor:pointer" onclick="woDetail('${w.id}')">
        <span class="pill p-crit">${I('alert',13,2.1)}${NUM(Math.round(ageH(w)-w.target))}${L('h over','س تجاوز')}</span>
        <div style="flex:1;min-width:0">
-         <div style="font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${w.desc}</div>
+         <div style="font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(w.desc)}</div>
          <div class="sub2">${T('unit')} ${NUM(w.unit)} · ${catName(CAT(w.cat))}</div>
        </div>
        <span style="color:var(--muted)" class="flipi">${I('chev',15)}</span>
@@ -2562,7 +3020,7 @@ function pgOver(){
     <table><thead><tr><th>${T('unit')}</th><th>${T('category')}</th><th>${T('assignee')}</th><th>${T('status')}</th></tr></thead>
     <tbody>${today.map(w=>`<tr class="click" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" onclick="woDetail('${w.id}')">
       <td class="strong">${NUM(w.unit)}</td><td>${catName(CAT(w.cat))}</td>
-      <td class="sub2">${techName(w)}</td><td>${stPill(w.status)}</td></tr>`).join('')}</tbody></table>
+      <td class="sub2">${esc(techName(w))}</td><td>${stPill(w.status)}</td></tr>`).join('')}</tbody></table>
    </div>
   </div>
   <div class="card">
@@ -2717,7 +3175,7 @@ function pgWO(){
       <td class="mono strong">${w.id}</td>
       <td class="strong">${NUM(w.unit)}</td>
       <td>${catName(CAT(w.cat))}</td>
-      <td style="max-width:250px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${w.desc}</div>
+      <td style="max-width:250px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(w.desc)}</div>
         <div class="sub2">${T('intake')}: ${T('ch_'+(w.ch==='wa'?'wa':w.ch))}</div></td>
       <td>${prPill(w.pri)}</td>
       <td class="mono">${fmtD(w.raised)}</td>
@@ -2743,7 +3201,7 @@ function woDetail(id){
    const done=w.status==='done'||i<at, now=i===at&&w.status!=='done';
    return `<li class="${done?'':now?'now':'todo'}"><div class="s">${T(STA[k][2])}</div>
     <div class="m">${done||now?fmtD(new Date(w.raised.getTime()+i*36e5*6)):L('Pending','قيد الانتظار')}</div></li>`;}).join('');
- openDrawer(`${w.id}<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${w.desc}</div>`,`
+ openDrawer(`${esc(w.id)}<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${esc(w.desc)}</div>`,`
   <div style="display:flex;gap:8px;margin-bottom:16px">${stPill(w.status)}${prPill(w.pri)}
    ${open&&ageH(w)>w.target?`<span class="pill p-crit">${I('alert',13,2.1)}${NUM(Math.round(ageH(w)-w.target))}${L('h past target','س تجاوز')}</span>`:''}</div>
 
@@ -2776,7 +3234,7 @@ function woDetail(id){
     <div><label class="f">${T('assignee')}</label>
      <input class="inp" id="aTech" list="techList" autocomplete="off"
        placeholder="${L('Name of the technician or supplier','اسم الفني أو المورّد')}"
-       value="${w.status!=='submitted'&&w.tech!=='—'?w.tech:''}">
+       value="${esc(w.status!=='submitted'&&w.tech!=='—'?w.tech:'')}">
      <datalist id="techList">${knownTechs().map(n=>`<option value="${n}">`).join('')}</datalist></div>
     <button class="btn" onclick="assignWO('${w.id}')">${L('Assign','إسناد')}</button>
     <button class="btn" onclick="startWO('${w.id}')">${L('Start work','بدء التنفيذ')}</button>
@@ -2903,11 +3361,16 @@ function pgUnits(){
    const cu=costByUnit.find(x=>x.u.u===u.u);
    const op=OPEN.filter(w=>w.unit===u.u).length;
    return `<tr>
-    <td class="strong">${NUM(u.u)}</td><td class="mono">${floorName(u.floor)}</td><td>${u.type}</td>
+    <td class="strong">${NUM(u.u)}</td><td class="mono">${floorName(u.floor)}</td><td>${esc(u.type)}</td>
     <td class="num mono">${NUM(u.area)} m²</td>
     <td>${u.occupied?`<span class="pill p-good">${I('check',12,2.1)}${T('occupied')}</span>`:`<span class="pill p-neut">${T('vacant')}</span>`}</td>
-    <td>${u.occupied?L(u.tenant,u.tenant_ar):'—'}</td>
-    <td class="mono">${u.occupied?fmtD(u.leaseEnd):'—'}</td>
+    <td>${u.occupied?esc(L(u.tenant,u.tenant_ar)):'—'}</td>
+    <td class="mono">${!u.occupied ? '—'
+      : u.leaseEnd ? fmtD(u.leaseEnd)
+      /* Occupied with no lease end is not the same as no data. Five flats are
+         in exactly this state and the register should say so rather than print
+         a dash that reads as "nothing to see". */
+      : `<span class="pill p-warn">${I('alert',12,2.1)}${T('u_nolease')}</span>`}</td>
     <td class="num">${op?`<span class="pill p-warn">${NUM(op)}</span>`:'—'}</td>
     <td><div class="ibar"><div class="t"><i style="width:${max?(cu.cost/max*100):0}%"></i></div><div class="n">${money(cu.cost)}</div></div></td>
    </tr>`;}).join('')}</tbody></table></div></div>`;
@@ -2929,7 +3392,7 @@ function pgRes(){
  <div class="card"><div class="tw"><table>
   <thead><tr><th>${T('unit')}</th><th>${T('tenant')}</th><th>${T('account')}</th><th>${T('lastseen')}</th><th>${T('channel')}</th><th>${T('leaseend')}</th></tr></thead>
   <tbody>${occ.map(u=>`<tr>
-   <td class="strong">${NUM(u.u)}</td><td>${L(u.tenant,u.tenant_ar)}</td>
+   <td class="strong">${NUM(u.u)}</td><td>${esc(L(u.tenant,u.tenant_ar))}</td>
    <td>${u.account==='verified'?`<span class="pill p-good">${I('check',12,2.1)}${T('verified')}</span>`
      :u.account==='pending'?`<span class="pill p-warn">${I('clock',12,2.1)}${T('pending')}</span>`
      :`<span class="pill p-neut">${T('inactive')}</span>`}</td>
@@ -2969,10 +3432,10 @@ const rpPeriods = () => [
 ];
 function rpRange(){
   const to = new Date(TODAY);
-  const from = new Date(TODAY);
+  let from = new Date(TODAY);
   if(RP.period==='m')   from.setDate(1);
-  if(RP.period==='q')   from.setMonth(from.getMonth()-3);
-  if(RP.period==='y12') from.setMonth(from.getMonth()-12);
+  if(RP.period==='q')   from = addMonthsClamped(from, -3);
+  if(RP.period==='y12') from = addMonthsClamped(from, -12);
   if(RP.period==='all') from.setFullYear(2000);
   from.setHours(0,0,0,0);
   return {from, to};
@@ -3028,7 +3491,7 @@ function repForecast(){
   const buckets = [];
   const start = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
   for(let i=0;i<12;i++){
-    const d = new Date(start); d.setMonth(d.getMonth()+i);
+    const d = addMonthsClamped(start, i);
     buckets.push({key:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'), d, due:0, paid:0, n:0, units:new Set()});
   }
   let overdue = 0, overdueN = 0;
@@ -3616,7 +4079,7 @@ function docOpen(ref, kind){
       <thead><tr><th>${T('doc_kind')}</th><th>${T('doc_file')}</th><th class="num">${T('doc_size')}</th><th>${T('doc_added')}</th><th>${T('doc_fp')}</th><th></th></tr></thead>
       <tbody>${list.map(d=>`<tr>
         <td>${T('doc_k_'+d.kind)}</td>
-        <td><div class="strong" style="word-break:break-all">${d.name}</div>
+        <td><div class="strong" style="word-break:break-all">${esc(d.name)}</div>
             <div class="sub2">${d.readable?T('doc_readable'):T('doc_'+(d.why||'scan'))}</div></td>
         <td class="num mono">${NUM(Math.round(d.size/1024))} KB</td>
         <td class="mono">${fmtISO(d.at.slice(0,10))}</td>
@@ -3706,7 +4169,7 @@ function docApplyLease(){
   if(value && n && start){
     const rows=[]; let left=value;
     for(let i=0;i<n;i++){
-      const d=new Date(start); d.setMonth(d.getMonth()+i);
+      const d=addMonthsClamped(start, i);
       const amt = i===n-1 ? left : Math.round(value/n);
       left -= amt;
       rows.push({q:i+1, amt, due:d, billed:d<=TODAY, paid:false, paidOn:null});
@@ -3786,7 +4249,7 @@ function repEvidence(){
 function rpCell(c, v){
   if(v === null || v === undefined || v === '') return '<span class="sub2">—</span>';
   /* a footer row puts a label in the first column, whatever that column's type */
-  if((c.date||c.month) && !(v instanceof Date)) return v;
+  if((c.date||c.month) && !(v instanceof Date)) return esc(v);
   if(c.date)  return `<span class="mono">${fmtD(v)}</span>`;
   if(c.month) return `<span class="mono">${L(['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][v.getMonth()],
                         ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'][v.getMonth()])} ${NUM(v.getFullYear())}</span>`;
@@ -3794,7 +4257,12 @@ function rpCell(c, v){
   if(c.pct)   return `<span class="mono">${NUM(c.dec?Number(v).toFixed(1):Math.round(v))}%</span>`;
   if(c.dec)   return `<span class="mono">${NUM(Number(v).toFixed(1))}</span>`;
   if(c.num)   return `<span class="mono">${typeof v==='number'?NUM(v.toLocaleString('en-US')):NUM(v)}</span>`;
-  return v;
+  /* SEC-02. Everything above is a number or a date this file formatted. This is
+     the fall-through, and it is the only branch that carries a string somebody
+     else wrote — a supplier name, a unit type, a note off an invoice. It
+     returned that string into a table cell unchanged. The 8 September audit put
+     inert markup through it and watched it survive. */
+  return esc(v);
 }
 function rpTable(cols, rows, foot){
   if(!rows || !rows.length) return '';
@@ -3903,7 +4371,18 @@ function rpExport(id){
   const esc = v => {
     if(v === null || v === undefined) return '';
     if(v instanceof Date) return v.toISOString().slice(0,10);
-    const s = String(v).replace(/<[^>]*>/g,'');
+    let s = String(v).replace(/<[^>]*>/g,'');
+    /* DATA-03. Commas and quotes were escaped; formulas were not. A field that
+       begins = + - @ (or a tab or carriage return before one) is executed by
+       Excel, Numbers and LibreOffice when the file is opened — a supplier name
+       or a resident's own request title is enough to carry it. Prefixing an
+       apostrophe is the documented neutralisation: the cell shows the text and
+       the sheet does not evaluate it.
+
+       Leading whitespace and control characters are stripped first, because
+       "  =cmd()" is the same attack wearing a space. */
+    s = s.replace(/^[\s\u0000-\u001F\u200B-\u200F\u2028\u2029]+/, '');
+    if(/^[=+\-@]/.test(s)) s = "'" + s;
     return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
   };
   const sheet = (title, cols, rows, foot) => {
@@ -4101,8 +4580,12 @@ function finDetail(uid){
  const jobs=DONE.filter(w=>w.unit===uid).sort((a,b)=>b.raised-a.raised);
  const openJobs=OPEN.filter(w=>w.unit===uid);
  const instRow=x=>{
-  const st = !x.billed ? ['p-neut','f_notdue',null]
-    : x.paid ? ['p-good','f_paid','check']
+  /* APP-04. Paid is asked FIRST. This tested not-billed first, so eleven
+     instalments with a payment date on file were labelled "Not yet due" —
+     a settled row reported as unbilled. What has happened outranks what
+     the calendar expected. */
+  const st = x.paid ? ['p-good','f_paid','check']
+    : !x.billed ? ['p-neut','f_notdue',null]
     : ((TODAY-x.due)/864e5>0 ? ['p-crit','f_overdue','alert'] : ['p-warn','f_due','clock']);
   return `<tr>
    <td class="strong">${T('f_instal')} ${NUM(x.q)}</td>
@@ -4176,7 +4659,7 @@ function pgAnn(){
  <div class="card"><div class="tw"><table>
   <thead><tr><th>${T('title_en')}</th><th>${T('audience')}</th><th>${L('Languages','اللغات')}</th><th>${T('status')}</th><th>${T('published')}</th></tr></thead>
   <tbody>${ANNS.map(a=>`<tr>
-   <td><div class="strong">${a.en}</div>${a.ar?`<div class="sub2">${a.ar}</div>`:''}</td>
+   <td><div class="strong">${esc(a.en)}</div>${a.ar?`<div class="sub2">${esc(a.ar)}</div>`:''}</td>
    <td>${a.aud==='all'?T('allres'):L('Floor 3','الدور الثالث')}</td>
    <td>${a.ok?`<span class="pill p-good">${I('check',12,2.1)}${T('complete')}</span>`:`<span class="pill p-crit">${I('alert',12,2.1)}${T('incomplete')}</span>`}</td>
    <td>${a.st==='published'?`<span class="pill p-good">${I('check',12,2.1)}${T('published')}</span>`
@@ -4689,7 +5172,10 @@ async function contactSave(id){
   if(!v('cNameEn')) return toast(T('crm_need_name'));
   try{
     /* Stored canonically — the database requires digits only, so the same
-       person cannot arrive twice as "1012345678" and "1012 345 678". Upper-
+       person cannot arrive twice as one string with spaces and one without.
+       No worked example is given here on purpose: an ID-shaped literal in a
+       comment stops every scanner looking for a leaked identity number, and a
+       check that cries wolf gets switched off. Upper-
        cased for passports, which are alphanumeric. */
     const idNo = v('cIdNo').replace(/[\s-]/g,'').toUpperCase() || null;
     const idType = $('cIdType').value;
@@ -5308,10 +5794,10 @@ async function roleToggle(id, on){
 }
 
 const SB = (function(){
-  const BASE = 'https://oaxasgfdfxrkbllzwvna.supabase.co';
-  const KEY  = 'sb_publishable_WRR6q8UHhW7gIWp6NdP50w_rO6eDRVU';
-  const SKEY = 'almaria.sb.session.v1';
-  const TOPIC = 'realtime:almaria';
+  const BASE = ENV.base;
+  const KEY  = ENV.key;
+  const SKEY = ENV.prefix + '.sb.session.v1';
+  const TOPIC = 'realtime:' + ENV.prefix;
 
   let sess = null;
   try{ sess = JSON.parse(localStorage.getItem(SKEY) || 'null'); }catch(e){ sess = null; }
@@ -5571,7 +6057,13 @@ const LIVE = (function(){
       end:   l ? l.ends_on   : null,
       paid:   rows.filter(x =>  x.paid).reduce((a,x)=>a + N(x.amount), 0),
       remain: rows.filter(x => !x.paid).reduce((a,x)=>a + N(x.amount), 0),
-      inst: rows.map(x => ({n:x.seq, amt:N(x.amount), due:x.due_on, paid:!!x.paid}))
+      /* DATA-07. This kept amount, due date and the paid flag and dropped
+         paid_on and receipt_ref on the floor. Downstream then rebuilt "Paid on"
+         from the DUE date, so the console displayed a payment date that was not
+         the payment date, and no receipt at all. A fabricated date is worse
+         than a blank one: nobody ever queries it. */
+      inst: rows.map(x => ({n:x.seq, amt:N(x.amount), due:x.due_on, paid:!!x.paid,
+                            on:x.paid_on || null, ref:x.receipt_ref || null}))
     };
   });
 
@@ -5664,55 +6156,173 @@ const LIVE = (function(){
   const nudge = () => { clearTimeout(timer); timer = setTimeout(reload, 400); };
 
   /* -------------------------------- write -------------------------------- */
-  async function saveLease(unit, a){
-    const patch = {};
-    if(a.start) patch.starts_on      = a.start;
-    if(a.end)   patch.ends_on        = a.end;
-    if(a.value) patch.contract_value = a.value;
-    let lid = leaseOf[unit];
-    if(lid){
-      await SB.upd('leases', 'id=eq.' + lid, patch);
-    }else{
-      const r = await SB.ins('leases', Object.assign({unit_id:unit, status:'active'}, patch));
-      lid = r && r[0] && r[0].id;
-      leaseOf[unit] = lid;
-      await SB.upd('units', 'id=eq.' + encodeURIComponent(unit), {occupied:true});
+  /* DATA-01. What this code used to do, in both saveLease and saveRegister:
+     DELETE every instalment on the lease, then insert a fresh unpaid schedule.
+     Correcting a typo in an end date erased every paid flag, paid_on and
+     receipt_ref on that lease — silently, with no error and nothing to restore
+     from. Twenty leases here carry 56 settled instalments.
+
+     Both paths now go through one Postgres function, save_lease_schedule, which
+     is a single transaction, reconciles by instalment number instead of
+     replacing, and cannot delete or rewrite a paid row — the instalments table
+     itself refuses that now, so a hand-typed statement in the SQL editor is
+     refused too. It runs as a dry run first and returns exactly the receipt the
+     real run would produce; anything it cannot do quietly is reported as a
+     conflict and the operator decides. DATA-02 rides along: the schedule dates
+     come from add_months_clamped, so 31 January plus one month is 28 February
+     rather than 3 March. */
+
+  function ScheduleConflict(receipt, unit){
+    const e = new Error('schedule conflicts with payment history');
+    e.name = 'ScheduleConflict'; e.receipt = receipt; e.unit = unit;
+    return e;
+  }
+
+  /* The arguments for one schedule, built in exactly one place. The import and
+     the single-lease editor both go through here, so a change to the shape
+     cannot reach one path and miss the other — which is how the import came to
+     carry a different notion of a write from the editor beside it. */
+  function scheduleArgs(unit, a){
+    return {
+      p_unit_id:        unit,
+      p_starts_on:      a.start || null,
+      p_ends_on:        a.end   || null,
+      p_contract_value: (a.value === 0 || a.value) ? a.value : null,
+      p_count:          a.n     || null,
+      p_frequency:      a.freq  || null,
+      p_rows:           a.rows  || null,
+      p_dry_run:        true
+    };
+  }
+
+  /* One call, both phases. Returns the receipt of whatever actually ran. */
+  async function writeSchedule(unit, a, opts){
+    opts = opts || {};
+    const args = scheduleArgs(unit, a);
+    const dry = await SB.rpc('save_lease_schedule', args);
+    const conflicts = (dry && dry.conflicts) || [];
+    if(conflicts.length && !opts.force){
+      /* The exact arguments are carried with the held receipt, so that saying
+         "apply" later applies THIS change and not a re-derived guess at it. */
+      try{ Object.defineProperty(dry, '_args', {value:args, enumerable:false}); }
+      catch(e){ dry._args = args; }
+      throw ScheduleConflict(dry, unit);
     }
-    if(a.value && a.n && a.start && lid){
-      await SB.del('instalments', 'lease_id=eq.' + lid);
-      const rows = []; let left = a.value;
-      for(let i = 0; i < a.n; i++){
-        const d = new Date(a.start); d.setMonth(d.getMonth() + i);
-        const amt = i === a.n - 1 ? left : Math.round(a.value / a.n);
-        left -= amt;
-        rows.push({lease_id:lid, seq:i+1, amount:amt, due_on:d.toISOString().slice(0,10), paid:false});
-      }
-      await SB.ins('instalments', rows);
-    }
+    args.p_dry_run = false;
+    return await SB.rpc('save_lease_schedule', args);
+  }
+
+  /* Apply a receipt the operator has read and accepted. Paid rows are still
+     untouchable — the function and the table both refuse — so this confirms the
+     unpaid side of the change, never an overwrite of a payment. */
+  async function applyHeld(receipt){
+    if(!receipt || !receipt._args) throw new Error('nothing to apply');
+    const args = Object.assign({}, receipt._args, {p_dry_run:false});
+    const r = await SB.rpc('save_lease_schedule', args);
+    if(r && r.lease_id && r.unit) leaseOf[r.unit] = r.lease_id;
+    nudge();
+    return r;
+  }
+
+  async function saveLease(unit, a, opts){
+    const r = await writeSchedule(unit, a, opts);
+    if(r && r.lease_id) leaseOf[unit] = r.lease_id;
+    return r;
   }
 
   /* A register imported from the workbook becomes the register in Postgres.
-     Units are upserted, the active lease per unit is replaced, and its
-     schedule is rewritten — so the import stays the one-way door it already is. */
-  async function saveRegister(rows){
-    await SB.ups('units', rows.map(r => ({
-      id:r.id, floor:r.floor, type:r.type, area:r.area, occupied:!!r.let })), 'id');
+     The import supplies its own instalments, including which of them are
+     settled — but a paid flag only settles a row when it names the receipt it
+     was paid against, and when it does not, the receipt says so per instalment
+     instead of the flag disappearing without a word.
+
+     DATA-01, the half that survived 8 September. This function used to upsert
+     every unit FIRST — unconditionally, before a single conflict had been
+     looked for — and then apply each lease as it went, keeping the ones that
+     were clean. A disagreement on the thirtieth flat therefore left the first
+     twenty-nine written, while the reconciliation panel told the operator, in
+     both languages, that nothing had been written. It had.
+
+     Applying part of an import is wrong on its own terms, not just to describe.
+     The preview the operator approves is about the WHOLE file: occupancy,
+     contracted, billed, collected, outstanding. An arbitrary prefix of it
+     leaves a register matching neither the workbook nor what was there before,
+     and makes that preview false as well as the panel.
+
+     So the import is all or nothing. Every schedule is dry-run first and
+     nothing at all is written until every one of them comes back clean, or
+     until the operator has read the conflicts and accepted them. A dry run
+     returns exactly the receipt the real run would produce, which is what makes
+     a decision taken on it a decision about the real thing. */
+  function registerUnitRows(rows){
+    return rows.map(r => ({
+      id:r.id, floor:r.floor, type:r.type, area:r.area, occupied:!!r.let }));
+  }
+  function registerLeaseArgs(rows){
+    const out = [];
     for(const r of rows){
-      if(!r.value && !r.start) continue;
-      let lid = leaseOf[r.id];
-      const patch = {unit_id:r.id, starts_on:r.start || null, ends_on:r.end || null,
-                     contract_value:r.value || null, status:'active'};
-      if(lid) await SB.upd('leases', 'id=eq.' + lid, patch);
-      else{
-        const x = await SB.ins('leases', patch);
-        lid = x && x[0] && x[0].id; leaseOf[r.id] = lid;
-      }
-      if(!lid) continue;
-      await SB.del('instalments', 'lease_id=eq.' + lid);
-      if((r.inst || []).length)
-        await SB.ins('instalments', r.inst.map(x => ({
-          lease_id:lid, seq:x.n, amount:x.amt, due_on:x.due, paid:!!x.paid })));
+      if(!r.value && !r.start && !(r.inst || []).length) continue;
+      out.push(scheduleArgs(r.id, {
+        start: r.start || null, end: r.end || null,
+        value: r.value || null, n: (r.inst || []).length || null,
+        rows: (r.inst || []).length ? r.inst.map(x => ({
+          seq:x.n, amount:x.amt, due_on:x.due,
+          paid:!!x.paid, paid_on:x.on || null, receipt_ref:x.ref || null })) : null
+      }));
     }
+    return out;
+  }
+
+  /* Phase two, and the only place in the import that writes anything. Reached
+     because the dry run was clean, or because the operator read what it found
+     and accepted it. Paid rows are still untouchable throughout: the function
+     and the table both refuse. */
+  async function commitRegister(plan){
+    await SB.ups('units', plan.units, 'id');
+    const receipts = [];
+    for(const args of plan.leases){
+      const got = await SB.rpc('save_lease_schedule',
+                               Object.assign({}, args, {p_dry_run:false}));
+      if(got && got.lease_id && got.unit) leaseOf[got.unit] = got.lease_id;
+      receipts.push(got);
+    }
+    nudge();
+    return receipts;
+  }
+
+  async function saveRegister(rows, opts){
+    opts = opts || {};
+    /* `rows` rides along so that accepting a held import can repaint the screen
+       from the same file the database just took, rather than from whatever the
+       shared record happens to hold by then. */
+    const plan = {units: registerUnitRows(rows), leases: registerLeaseArgs(rows), rows: rows};
+    if(!opts.force){
+      const held = [];
+      for(const args of plan.leases){
+        const dry = await SB.rpc('save_lease_schedule',
+                                 Object.assign({}, args, {p_dry_run:true}));
+        if(dry && (dry.conflicts || []).length) held.push(dry);
+      }
+      if(held.length){
+        const e = new Error('register held for review');
+        e.name = 'ScheduleConflictBatch';
+        e.receipts = held;
+        /* Empty, and now true. This used to carry the flats already written. */
+        e.applied = [];
+        /* Carried so that accepting applies THIS import rather than a
+           re-derived guess at it — the same reason a single held lease carries
+           its own arguments. */
+        e.plan = plan;
+        throw e;
+      }
+    }
+    return await commitRegister(plan);
+  }
+
+  /* The whole import, accepted. One button, because the import was one act. */
+  async function applyRegisterHeld(batch){
+    if(!batch || !batch.plan) throw new Error('nothing to apply');
+    return await commitRegister(batch.plan);
   }
 
   async function push(before, after){
@@ -5738,6 +6348,11 @@ const LIVE = (function(){
       if((before.newWO || []).some(x => x.id === w.id)) return;
       jobs.push(SB.ins('work_orders', {
         id:w.id, unit_id:w.unit, category:w.cat, description:w.desc,
+        /* APP-02. The resident app collects a title and a preferred visit
+           window as well as the description; both were being dropped on the
+           floor here. Sent as null rather than '' when absent, so "not stated"
+           and "stated as empty" stay different things. */
+        title: w.title || null, visit_window: w.visit || null,
         priority:w.pri || 'med', channel:'app', status:'submitted', raised_at:w.raised}));
     });
 
@@ -5795,17 +6410,49 @@ const LIVE = (function(){
 
     const out = await Promise.allSettled(jobs);
     const bad = out.filter(r => r.status === 'rejected');
-    if(bad.length){
-      lastErr = bad[0].reason;
-      const m = (bad[0].reason && bad[0].reason.message) || 'write failed';
+
+    /* A schedule that disagrees with money already received is not a failure —
+       it is a question, and it is the operator's to answer. It gets the
+       reconciliation panel, not a toast that scrolls away in three seconds. */
+    const conflicted = bad.map(r => r.reason).filter(e =>
+      e && (e.name === 'ScheduleConflict' || e.name === 'ScheduleConflictBatch'));
+    const failed = bad.map(r => r.reason).filter(e =>
+      !e || (e.name !== 'ScheduleConflict' && e.name !== 'ScheduleConflictBatch'));
+
+    /* A held import is kept whole rather than flattened into the single-lease
+       list. The two are answered differently — one flat can be accepted on its
+       own; an import is accepted entire or not at all — and a panel that offered
+       "apply" per flat on an import would reintroduce the partial write this
+       release removed, one press at a time. */
+    let batch = null;
+    if(conflicted.length && typeof openReconcile === 'function'){
+      const receipts = [];
+      conflicted.forEach(e => {
+        if(e.name === 'ScheduleConflictBatch') batch = e;
+        else receipts.push(e.receipt);
+      });
+      openReconcile(receipts, batch);
+    }
+
+    if(failed.length){
+      lastErr = failed[0];
+      const m = (failed[0] && failed[0].message) || 'write failed';
       if(typeof toast === 'function')
         toast(L('The database refused that change: ' + m,
                 'رفضت قاعدة البيانات هذا التغيير: ' + m));
-    }else{
+    }else if(!conflicted.length){
       lastErr = null;
     }
     nudge();
+    /* What actually happened, for a caller that needs to know before it speaks.
+       importApply used to announce "Register replaced" while this was still in
+       flight, so the sentence appeared over a database that had refused it. */
+    return {held: conflicted.length, failed: failed.length, batch: !!batch};
   }
+
+  /* The most recent push, so a caller can wait for its outcome. Writes stay
+     fire-and-forget for every screen that does not need to say what happened. */
+  let settled = Promise.resolve(null);
 
   function commit(mutate, who){
     const before = JSON.parse(JSON.stringify(state || BLANK()));
@@ -5813,7 +6460,7 @@ const LIVE = (function(){
     state.rev = (state.rev || 0) + 1;
     state.at  = Date.now();
     state.by  = who || '';
-    push(before, state);
+    settled = push(before, state);
     return state;
   }
 
@@ -5827,6 +6474,7 @@ const LIVE = (function(){
     LINK.reset    = () => state;
     LINK.healthy  = () => !lastErr;
     LINK.live     = () => true;
+    LINK.settled  = () => settled;
     DOCSTORE.mode = 'supabase';
     DOCSTORE.put  = async file => {
       const stamp = new Date().toISOString().replace(/[-:T.]/g,'').slice(0,14);
@@ -5838,7 +6486,8 @@ const LIVE = (function(){
   }
 
   return {start, reload, on: () => !!state && LINK.live(), err: () => lastErr,
-          rt: () => SB.rtState(), signedInAs: () => SB.email()};
+          rt: () => SB.rtState(), signedInAs: () => SB.email(),
+          applyHeld, applyRegisterHeld};
 })();
 
 
@@ -5915,11 +6564,34 @@ async function sbDoSignIn(){
   }
 }
 
+/* SEC-03. Signing out cleared THIS tab and left every other open console tab
+   showing Connected, the roster, and live request and cost data — reproduced by
+   the 9 September audit with a real admin session. A second tab left open on a
+   shared desk is the ordinary case in an office, not an edge one.
+
+   The sign-out is announced through storage, which every tab on this origin
+   sees, and each one reloads to the signed-out state. The key is namespaced by
+   environment, so signing out of staging does not disturb production and vice
+   versa. */
+const AUTH_EVENT = ENV.prefix + '.auth.event';
+
 function sbDoSignOut(){
-  SB.signOut();
+  try{ SB.signOut(); }catch(e){}
+  try{ localStorage.setItem(AUTH_EVENT, 'out:' + Date.now()); }catch(e){}
   closeDrawer();
-  location.reload();
+  location.replace(location.pathname + location.search);
 }
+
+window.addEventListener('storage', function(e){
+  if(e.key === AUTH_EVENT){
+    location.replace(location.pathname + location.search);
+    return;
+  }
+  /* The session disappearing is the same event by another route — a sign-out in
+     a tab that predates this build, or a token cleared by the browser. */
+  if(e.key === ENV.prefix + '.sb.session.v1' && !e.newValue)
+    location.replace(location.pathname + location.search);
+});
 
 /* Replay the imported registers through the console's own invoice path, so
    each record is exactly what the 'Enter a completed job' form produces —
