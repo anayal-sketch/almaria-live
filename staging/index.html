@@ -783,7 +783,15 @@ const D = {
 const T = k => (D[LANG][k] !== undefined ? D[LANG][k] : k);
 const L = (en,ar) => LANG==='en' ? en : ar;
 const NUM = s => LANG==='en' ? String(s) : String(s).replace(/[0-9]/g, d=>'٠١٢٣٤٥٦٧٨٩'[d]);
-const money = n => NUM(n.toLocaleString('en-US')) + ' ' + T('sar');
+/* An amount the database does not hold is not zero, and must not print as a
+   number. This used to throw on null — which is why every caller had been
+   given a fallback to the demo lease's figure instead, and that was far worse
+   than a crash: a real tenant was shown an invented rent as their own. */
+const NONE = () => L('Not recorded', 'غير مسجَّل');
+const money = n => (n === null || n === undefined || n === '' || isNaN(Number(n)))
+  ? NONE() : NUM(Number(n).toLocaleString('en-US')) + ' ' + T('sar');
+/* Any other value the database does not hold. Same rule, same reason. */
+const shown = v => (v === null || v === undefined || v === '') ? NONE() : v;
 
 /* ---------------------------- data ---------------------------- */
 const RESIDENT = {
@@ -915,7 +923,12 @@ const openReqs = () => REQUESTS.filter(r=>['submitted','assigned','progress','ho
 const doneReqs = () => REQUESTS.filter(r=>['done','cancelled'].includes(r.status));
 const statusPill = s => `<span class="pill ${STATUS[s].cls}">${T(STATUS[s].k)}</span>`;
 const priLabel = p => T(p==='high'?'p_high':p==='low'?'p_low':'p_med');
-const rname = () => L(RESIDENT.name_en, RESIDENT.name_ar);
+/* The resident's own name, or null — never a substitute. `rfirst` is the
+   greeting; with no name on file there is no greeting to personalise, and
+   "Welcome back, Yazeed" said to somebody else is the whole defect in one
+   line. Escaped at every site: this is the one field the resident controls. */
+const rname  = () => L(RESIDENT.name_en, RESIDENT.name_ar) || null;
+const rfirst = () => { const n = rname(); return n ? String(n).trim().split(/\s+/)[0] : null; };
 
 function toast(msg){
   const el = $('toast');
@@ -1290,7 +1303,7 @@ function renderTop(){
     bar.innerHTML = `
       <button class="iconbtn" onclick="openDrawer()">${I('menu',24)}</button>
       <div class="grow">
-        <h1 style="font-size:17px">${T('welcome')}${L(',','،')} ${rname().split(' ')[0]}</h1>
+        <h1 style="font-size:17px">${T('welcome')}${rfirst() ? L(',','،') + ' ' + esc(rfirst()) : ''}</h1>
         <div class="sub">${T('hub')}</div>
       </div>
       <div class="avatar">${RESIDENT.initials}</div>`;
@@ -1403,13 +1416,19 @@ function viewHome(){
 
   <div class="sect-row">
     <h2>${T('latest')}</h2>
-    <button class="link" onclick="go('com')">${T('viewAll')}</button>
+    ${POSTS.length ? `<button class="link" onclick="go('com')">${T('viewAll')}</button>` : ''}
   </div>
+  ${POSTS.length ? '' : `<div class="card"><div class="bd muted">${
+      L('No notices from the building management yet.','لا توجد إعلانات من إدارة المبنى بعد.')}</div></div>`}
   <!-- APP-08. This was sheetPost(1) — a hardcoded 1 — while the card above it
        renders POSTS[0]. With a live feed the two are different posts, so
        tapping the notice you can see opened a different one. The id is bound
-       and quoted, because live ids are strings prefixed with L. -->
-  <div class="post" onclick="sheetPost('${esc(String(p.id))}')">
+       and quoted, because live ids are strings prefixed with L.
+
+       And p may be undefined: with the demonstration posts cleared on sign-in
+       (see LIVE.paint) a building that has published nothing has an empty feed,
+       and this read p.id off it and took the whole Home screen down. -->
+  ${!p ? '' : `<div class="post" onclick="sheetPost('${esc(String(p.id))}')">
     <div class="img" style="background:linear-gradient(135deg,${cssColour(p.tone[0])},${cssColour(p.tone[1])});color:rgba(255,255,255,.9)">
       ${I(p.ico,46,1.4)}
       <span class="tag">${T(p.tag)}</span>
@@ -1419,7 +1438,7 @@ function viewHome(){
       <div class="ex">${L(p.b_en,p.b_ar).slice(0,110)}…</div>
       <div class="meta"><span>${L('Building management','إدارة المبنى')}</span><span>${esc(L(p.d_en,p.d_ar))}</span></div>
     </div>
-  </div>
+  </div>`}
 
   <div class="sect">${T('amenities')}</div>
   <div class="grid2">
@@ -1523,7 +1542,7 @@ function formHTML(){
 
   <div class="fgroup">
     <label class="f">${T('f_unit')}</label>
-    <input class="inp" value="${L('Apartment','شقة')} ${esc(RESIDENT.unit)} · ${esc(L(RESIDENT.type_en,RESIDENT.type_ar))}" readonly style="background:#F1F3F5;color:var(--muted)">
+    <input class="inp" value="${L('Apartment','شقة')} ${esc(shown(RESIDENT.unit))} · ${esc(shown(L(RESIDENT.type_en,RESIDENT.type_ar)))}" readonly style="background:#F1F3F5;color:var(--muted)">
   </div>
 
   <div class="fgroup">
@@ -1709,7 +1728,10 @@ function viewPayments(){
   const paidCount = LEASE.rows.filter(r=>r.st==='paid').length;
   const paidAmt   = LEASE.rows.filter(r=>r.st==='paid').reduce((a,r)=>a+r.amt,0);
   const schedTot  = LEASE.rows.reduce((a,r)=>a+r.amt,0);
-  const pct = Math.round(paidAmt/schedTot*100);
+  /* An empty schedule is not a divide-by-zero, it is a lease with no
+     instalments recorded — which is what a real tenancy looks like before the
+     office has entered one. This printed NaN%. */
+  const pct = schedTot > 0 ? Math.round(paidAmt/schedTot*100) : 0;
   const pillFor = st => st==='paid' ? `<span class="pill g">${T('paid')}</span>`
     : st==='due' ? `<span class="pill a">${T('due')}</span>` : `<span class="pill n">${T('upcoming')}</span>`;
 
@@ -1717,10 +1739,10 @@ function viewPayments(){
   <div class="leasecard">
     <div class="lbl">${T('annualRent')}</div>
     <div class="big">${money(LEASE.annual)}</div>
-    <div style="font-size:12.5px;opacity:.8;font-weight:700">${L('Apartment','شقة')} ${esc(RESIDENT.unit)} · ${esc(L(RESIDENT.type_en,RESIDENT.type_ar))}</div>
+    <div style="font-size:12.5px;opacity:.8;font-weight:700">${L('Apartment','شقة')} ${esc(shown(RESIDENT.unit))} · ${esc(shown(L(RESIDENT.type_en,RESIDENT.type_ar)))}</div>
     <div class="mk">${MARK('100%',34)}</div>
     <div class="lease-grid">
-      <div><div class="lbl">${T('leaseTerm')}</div><div class="v">${L(LEASE.term_en,LEASE.term_ar)}</div></div>
+      <div><div class="lbl">${T('leaseTerm')}</div><div class="v">${esc(shown(L(LEASE.term_en,LEASE.term_ar)))}</div></div>
       <div><div class="lbl">${T('paidToDate')}</div><div class="v">${money(paidAmt)}</div></div>
     </div>
   </div>
@@ -1804,9 +1826,9 @@ function viewProfile(){
   <div class="phead">
     <div class="pic">${esc(RESIDENT.initials)}</div>
     <div class="nm">${esc(rname())}</div>
-    <div class="un">${L('Apartment','شقة')} ${esc(RESIDENT.unit)} · ${esc(L(RESIDENT.type_en,RESIDENT.type_ar))}</div>
+    <div class="un">${L('Apartment','شقة')} ${esc(shown(RESIDENT.unit))} · ${esc(shown(L(RESIDENT.type_en,RESIDENT.type_ar)))}</div>
     <div class="split">
-      <div><div class="k">${T('joinDate')}</div><div class="v">${L(RESIDENT.since_en,RESIDENT.since_ar)}</div></div>
+      <div><div class="k">${T('joinDate')}</div><div class="v">${esc(shown(L(RESIDENT.since_en,RESIDENT.since_ar)))}</div></div>
       <div><div class="k">${T('lastLogin')}</div><div class="v">${L(RESIDENT.last_en,RESIDENT.last_ar)}</div></div>
     </div>
   </div>
@@ -1816,8 +1838,8 @@ function viewProfile(){
       <span style="color:#A8811A">${I('shield',20)}</span>
       <div class="grow" style="font-size:15.5px;font-weight:800">${T('prof_info')}</div>
     </div>
-    <div class="kv"><div class="k">${T('prof_email')}</div><div class="v" dir="ltr" style="text-align:${LANG==='ar'?'right':'left'}">${esc(RESIDENT.email)}</div></div>
-    <div class="kv"><div class="k">${T('prof_phone')}</div><div class="v" dir="ltr" style="text-align:${LANG==='ar'?'right':'left'}">${esc(RESIDENT.phone)}</div></div>
+    <div class="kv"><div class="k">${T('prof_email')}</div><div class="v" dir="ltr" style="text-align:${LANG==='ar'?'right':'left'}">${esc(shown(RESIDENT.email))}</div></div>
+    <div class="kv"><div class="k">${T('prof_phone')}</div><div class="v" dir="ltr" style="text-align:${LANG==='ar'?'right':'left'}">${esc(shown(RESIDENT.phone))}</div></div>
     <div class="kv"><div class="k">${T('prof_unit')}</div><div class="v">${L('Apartment','شقة')} ${esc(RESIDENT.unit)} · ${L('Floor','الدور')} ${NUM(3)}</div></div>
     <div class="note">
       <span style="color:#A8811A;flex:none">${I('check',20)}</span>
@@ -2180,22 +2202,68 @@ const LIVE = (function(){
     return {me: me && me[0], lease: leases && leases[0], wos, anns};
   }
 
+  /* The demonstration tenant and their lease, erased. Called at the top of
+     every paint, so a value can only reach the screen by coming back out of
+     the database on this pass. `initials` is a string because it is rendered
+     into an avatar rather than through `shown()`. */
+  function blankResident(){
+    RESIDENT.name_en = null;  RESIDENT.name_ar = null;
+    RESIDENT.email   = null;  RESIDENT.phone   = null;
+    RESIDENT.unit    = null;  RESIDENT.initials = '';
+    RESIDENT.type_en = null;  RESIDENT.type_ar = null;
+    RESIDENT.since_en = null; RESIDENT.since_ar = null;
+    RESIDENT.last_en = null;  RESIDENT.last_ar = null;
+  }
+  function blankLease(){
+    LEASE.annual = null; LEASE.inst = null;
+    LEASE.term_en = null; LEASE.term_ar = null;
+    LEASE.rows = [];
+  }
+
   function paint(d){
     if(!d.lease) throw new Error('no active tenancy is attached to this account');
     myLease = d.lease;
     const u = d.lease.units || {};
 
+    /* Blank the demonstration person BEFORE filling anything in.
+
+       This block used to read `RESIDENT.phone = d.me.phone || RESIDENT.phone`,
+       field by field, so every value the database did not supply kept the
+       invented one — and the invented one is a specific fictional tenant of
+       flat B-009 with a lease of their own. A real resident whose record had no
+       phone number was shown the demonstration number as theirs. One whose
+       contract value is not recorded — and one unit's deliberately is not,
+       because its contract disagrees with itself between numerals and words —
+       would have been shown the fictional tenant's annual rent, a figure
+       belonging to nobody, on the screen where they check what they owe.
+
+       (The figures themselves are deliberately not written here. SEC-01: the
+       last leak on this project was a real instalment amount inside a code
+       comment, and this file is served to anyone.)
+
+       Blanking first inverts the failure: a field the database does not answer
+       for is absent, and absent renders as "Not recorded". Adding a field to
+       the fixture can no longer leak it into a real session, because the
+       fixture is gone by the time anything is read. */
+    blankResident();
+    blankLease();
+
     if(d.me){
-      RESIDENT.name_en  = d.me.name_en || RESIDENT.name_en;
-      RESIDENT.name_ar  = d.me.name_ar || d.me.name_en || RESIDENT.name_ar;
-      RESIDENT.initials = (RESIDENT.name_en || '').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();
-      RESIDENT.phone    = d.me.phone || RESIDENT.phone;
+      RESIDENT.name_en  = d.me.name_en || null;
+      RESIDENT.name_ar  = d.me.name_ar || d.me.name_en || null;
+      RESIDENT.phone    = d.me.phone   || null;
     }
-    RESIDENT.email = SB.email() || RESIDENT.email;
-    RESIDENT.unit  = d.lease.unit_id;
+    RESIDENT.email = SB.email() || null;
+    RESIDENT.unit  = d.lease.unit_id || null;
+    /* Two real letters, from the name if there is one and otherwise from the
+       flat. Both are the resident's own; neither is anybody else's. */
+    RESIDENT.initials = (RESIDENT.name_en || RESIDENT.name_ar)
+      ? String(RESIDENT.name_en || RESIDENT.name_ar).trim().split(/\s+/)
+          .map(x => x[0]).join('').slice(0, 2).toUpperCase()
+      : String(RESIDENT.unit || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 2).toUpperCase();
     if(u.type){
       const beds = parseInt(u.type, 10) || 1;
-      RESIDENT.type_en = beds + (beds === 1 ? ' Bedroom' : ' Bedroom');
+      RESIDENT.type_en = beds + ' Bedroom';
       RESIDENT.type_ar = beds === 1 ? 'غرفة نوم' : beds === 2 ? 'غرفتان نوم' : NUM(beds) + ' غرف نوم';
     }
     if(d.lease.starts_on){
@@ -2206,8 +2274,12 @@ const LIVE = (function(){
 
     /* ---- the schedule, as the database holds it ---- */
     const rows = (d.lease.instalments || []).slice().sort((a,b)=>a.seq-b.seq);
-    LEASE.annual = N(d.lease.contract_value) || LEASE.annual;
-    LEASE.inst   = rows.length || LEASE.inst;
+    /* No `||`. A contract value the database holds as null is not recorded,
+       and a schedule of zero instalments is a schedule of zero instalments —
+       both are facts about this tenancy, and both used to be replaced by the
+       demonstration lease's own figures. */
+    LEASE.annual = N(d.lease.contract_value);
+    LEASE.inst   = rows.length;
     if(d.lease.starts_on && d.lease.ends_on){
       const s = new Date(d.lease.starts_on), e = new Date(d.lease.ends_on);
       LEASE.term_en = `${dEN(s)} – ${dEN(e)}`;
@@ -2248,7 +2320,13 @@ const LIVE = (function(){
     });
 
     /* ---- what the office has published ---- */
-    for(let i = POSTS.length - 1; i >= 0; i--) if(POSTS[i].linkId) POSTS.splice(i, 1);
+    /* This removed only the posts a PREVIOUS pass had added — the ones with a
+       linkId — and left the five hardcoded demonstration announcements in
+       place. So a signed-in resident read the office's real notices
+       interleaved with invented ones, in the same feed, in the same style,
+       with nothing to tell them apart. Everything goes; only what the office
+       published comes back. */
+    POSTS.length = 0;
     d.anns.forEach(a => {
       const at = a.published_at ? new Date(a.published_at) : new Date();
       POSTS.unshift({
