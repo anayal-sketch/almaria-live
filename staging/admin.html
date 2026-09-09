@@ -234,10 +234,46 @@ label.f{display:block;font-size:11.5px;font-weight:800;color:var(--ink-2);margin
   font-size:12px;font-weight:700;color:var(--gold-ink);display:flex;gap:9px;align-items:center;margin-bottom:16px
 }
 html[dir="rtl"] .flipi{transform:scaleX(-1)}
+/* MOB-01. Below 900px this was `.side{display:none}` and nothing else — the
+   sidebar is the console's only navigation, so on a phone there was no way to
+   leave the page you landed on. Staff use phones; that is not a degraded
+   experience, it is a dead end.
+
+   The sidebar becomes an off-canvas sheet rather than being replaced by a
+   second, cut-down navigation. One panel, built by one renderNav from one
+   NAVDEF: a destination added later cannot appear on the desktop and go missing
+   on the phone, and the role gates that hide Administration keep working
+   without being written twice. */
+.menubtn{
+  display:none; border:1px solid var(--line); background:#fff; border-radius:8px;
+  padding:8px 10px; color:var(--ink-2); cursor:pointer; align-items:center; flex:none
+}
+.menubtn:hover{border-color:var(--teal-600); color:var(--teal)}
+.navscrim{display:none}
 @media (max-width:900px){
   body{overflow:auto}
-  .side{display:none}
   .main{height:auto}
+  .side{
+    position:fixed; top:0; bottom:0; inset-inline-start:0; z-index:70;
+    height:auto; transform:translateX(-100%);
+    transition:transform .22s ease; box-shadow:0 0 40px rgba(0,0,0,.35)
+  }
+  /* The environment banner is pinned to the bottom of the viewport, so the
+     sheet stops above it rather than running underneath it. */
+  html.has-envbar .side{bottom:var(--envbar-h,32px)}
+  html[dir="rtl"] .side{transform:translateX(100%)}
+  body.navopen .side{transform:none}
+  .navscrim{
+    display:block; position:fixed; inset:0; background:rgba(0,41,59,.44); z-index:60;
+    opacity:0; pointer-events:none; transition:opacity .22s ease; border:0
+  }
+  body.navopen .navscrim{opacity:1; pointer-events:auto}
+  .menubtn{display:flex}
+  .top{padding:12px 14px; gap:10px}
+  .scroll{padding:16px 14px 40px}
+}
+@media (prefers-reduced-motion:reduce){
+  .side, .navscrim{transition:none}
 }
 
 .linkchip{text-decoration:none;display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;
@@ -262,8 +298,15 @@ tr.fromapp td:first-child::after{content:'';display:inline-block;width:6px;heigh
   <div class="foot" id="sideFoot"></div>
 </aside>
 
+<button class="navscrim" id="navscrim" type="button" tabindex="-1" aria-hidden="true" onclick="navClose()"></button>
+
 <div class="main">
   <header class="top">
+    <button class="menubtn" id="menuBtn" type="button" onclick="navToggle()"
+            aria-controls="nav" aria-expanded="false">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
     <div>
       <h1 id="pgTitle"></h1>
       <div class="sub" id="pgSub"></div>
@@ -310,6 +353,7 @@ const D={
   m_res:'Residents', m_rep:'Reports', m_ann:'Announcements', m_sup:'Suppliers',
   nav_admin:'Administration',
   m_roles:'Users and roles',
+  m_menu:'Sections',
   t_roles:'Users and roles', s_roles:'Who works here, and what each of them may do',
   ro_banner:'You are signed in as a viewer. You can read everything on these screens and change nothing. That is enforced by the database, not by this page.',
   ro_toast:'A viewer cannot change records. Ask an administrator to change your role.',
@@ -787,6 +831,10 @@ const D={
   rc_kept:'On file', rc_proposed:'In the new schedule',
   rc_apply:'Apply, keeping every payment', rc_cancel:'Leave it as it is',
   rc_applied:'Applied. Payments were kept.',
+  rc_import_lead:'This is an import, so it is applied whole or not at all. {h} of {n} apartments in the file disagree with payments already received. Nothing from this import has been written — not these apartments and not the others.',
+  rc_apply_import:'Apply the whole import, keeping every payment',
+  rc_cancel_import:'Discard this import',
+  rc_applied_import:'Import applied. Payments were kept.',
   rc_none:'No changes were held.',
   rc_summary:'{n} unpaid removed · {u} unpaid changed · {i} added · {k} paid kept',
   rc_k_beyond:'Paid, but the new schedule has no instalment with this number. It stays.',
@@ -824,6 +872,7 @@ const D={
   m_res:'السكان', m_rep:'التقارير', m_ann:'الإعلانات', m_sup:'الموردون',
   nav_admin:'الإدارة',
   m_roles:'المستخدمون والصلاحيات',
+  m_menu:'الأقسام',
   t_roles:'المستخدمون والصلاحيات', s_roles:'من يعمل هنا، وما الذي يستطيع كل واحد فعله',
   ro_banner:'أنت مسجّل الدخول بصلاحية اطّلاع. تستطيع قراءة كل ما في هذه الشاشات ولا تستطيع تعديل شيء. هذا يُطبَّق في قاعدة البيانات لا في هذه الصفحة.',
   ro_toast:'صلاحية الاطّلاع لا تسمح بالتعديل. اطلب من مدير النظام تغيير صلاحيتك.',
@@ -1290,6 +1339,10 @@ const D={
   rc_kept:'المثبت في السجل', rc_proposed:'في الجدول الجديد',
   rc_apply:'طبّق مع الإبقاء على كل دفعة', rc_cancel:'اتركه كما هو',
   rc_applied:'تم التطبيق مع الإبقاء على الدفعات.',
+  rc_import_lead:'هذا استيراد، ويُطبَّق كاملاً أو لا يُطبَّق. {h} من {n} شقة في الملف تخالف مبالغ مقبوضة فعلاً. لم يُكتب أي شيء من هذا الاستيراد — لا هذه الشقق ولا غيرها.',
+  rc_apply_import:'طبّق الاستيراد كاملاً مع الإبقاء على كل دفعة',
+  rc_cancel_import:'تجاهل هذا الاستيراد',
+  rc_applied_import:'تم تطبيق الاستيراد مع الإبقاء على الدفعات.',
   rc_none:'لا تغييرات معلّقة.',
   rc_summary:'{n} غير مسدَّد محذوف · {u} غير مسدَّد معدَّل · {i} مضاف · {k} مسدَّد محفوظ',
   rc_k_beyond:'مسدَّد، ولا يوجد في الجدول الجديد قسط بهذا الرقم. يبقى كما هو.',
@@ -2419,9 +2472,30 @@ function importPreviewHtml(res){
   <div class="note" style="margin-top:10px">${T('imp_apply_note')}</div>`;
 }
 
-function importApply(){
+async function importApply(){
   const res = IMP.result; if(!res) return;
   LINK.commit(s => { s.register = res.rows; s.registerFrom = IMP.file; s.registerAt = Date.now(); }, 'console');
+
+  /* DATA-01. "Register replaced — 37 apartments loaded" used to fire here,
+     unconditionally, while the write was still in flight — so the sentence
+     appeared over a database that had refused it, and the screen was repainted
+     with a register Postgres did not hold. Wait for the outcome first.
+
+     LINK.settled exists only in live mode; offline there is nothing to wait for
+     and nothing that can be refused, so the demo path falls straight through. */
+  let out = null;
+  try{ out = LINK.settled ? await LINK.settled() : null; }
+  catch(e){ console.error('importApply', e); }
+
+  if(out && (out.held || out.failed)){
+    /* The reconciliation panel is open and explains itself. Two things must not
+       happen here: the screen must not be repainted from a file the database
+       has not taken, and the shared record must not keep claiming an import
+       that did not land — the other console in the office reads that record. */
+    LINK.commit(s => { delete s.register; delete s.registerFrom; delete s.registerAt; }, 'console');
+    return;
+  }
+
   applyRegister(res.rows);
   closeDrawer(); render();
   toast(T('imp_done').replace('{n}', NUM(res.rows.length)));
@@ -2496,6 +2570,9 @@ function closeDrawer(){$('drawer').classList.remove('on');$('scrim').classList.r
    nobody is shown is its own bug. Every held write lands here, named, with what
    is on file beside what was proposed, and the operator decides. */
 let HELD = [];
+/* A held import, kept whole. Separate from HELD because it is answered as one
+   act — see saveRegister for why an import is not applied in pieces. */
+let HELD_IMPORT = null;
 function rcWhat(c){
   const k = {paid_row_beyond_new_schedule:'rc_k_beyond', paid_amount_differs:'rc_k_amount',
              paid_due_date_differs:'rc_k_due', paid_flag_without_receipt:'rc_k_noreceipt',
@@ -2510,39 +2587,58 @@ function rcVal(v){
   if(typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) return money(Number(v));
   return esc(String(v));
 }
-function openReconcile(receipts){
+/* One flat's held write, rendered. `buttons` is the caller's, because what may
+   be done about it differs: a single lease edit can be accepted on its own, and
+   a flat inside a held import cannot — the import is accepted whole or not at
+   all, so its sections carry no button of their own. */
+function rcSection(r, buttons){
+  const rows = (r.conflicts || []).map(c => `<tr>
+      <td>${c.seq === undefined ? '—' : esc(String(c.seq))}</td>
+      <td>${rcWhat(c)}</td>
+      <td class="num">${rcVal(c.kept !== undefined ? c.kept
+                        : (c.amount !== undefined ? c.amount
+                        : (c.scheduled !== undefined ? c.scheduled : c.due_on)))}</td>
+      <td class="num">${rcVal(c.proposed !== undefined ? c.proposed
+                        : (c.contract !== undefined ? c.contract : null))}</td>
+      <td>${c.receipt_ref ? esc(String(c.receipt_ref))
+                          : '<span class="muted">' + T('rc_none_ref') + '</span>'}</td>
+    </tr>`).join('');
+  const sum = T('rc_summary').replace('{n}', r.deleted_unpaid || 0)
+                             .replace('{u}', r.updated || 0)
+                             .replace('{i}', r.inserted || 0)
+                             .replace('{k}', r.kept_paid || 0);
+  return `<section style="margin-bottom:22px">
+    <h3 style="margin:0 0 4px">${T('rc_unit')} ${esc(String(r.unit || '—'))}</h3>
+    <p class="muted" style="margin:0 0 10px">${esc(sum)}</p>
+    <div style="overflow-x:auto"><table class="tbl"><thead><tr>
+      <th>${T('rc_seq')}</th><th>${T('rc_what')}</th>
+      <th class="num">${T('rc_kept')}</th><th class="num">${T('rc_proposed')}</th>
+      <th>${T('rc_receipt')}</th></tr></thead><tbody>${rows}</tbody></table></div>
+    ${buttons ? `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">${buttons}</div>` : ''}
+  </section>`;
+}
+function openReconcile(receipts, batch){
   HELD = (receipts || []).filter(Boolean);
-  if(!HELD.length){ toast(T('rc_none')); return; }
-  const body = HELD.map((r, ri) => {
-    const rows = (r.conflicts || []).map(c => `<tr>
-        <td>${c.seq === undefined ? '—' : esc(String(c.seq))}</td>
-        <td>${rcWhat(c)}</td>
-        <td class="num">${rcVal(c.kept !== undefined ? c.kept
-                          : (c.amount !== undefined ? c.amount
-                          : (c.scheduled !== undefined ? c.scheduled : c.due_on)))}</td>
-        <td class="num">${rcVal(c.proposed !== undefined ? c.proposed
-                          : (c.contract !== undefined ? c.contract : null))}</td>
-        <td>${c.receipt_ref ? esc(String(c.receipt_ref))
-                            : '<span class="muted">' + T('rc_none_ref') + '</span>'}</td>
-      </tr>`).join('');
-    const sum = T('rc_summary').replace('{n}', r.deleted_unpaid || 0)
-                               .replace('{u}', r.updated || 0)
-                               .replace('{i}', r.inserted || 0)
-                               .replace('{k}', r.kept_paid || 0);
-    return `<section style="margin-bottom:22px">
-      <h3 style="margin:0 0 4px">${T('rc_unit')} ${esc(String(r.unit || '—'))}</h3>
-      <p class="muted" style="margin:0 0 10px">${esc(sum)}</p>
-      <div style="overflow-x:auto"><table class="tbl"><thead><tr>
-        <th>${T('rc_seq')}</th><th>${T('rc_what')}</th>
-        <th class="num">${T('rc_kept')}</th><th class="num">${T('rc_proposed')}</th>
-        <th>${T('rc_receipt')}</th></tr></thead><tbody>${rows}</tbody></table></div>
-      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
-        <button class="btn primary" onclick="rcApply(${ri})">${T('rc_apply')}</button>
-        <button class="btn" onclick="closeDrawer()">${T('rc_cancel')}</button>
-      </div></section>`;
-  }).join('');
+  HELD_IMPORT = batch || null;
+  if(!HELD.length && !HELD_IMPORT){ toast(T('rc_none')); return; }
+  const singles = HELD.map((r, ri) => rcSection(r,
+      `<button class="btn primary" onclick="rcApply(${ri})">${T('rc_apply')}</button>
+       <button class="btn" onclick="closeDrawer()">${T('rc_cancel')}</button>`)).join('');
+  let imported = '';
+  if(HELD_IMPORT){
+    const held = (HELD_IMPORT.receipts || []).filter(Boolean);
+    const total = ((HELD_IMPORT.plan || {}).leases || []).length;
+    imported = `<div class="warnbox" style="margin:0 0 16px">${I('alert',16,2.2)}<span>${
+        esc(T('rc_import_lead').replace('{h}', NUM(held.length)).replace('{n}', NUM(total)))
+      }</span></div>`
+      + held.map(r => rcSection(r, '')).join('')
+      + `<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+           <button class="btn primary" onclick="rcApplyImport()">${T('rc_apply_import')}</button>
+           <button class="btn" onclick="closeDrawer()">${T('rc_cancel_import')}</button>
+         </div>`;
+  }
   openDrawer(T('rc_title'),
-    `<p class="muted" style="margin:0 0 16px">${T('rc_lead')}</p>${body}`);
+    `<p class="muted" style="margin:0 0 16px">${T('rc_lead')}</p>${singles}${imported}`);
 }
 async function rcApply(i){
   const r = HELD[i];
@@ -2552,6 +2648,24 @@ async function rcApply(i){
     HELD[i] = null;
     closeDrawer();
     toast(T('rc_applied'));
+  }catch(e){
+    toast(L('The database refused that change: ' + (e && e.message || ''),
+            'رفضت قاعدة البيانات هذا التغيير: ' + (e && e.message || '')));
+  }
+}
+/* The whole import, accepted. Until this runs, no part of the import exists in
+   Postgres — not the schedules and not the unit rows either. */
+async function rcApplyImport(){
+  const b = HELD_IMPORT;
+  if(!b) return;
+  try{
+    await LIVE.applyRegisterHeld(b);
+    HELD_IMPORT = null;
+    closeDrawer();
+    if(typeof applyRegister === 'function' && b.plan && b.plan.rows)
+      applyRegister(b.plan.rows);
+    render();
+    toast(T('rc_applied_import'));
   }catch(e){
     toast(L('The database refused that change: ' + (e && e.message || ''),
             'رفضت قاعدة البيانات هذا التغيير: ' + (e && e.message || '')));
@@ -2730,10 +2844,27 @@ function renderNav(){
   return `<button class="${PAGE===id?'on':''}" onclick="go('${id}')">${I(ic,17)}<span>${T(k)}</span>${c?`<span class="cnt">${NUM(c)}</span>`:''}</button>`;
  }).join('');
 }
-function go(p){PAGE=p;closeDrawer();render();$('scroll')&&0;$('page').scrollTop=0;}
+/* MOB-01. The sheet only exists below 900px, but these are unconditional: a
+   narrow desktop window is the same case, and a state that depends on which
+   media query happened to match at the time is a state that gets stuck open. */
+function navSet(open){
+ document.body.classList.toggle('navopen', !!open);
+ const b=$('menuBtn'); if(b) b.setAttribute('aria-expanded', open?'true':'false');
+ const s=$('navscrim'); if(s) s.setAttribute('aria-hidden', open?'false':'true');
+}
+function navToggle(){ navSet(!document.body.classList.contains('navopen')); }
+function navClose(){ navSet(false); }
+document.addEventListener('keydown', e => {
+ if(e.key==='Escape' && document.body.classList.contains('navopen')) navClose();
+});
+
+/* Choosing a destination closes the sheet. Leaving it open over the page the
+   operator just asked for is the commonest way an off-canvas nav goes wrong. */
+function go(p){PAGE=p;closeDrawer();navClose();render();$('page').scrollTop=0;}
 
 function render(){
  renderNav();
+ const mb=$('menuBtn'); if(mb) mb.setAttribute('aria-label', T('m_menu'));
  $('pgTitle').textContent=T('t_'+PAGE);
  $('pgSub').textContent=T('s_'+PAGE);
  $('whoNm').textContent=T('who'); $('whoRl').textContent=T('role');
@@ -5994,10 +6125,12 @@ const LIVE = (function(){
     return e;
   }
 
-  /* One call, both phases. Returns the receipt of whatever actually ran. */
-  async function writeSchedule(unit, a, opts){
-    opts = opts || {};
-    const args = {
+  /* The arguments for one schedule, built in exactly one place. The import and
+     the single-lease editor both go through here, so a change to the shape
+     cannot reach one path and miss the other — which is how the import came to
+     carry a different notion of a write from the editor beside it. */
+  function scheduleArgs(unit, a){
+    return {
       p_unit_id:        unit,
       p_starts_on:      a.start || null,
       p_ends_on:        a.end   || null,
@@ -6007,6 +6140,12 @@ const LIVE = (function(){
       p_rows:           a.rows  || null,
       p_dry_run:        true
     };
+  }
+
+  /* One call, both phases. Returns the receipt of whatever actually ran. */
+  async function writeSchedule(unit, a, opts){
+    opts = opts || {};
+    const args = scheduleArgs(unit, a);
     const dry = await SB.rpc('save_lease_schedule', args);
     const conflicts = (dry && dry.conflicts) || [];
     if(conflicts.length && !opts.force){
@@ -6039,41 +6178,98 @@ const LIVE = (function(){
   }
 
   /* A register imported from the workbook becomes the register in Postgres.
-     Units are upserted; each unit's schedule is then reconciled row by row.
      The import supplies its own instalments, including which of them are
      settled — but a paid flag only settles a row when it names the receipt it
      was paid against, and when it does not, the receipt says so per instalment
-     instead of the flag disappearing without a word. */
-  async function saveRegister(rows, opts){
-    await SB.ups('units', rows.map(r => ({
-      id:r.id, floor:r.floor, type:r.type, area:r.area, occupied:!!r.let })), 'id');
-    const receipts = [], held = [];
+     instead of the flag disappearing without a word.
+
+     DATA-01, the half that survived 8 September. This function used to upsert
+     every unit FIRST — unconditionally, before a single conflict had been
+     looked for — and then apply each lease as it went, keeping the ones that
+     were clean. A disagreement on the thirtieth flat therefore left the first
+     twenty-nine written, while the reconciliation panel told the operator, in
+     both languages, that nothing had been written. It had.
+
+     Applying part of an import is wrong on its own terms, not just to describe.
+     The preview the operator approves is about the WHOLE file: occupancy,
+     contracted, billed, collected, outstanding. An arbitrary prefix of it
+     leaves a register matching neither the workbook nor what was there before,
+     and makes that preview false as well as the panel.
+
+     So the import is all or nothing. Every schedule is dry-run first and
+     nothing at all is written until every one of them comes back clean, or
+     until the operator has read the conflicts and accepted them. A dry run
+     returns exactly the receipt the real run would produce, which is what makes
+     a decision taken on it a decision about the real thing. */
+  function registerUnitRows(rows){
+    return rows.map(r => ({
+      id:r.id, floor:r.floor, type:r.type, area:r.area, occupied:!!r.let }));
+  }
+  function registerLeaseArgs(rows){
+    const out = [];
     for(const r of rows){
       if(!r.value && !r.start && !(r.inst || []).length) continue;
-      const a = {
+      out.push(scheduleArgs(r.id, {
         start: r.start || null, end: r.end || null,
         value: r.value || null, n: (r.inst || []).length || null,
         rows: (r.inst || []).length ? r.inst.map(x => ({
           seq:x.n, amount:x.amt, due_on:x.due,
           paid:!!x.paid, paid_on:x.on || null, receipt_ref:x.ref || null })) : null
-      };
-      try{
-        const got = await saveLease(r.id, a, opts);
-        receipts.push(got);
-      }catch(e){
-        /* One unit's disagreement must not abandon the other thirty-six. Each
-           is its own transaction; the ones that are clean are applied and the
-           ones that are not are collected and shown together. */
-        if(e && e.name === 'ScheduleConflict') held.push(e.receipt);
-        else throw e;
+      }));
+    }
+    return out;
+  }
+
+  /* Phase two, and the only place in the import that writes anything. Reached
+     because the dry run was clean, or because the operator read what it found
+     and accepted it. Paid rows are still untouchable throughout: the function
+     and the table both refuse. */
+  async function commitRegister(plan){
+    await SB.ups('units', plan.units, 'id');
+    const receipts = [];
+    for(const args of plan.leases){
+      const got = await SB.rpc('save_lease_schedule',
+                               Object.assign({}, args, {p_dry_run:false}));
+      if(got && got.lease_id && got.unit) leaseOf[got.unit] = got.lease_id;
+      receipts.push(got);
+    }
+    nudge();
+    return receipts;
+  }
+
+  async function saveRegister(rows, opts){
+    opts = opts || {};
+    /* `rows` rides along so that accepting a held import can repaint the screen
+       from the same file the database just took, rather than from whatever the
+       shared record happens to hold by then. */
+    const plan = {units: registerUnitRows(rows), leases: registerLeaseArgs(rows), rows: rows};
+    if(!opts.force){
+      const held = [];
+      for(const args of plan.leases){
+        const dry = await SB.rpc('save_lease_schedule',
+                                 Object.assign({}, args, {p_dry_run:true}));
+        if(dry && (dry.conflicts || []).length) held.push(dry);
+      }
+      if(held.length){
+        const e = new Error('register held for review');
+        e.name = 'ScheduleConflictBatch';
+        e.receipts = held;
+        /* Empty, and now true. This used to carry the flats already written. */
+        e.applied = [];
+        /* Carried so that accepting applies THIS import rather than a
+           re-derived guess at it — the same reason a single held lease carries
+           its own arguments. */
+        e.plan = plan;
+        throw e;
       }
     }
-    if(held.length){
-      const e = new Error('register held for review');
-      e.name = 'ScheduleConflictBatch'; e.receipts = held; e.applied = receipts;
-      throw e;
-    }
-    return receipts;
+    return await commitRegister(plan);
+  }
+
+  /* The whole import, accepted. One button, because the import was one act. */
+  async function applyRegisterHeld(batch){
+    if(!batch || !batch.plan) throw new Error('nothing to apply');
+    return await commitRegister(batch.plan);
   }
 
   async function push(before, after){
@@ -6170,13 +6366,19 @@ const LIVE = (function(){
     const failed = bad.map(r => r.reason).filter(e =>
       !e || (e.name !== 'ScheduleConflict' && e.name !== 'ScheduleConflictBatch'));
 
+    /* A held import is kept whole rather than flattened into the single-lease
+       list. The two are answered differently — one flat can be accepted on its
+       own; an import is accepted entire or not at all — and a panel that offered
+       "apply" per flat on an import would reintroduce the partial write this
+       release removed, one press at a time. */
+    let batch = null;
     if(conflicted.length && typeof openReconcile === 'function'){
       const receipts = [];
       conflicted.forEach(e => {
-        if(e.name === 'ScheduleConflictBatch') receipts.push.apply(receipts, e.receipts);
+        if(e.name === 'ScheduleConflictBatch') batch = e;
         else receipts.push(e.receipt);
       });
-      openReconcile(receipts);
+      openReconcile(receipts, batch);
     }
 
     if(failed.length){
@@ -6189,7 +6391,15 @@ const LIVE = (function(){
       lastErr = null;
     }
     nudge();
+    /* What actually happened, for a caller that needs to know before it speaks.
+       importApply used to announce "Register replaced" while this was still in
+       flight, so the sentence appeared over a database that had refused it. */
+    return {held: conflicted.length, failed: failed.length, batch: !!batch};
   }
+
+  /* The most recent push, so a caller can wait for its outcome. Writes stay
+     fire-and-forget for every screen that does not need to say what happened. */
+  let settled = Promise.resolve(null);
 
   function commit(mutate, who){
     const before = JSON.parse(JSON.stringify(state || BLANK()));
@@ -6197,7 +6407,7 @@ const LIVE = (function(){
     state.rev = (state.rev || 0) + 1;
     state.at  = Date.now();
     state.by  = who || '';
-    push(before, state);
+    settled = push(before, state);
     return state;
   }
 
@@ -6211,6 +6421,7 @@ const LIVE = (function(){
     LINK.reset    = () => state;
     LINK.healthy  = () => !lastErr;
     LINK.live     = () => true;
+    LINK.settled  = () => settled;
     DOCSTORE.mode = 'supabase';
     DOCSTORE.put  = async file => {
       const stamp = new Date().toISOString().replace(/[-:T.]/g,'').slice(0,14);
@@ -6223,7 +6434,7 @@ const LIVE = (function(){
 
   return {start, reload, on: () => !!state && LINK.live(), err: () => lastErr,
           rt: () => SB.rtState(), signedInAs: () => SB.email(),
-          applyHeld};
+          applyHeld, applyRegisterHeld};
 })();
 
 

@@ -399,9 +399,6 @@ html[dir="rtl"] .drawer{transform:translateX(102%)}
 .footer-lock{display:block;height:16px;width:213px;object-fit:contain;margin:2px auto 12px;opacity:.8}
 
 /* fake QR */
-.qr{width:172px;height:172px;margin:0 auto;display:grid;grid-template-columns:repeat(21,1fr);gap:0}
-.qr i{background:#fff}
-.qr i.b{background:var(--teal-900)}
 
 .linkbar{display:none;align-items:center;justify-content:center;gap:8px;margin:16px auto 0;padding:7px 14px;
   border-radius:999px;background:#E8F5EE;color:#136B43;font-size:12.5px;font-weight:700;
@@ -443,7 +440,6 @@ html[dir="rtl"] .drawer{transform:translateX(102%)}
         <h1 style="font-size:17px">Welcome back, Yazeed</h1>
         <div class="sub">Your building hub</div>
       </div>
-      <button class="iconbtn" style="position:relative" onclick="demo()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9a6 6 0 0 0-12 0c0 5-2 6.5-2 6.5h16S18 14 18 9Z"></path><path d="M13.7 19.5a2 2 0 0 1-3.4 0"></path></svg><span class="dot"></span></button>
       <div class="avatar">SY</div>
       </div>
       <div class="screen" id="screen">
@@ -464,9 +460,6 @@ html[dir="rtl"] .drawer{transform:translateX(102%)}
     <button class="qa" onclick="sheetNewRequest()">
     <span class="icobox" style="background:#FBF3DE;color:#A8811A"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg></span>
     <span class="t">New request</span><span class="d">Report a maintenance issue</span></button>
-    <button class="qa" onclick="sheetGatePass()">
-    <span class="icobox" style="background:#E4EEF2;color:#00506B"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><path d="M14 14h3v3h-3zM20 14h1M14 20h3M20 17v4"></path></svg></span>
-    <span class="t">Visitor pass</span><span class="d">Send a QR code in seconds</span></button>
     <button class="qa" onclick="go('pay')">
     <span class="icobox" style="background:#E6F2EC;color:#2C8259"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="19" height="14" rx="2.6"></rect><path d="M2.5 10h19M6 15h3"></path></svg></span>
     <span class="t">Rent &amp; payments</span><span class="d">Schedule, receipts, balance</span></button>
@@ -1266,7 +1259,11 @@ function dueChip(r){
   return `<span class="pill a">${NUM(d)} ${T('days')}</span>`;
 }
 function go(tab){ TAB = tab; closeAll(); render(); $('screen').scrollTop = 0; }
-function demo(){ toast(T('toastDemo')); }
+/* APP-05/06. `demo()` used to be here: a toast reading "Prototype — this
+   action is not wired up", behind eighteen controls. It has no callers left.
+   The controls were not disabled or relabelled; they were removed, because a
+   resident who presses one learns that the app is a mock-up, and that is the
+   thing they then believe about the parts that DO work. */
 
 /* ---------------------------- language ---------------------------- */
 function setLang(l){
@@ -1296,7 +1293,6 @@ function renderTop(){
         <h1 style="font-size:17px">${T('welcome')}${L(',','،')} ${rname().split(' ')[0]}</h1>
         <div class="sub">${T('hub')}</div>
       </div>
-      <button class="iconbtn" style="position:relative" onclick="demo()">${I('bell',22)}<span class="dot"></span></button>
       <div class="avatar">${RESIDENT.initials}</div>`;
   } else {
     const titles = {svc:T('tab_svc'), pay:T('tab_pay'), com:T('community'), prof:T('tab_prof')};
@@ -1306,8 +1302,7 @@ function renderTop(){
         <h1>${titles[TAB]}</h1>
         <div class="sub">${subs[TAB]}</div>
       </div>
-      ${TAB==='svc' ? `<button class="iconbtn" onclick="sheetNewRequest()">${I('plus',24)}</button>` : ''}
-      <button class="iconbtn" style="position:relative" onclick="demo()">${I('bell',22)}<span class="dot"></span></button>`;
+      ${TAB==='svc' ? `<button class="iconbtn" onclick="sheetNewRequest()">${I('plus',24)}</button>` : ''}`;
   }
 }
 
@@ -1364,7 +1359,6 @@ function viewHome(){
   <div class="sect first">${T('quick')}</div>
   <div class="quick">
     ${qa('plus','#FBF3DE','#A8811A',T('qa_req'),T('qa_req_d'),'sheetNewRequest()')}
-    ${qa('qr','#E4EEF2','#00506B',T('qa_gate'),T('qa_gate_d'),'sheetGatePass()')}
     ${qa('card','#E6F2EC','#2C8259',T('qa_pay'),T('qa_pay_d'),"go('pay')")}
     ${qa('phone','#FBEAEA','#C0504A',T('qa_call'),T('qa_call_d'),'sheetContact()')}
   </div>
@@ -1552,11 +1546,6 @@ function formHTML(){
     <div class="chips">${times.map(([v,k])=>`<button class="chip ${FORM.time===v?'on':''}" onclick="FORM.time='${v}';refreshForm()">${T(k)}</button>`).join('')}</div>
   </div>
 
-  <div class="fgroup">
-    <label class="f">${T('f_photo')}</label>
-    <div class="upload" onclick="demo()">${I('camera',26)}<div style="margin-top:8px">${T('photoHint')}</div></div>
-  </div>
-
   <button class="btn primary" onclick="submitRequest()">${T('submit')}</button>`;
 }
 function refreshForm(){
@@ -1660,66 +1649,27 @@ function sheetRequest(id){
     <div class="sect" style="margin-top:6px">${T('progress')}</div>
     <div class="card"><ul class="tl">${steps}</ul></div>
     ${stars}
-    ${['submitted','assigned'].includes(r.status)?`<button class="btn danger" onclick="demo()">${T('cancelReq')}</button>`:''}
   `);
 }
 
-/* ------- gate pass sheet ------- */
-function sheetGatePass(){
-  openSheet(T('gatePass'), `
-    <div class="fgroup">
-      <label class="f">${T('visitorName')}</label>
-      <input class="inp" id="vName" placeholder="${L('Full name','الاسم الكامل')}">
-    </div>
-    <div class="fgroup">
-      <label class="f">${T('visitDate')}</label>
-      <input class="inp" value="${L('18 Aug 2026','١٨ أغسطس ٢٠٢٦')}" readonly>
-    </div>
-    <div class="fgroup">
-      <label class="f">${T('validFor')}</label>
-      <div class="chips">
-        <button class="chip on">${T('hours4')}</button>
-        <button class="chip">${T('hours12')}</button>
-        <button class="chip">${T('day1')}</button>
-      </div>
-    </div>
-    <button class="btn primary" onclick="showPass()">${I('qr',20)} ${T('generate')}</button>`);
-}
-function showPass(){
-  const name = ($('vName')&&$('vName').value.trim()) || L('Visitor','زائر');
-  // deterministic pseudo-QR
-  let cells = '';
-  for(let i=0;i<441;i++){
-    const r=Math.floor(i/21), c=i%21;
-    const finder = (r<7&&c<7)||(r<7&&c>13)||(r>13&&c<7);
-    const ring = finder && (r%7===0||r%7===6||c%7===0||c%7===6||(r%7>=2&&r%7<=4&&c%7>=2&&c%7<=4));
-    const on = finder ? ring : ((r*7 + c*13 + (r*c)%5) % 3 === 0);
-    cells += `<i class="${on?'b':''}"></i>`;
-  }
-  openSheet(T('gatePass'), `
-    <div style="text-align:center">
-      <div class="card" style="padding:22px 18px">
-        <div class="qr">${cells}</div>
-        <div style="font-size:17px;font-weight:800;margin-top:16px">${name}</div>
-        <div class="muted" style="margin-top:4px">${L('Apartment','شقة')} ${esc(RESIDENT.unit)} · ${L('Almaria Residence','المارية ريزيدنس')}</div>
-        <div class="divider"></div>
-        <div class="row" style="justify-content:center;gap:22px">
-          <div><div class="k muted">${T('visitDate')}</div><div style="font-weight:800;font-size:14px">${L('18 Aug 2026','١٨ أغسطس ٢٠٢٦')}</div></div>
-          <div><div class="k muted">${T('validFor')}</div><div style="font-weight:800;font-size:14px">${T('hours4')}</div></div>
-        </div>
-      </div>
-      <p class="muted" style="line-height:1.5">${T('showGuard')}</p>
-      <button class="btn primary" onclick="closeAll();toast(T('toastPass'))">${I('phone',18)} ${L('Send by SMS','إرسال برسالة نصية')}</button>
-    </div>`);
-}
+/* APP-05. The visitor pass is gone, not disabled.
+
+   It drew a QR code from `(r*7 + c*13 + (r*c)%5) % 3` — a pattern, not an
+   encoding, scannable by nothing — over a hardcoded visit date of 18 August
+   2026, with a "Send by SMS" button that sent no SMS. A resident would have
+   held that up to a guard.
+
+   Whether it comes back is not a UI question. OQ-2 in the store plan is still
+   open: is there a scanner at the gate, and a process behind it? Until someone
+   answers that, the feature cannot exist. */
 
 /* ------- contact sheet ------- */
 function sheetContact(){
   const row = (ico,label,val,tone) => `
-    <div class="menurow" onclick="demo()">
+    <div class="menurow" style="cursor:default">
       <span class="icobox" style="background:${tone[0]};color:${tone[1]};width:40px;height:40px;border-radius:12px">${I(ico,20)}</span>
       <div class="grow"><div class="t">${label}</div><div class="sv" dir="ltr">${val}</div></div>
-      <span class="chev">${I('chev',18)}</span></div>`;
+    </div>`;
   openSheet(T('contact'), `
     <div class="card tight">
       ${row('user', T('mgr'), '+966 53 838 3007', ['var(--gold-soft)','#A8811A'])}
@@ -1751,7 +1701,6 @@ function sheetAmenity(i){
       <span style="color:#A8811A;flex:none">${I('shield',20)}</span>
       <p>${T('included')}</p>
     </div>
-    ${a.book?`<div style="height:16px"></div><button class="btn primary" onclick="closeAll();toast(L('Booking request sent to building management.','تم إرسال طلب الحجز إلى إدارة المبنى.'))">${T('bookIt')}</button>`:''}
   `);
 }
 
@@ -1788,7 +1737,7 @@ function viewPayments(){
   <div class="sect">${T('schedule')}</div>
   <div class="card tight">
     ${LEASE.rows.map(r=>`
-      <div class="payrow" ${r.ref?`onclick="demo()" style="cursor:pointer"`:''}>
+      <div class="payrow">
         <span class="icobox" style="width:40px;height:40px;border-radius:12px;background:${r.st==='paid'?'var(--green-soft)':r.st==='due'?'var(--amber-soft)':'#F1F3F5'};color:${r.st==='paid'?'var(--green)':r.st==='due'?'var(--amber)':'#98A0A9'}">
           ${I(r.st==='paid'?'check':'cal',20)}
         </span>
@@ -1805,10 +1754,16 @@ function viewPayments(){
     <p>${T('payNote')}</p>
   </div>
 
-  <button class="btn primary" onclick="demo()">${I('file',18)} ${T('payNow')}</button>
-  <div style="height:10px"></div>
-  <button class="btn ghost" onclick="demo()">${I('doc2',18)} ${T('receipts')}</button>
   `;
+  /* APP-05/06. Three placeholders stood here: "View payment instructions" and
+     "Receipts", both of which answered with "Prototype — this action is not
+     wired up", and a tap on any settled instalment that did the same.
+     The note above already carries the payment method, which is what the
+     button claimed to be about; there is no receipt document to open; and a
+     row that looks tappable and is not teaches the resident that the app is a
+     mock-up. Removed rather than shipped.
+     Receipts come back when the payment-evidence backfill does — see D3 in
+     claude/go-live-plan.md. */
 }
 
 /* ---------------------------- COMMUNITY ---------------------------- */
@@ -1860,7 +1815,6 @@ function viewProfile(){
     <div class="row" style="margin-bottom:6px">
       <span style="color:#A8811A">${I('shield',20)}</span>
       <div class="grow" style="font-size:15.5px;font-weight:800">${T('prof_info')}</div>
-      <button class="iconbtn" onclick="demo()" style="width:32px;height:32px;color:#A8811A">${I('edit',18)}</button>
     </div>
     <div class="kv"><div class="k">${T('prof_email')}</div><div class="v" dir="ltr" style="text-align:${LANG==='ar'?'right':'left'}">${esc(RESIDENT.email)}</div></div>
     <div class="kv"><div class="k">${T('prof_phone')}</div><div class="v" dir="ltr" style="text-align:${LANG==='ar'?'right':'left'}">${esc(RESIDENT.phone)}</div></div>
@@ -1872,10 +1826,7 @@ function viewProfile(){
   </div>
 
   <div class="card tight">
-    ${menuRow('users', T('household'), NUM(3)+' '+L('people','أفراد'))}
-    ${menuRow('doc2', T('documents'), L('Lease, ID, receipts','العقد، الهوية، الإيصالات'))}
     ${menuRow('phone', T('emergency'), L('Manager, security, 24h line','المدير، الأمن، خط ٢٤ ساعة'), 'sheetContact()')}
-    ${menuRow('key', T('menu_id'), L('Show resident ID','عرض بطاقة الساكن'))}
   </div>
 
   <div class="card tight">
@@ -1891,20 +1842,24 @@ function viewProfile(){
   <div class="muted" style="text-align:center;padding:0 0 4px">${L('Prototype v1','نموذج تجريبي ١')} · ${T('web')}</div>
   `;
 }
+/* APP-06. `act` is optional, and without one this rendered a chevron, a pointer
+   cursor and a toast saying the action was not wired up. A row that cannot be
+   pressed must not look pressable — the chevron is the promise, not the
+   handler. */
 function menuRow(ico,t,sv,act){
-  return `<div class="menurow" onclick="${act||'demo()'}">
+  return `<div class="menurow"${act?` onclick="${act}"`:' style="cursor:default"'}>
     <span class="icobox" style="width:40px;height:40px;border-radius:12px;background:#F1F3F5;color:var(--ink-2)">${I(ico,20)}</span>
     <div class="grow"><div class="t">${t}</div><div class="sv">${sv}</div></div>
-    <span class="chev">${I('chev',18)}</span></div>`;
+    ${act?`<span class="chev">${I('chev',18)}</span>`:''}</div>`;
 }
 
 /* ---------------------------- DRAWER ---------------------------- */
 function renderDrawer(){
   const item = (ico,label,act) => `
-    <div class="menurow" onclick="${act||'closeAll();demo()'}">
+    <div class="menurow"${act?` onclick="${act}"`:' style="cursor:default"'}>
       <span style="color:var(--ink-2);flex:none">${I(ico,21)}</span>
       <div class="t">${label}</div>
-      <span class="chev">${I('chev',17)}</span></div>`;
+      ${act?`<span class="chev">${I('chev',17)}</span>`:''}</div>`;
   $('drawer').innerHTML = `
     <div class="dh">
       <div class="mk">${MARK('100%',30)}</div>
@@ -1914,13 +1869,8 @@ function renderDrawer(){
       <div class="em">${L('Apartment','شقة')} ${esc(RESIDENT.unit)} · ${T('appName')}</div>
     </div>
     <div class="dl">
-      ${item('key', T('menu_id'))}
-      ${item('qr', T('menu_gate'), "closeAll();sheetGatePass()")}
       ${item('gear', T('menu_req'), "go('svc');svcTab('open')")}
-      ${item('alert', T('menu_comp'))}
       ${item('card', T('menu_pay'), "go('pay')")}
-      ${item('users', T('menu_house'))}
-      ${item('doc2', T('menu_docs'))}
       ${item('phone', T('contact'), "closeAll();sheetContact()")}
       ${item('file', T('menu_info'), "closeAll();sheetContact()")}
       ${item('globe', T('prof_lang'), "setLang(LANG==='en'?'ar':'en')")}
