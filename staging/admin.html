@@ -1384,7 +1384,33 @@ const CAT_TECH={ac:['Mostafa A.','Coolair Est.'],lift:['Otis Service'],clean:['B
  pest:['Riyadh Pest Co.'],plumb:['Sayed M.','Ramy H.'],elec:['Ramy H.','Mostafa A.'],
  appl:['Mostafa A.'],carp:['Sayed M.'],alum:['Sayed M.'],paint:['Sayed M.'],waste:['Belda Housekeeping'],wifi:['Ramy H.']};
 
-const TODAY=new Date(2026,7,19,18,0);
+/* APP-04. This was frozen at 19 August 2026 and every ageing bucket, arrears
+   figure, expiry, forecast and report window measured from it. Signed in on
+   9 September the console still said "to 19 Aug 2026": the work-order log showed
+   94 of 99 records, its cost total read SAR 198,491 against SAR 210,821 actually
+   on file, and requests raised on the 2nd and 4th showed an age of 0h because
+   the clock predated them.
+
+   The reporting date is now today, in the building's own timezone, and it is a
+   let rather than a const so a historical view can move it deliberately. Riyadh
+   does not observe daylight saving, so a fixed +03:00 offset is correct here and
+   the boundary is the building's midnight rather than the reader's. */
+const REPORT_TZ_OFFSET_MIN = 3 * 60;          /* Asia/Riyadh, no DST */
+function businessNow(){
+  const t = new Date();
+  return new Date(t.getTime() + (REPORT_TZ_OFFSET_MIN + t.getTimezoneOffset()) * 60000);
+}
+let TODAY = businessNow();
+/* Kept current without a reload: a console left open overnight otherwise keeps
+   yesterday's date and quietly reports yesterday's arrears. */
+setInterval(function(){
+  const n = businessNow();
+  if(n.toDateString() !== TODAY.toDateString()){
+    TODAY = n;
+    try{ if(typeof recompute === 'function') recompute();
+         if(typeof render === 'function') render(); }catch(e){}
+  } else { TODAY = n; }
+}, 60000);
 
 /* DATA-02. Date.setMonth overflows whenever the day does not exist in the
    target month, so a lease starting 31 January generated instalments due
@@ -1417,7 +1443,9 @@ const UNITS=REGISTER.map(r=>({
   rent:r.value||0, leaseStart:r.start?new Date(r.start):null, leaseEnd:r.end?new Date(r.end):null,
   inst:(r.inst||[]).map(x=>({q:x.n, amt:x.amt, due:x.due?new Date(x.due):null,
         billed: x.due? new Date(x.due)<=TODAY : false, paid:x.paid,
-        paidOn: x.paid && x.due ? new Date(x.due) : null})),
+        /* The date it was actually paid, or nothing. Never the due date:
+           that is a guess wearing a record's clothes — DATA-07. */
+        paidOn: x.on ? new Date(x.on) : null, ref: x.ref || null})),
   sheetPaid:r.paid, sheetRemain:r.remain
 }));
 /* app-account state is the only invented field here — no such system exists yet */
@@ -2407,7 +2435,9 @@ function applyRegister(rows){
     rent:r.value||0, leaseStart:r.start?new Date(r.start):null, leaseEnd:r.end?new Date(r.end):null,
     inst:(r.inst||[]).map(x=>({q:x.n, amt:x.amt, due:x.due?new Date(x.due):null,
           billed: x.due? new Date(x.due)<=TODAY : false, paid:x.paid,
-          paidOn: x.paid && x.due ? new Date(x.due) : null})),
+          /* The date it was actually paid, or nothing. Never the due date:
+             that is a guess wearing a record's clothes — DATA-07. */
+          paidOn: x.on ? new Date(x.on) : null, ref: x.ref || null})),
     sheetPaid:r.paid, sheetRemain:r.remain
   }));
   const keep = {};
@@ -4366,8 +4396,12 @@ function finDetail(uid){
  const jobs=DONE.filter(w=>w.unit===uid).sort((a,b)=>b.raised-a.raised);
  const openJobs=OPEN.filter(w=>w.unit===uid);
  const instRow=x=>{
-  const st = !x.billed ? ['p-neut','f_notdue',null]
-    : x.paid ? ['p-good','f_paid','check']
+  /* APP-04. Paid is asked FIRST. This tested not-billed first, so eleven
+     instalments with a payment date on file were labelled "Not yet due" —
+     a settled row reported as unbilled. What has happened outranks what
+     the calendar expected. */
+  const st = x.paid ? ['p-good','f_paid','check']
+    : !x.billed ? ['p-neut','f_notdue',null]
     : ((TODAY-x.due)/864e5>0 ? ['p-crit','f_overdue','alert'] : ['p-warn','f_due','clock']);
   return `<tr>
    <td class="strong">${T('f_instal')} ${NUM(x.q)}</td>
@@ -5839,7 +5873,13 @@ const LIVE = (function(){
       end:   l ? l.ends_on   : null,
       paid:   rows.filter(x =>  x.paid).reduce((a,x)=>a + N(x.amount), 0),
       remain: rows.filter(x => !x.paid).reduce((a,x)=>a + N(x.amount), 0),
-      inst: rows.map(x => ({n:x.seq, amt:N(x.amount), due:x.due_on, paid:!!x.paid}))
+      /* DATA-07. This kept amount, due date and the paid flag and dropped
+         paid_on and receipt_ref on the floor. Downstream then rebuilt "Paid on"
+         from the DUE date, so the console displayed a payment date that was not
+         the payment date, and no receipt at all. A fabricated date is worse
+         than a blank one: nobody ever queries it. */
+      inst: rows.map(x => ({n:x.seq, amt:N(x.amount), due:x.due_on, paid:!!x.paid,
+                            on:x.paid_on || null, ref:x.receipt_ref || null}))
     };
   });
 
@@ -6260,11 +6300,34 @@ async function sbDoSignIn(){
   }
 }
 
+/* SEC-03. Signing out cleared THIS tab and left every other open console tab
+   showing Connected, the roster, and live request and cost data — reproduced by
+   the 9 September audit with a real admin session. A second tab left open on a
+   shared desk is the ordinary case in an office, not an edge one.
+
+   The sign-out is announced through storage, which every tab on this origin
+   sees, and each one reloads to the signed-out state. The key is namespaced by
+   environment, so signing out of staging does not disturb production and vice
+   versa. */
+const AUTH_EVENT = ENV.prefix + '.auth.event';
+
 function sbDoSignOut(){
-  SB.signOut();
+  try{ SB.signOut(); }catch(e){}
+  try{ localStorage.setItem(AUTH_EVENT, 'out:' + Date.now()); }catch(e){}
   closeDrawer();
-  location.reload();
+  location.replace(location.pathname + location.search);
 }
+
+window.addEventListener('storage', function(e){
+  if(e.key === AUTH_EVENT){
+    location.replace(location.pathname + location.search);
+    return;
+  }
+  /* The session disappearing is the same event by another route — a sign-out in
+     a tab that predates this build, or a token cleared by the browser. */
+  if(e.key === ENV.prefix + '.sb.session.v1' && !e.newValue)
+    location.replace(location.pathname + location.search);
+});
 
 /* Replay the imported registers through the console's own invoice path, so
    each record is exactly what the 'Enter a completed job' form produces —
