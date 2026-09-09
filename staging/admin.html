@@ -2889,6 +2889,12 @@ function unlocked(){
 function renderLocked(){
   navClose();
   $('nav').innerHTML = '';
+  /* Nobody is signed in, so the header must not show an identity or a
+     connection. The avatar was a fixed "MS" and the chip was green — both
+     stating something about a session that does not exist. */
+  for(const sel of ['.who', '#linkdot']){
+    const e = document.querySelector(sel); if(e) e.style.display = 'none';
+  }
   $('pgTitle').textContent = T('lock_title');
   $('pgSub').textContent = '';
   $('whoNm').textContent = ''; $('whoRl').textContent = '';
@@ -2909,6 +2915,9 @@ function renderLocked(){
 function render(){
  if(!unlocked()) return renderLocked();
  for(const id of ['expBtn','impBtn']){ const e=$(id); if(e) e.style.display=''; }
+ for(const sel of ['.who', '#linkdot']){
+   const e = document.querySelector(sel); if(e) e.style.display = '';
+ }
  renderNav();
  const mb=$('menuBtn'); if(mb) mb.setAttribute('aria-label', T('m_menu'));
  $('pgTitle').textContent=T('t_'+PAGE);
