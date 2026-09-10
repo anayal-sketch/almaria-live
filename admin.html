@@ -359,6 +359,16 @@ const D={
   t_roles:'Users and roles', s_roles:'Who works here, and what each of them may do',
   ro_banner:'You are signed in as a viewer. You can read everything on these screens and change nothing. That is enforced by the database, not by this page.',
   ro_toast:'A viewer cannot change records. Ask an administrator to change your role.',
+  pw_title:'Change password', pw_set_title:'Set a new password',
+  pw_recovery:'You followed a recovery link. Choose a new password to finish — the link only works once.',
+  pw_who:'For the account', pw_new:'New password', pw_again:'Type it again',
+  pw_save:'Save password', pw_saving:'Saving…',
+  pw_note:'At least 8 characters. It changes immediately, and this device stays signed in. Anywhere else you are signed in stays signed in until that session expires.',
+  pw_short:'Use at least 8 characters.',
+  pw_mismatch:'The two entries do not match.',
+  pw_done:'Password changed.',
+  pw_err:'The password was not changed:',
+  pw_link_dead:'That link cannot be used:',
   rl_admin:'Administrator', rl_manager:'Manager', rl_viewer:'Viewer',
   rl_admin_d:'Everything a manager can do, and the roster: add people, change roles, switch people off.',
   rl_manager_d:'The day job — contacts, leases, work orders, costs, announcements, documents.',
@@ -878,6 +888,16 @@ const D={
   t_roles:'المستخدمون والصلاحيات', s_roles:'من يعمل هنا، وما الذي يستطيع كل واحد فعله',
   ro_banner:'أنت مسجّل الدخول بصلاحية اطّلاع. تستطيع قراءة كل ما في هذه الشاشات ولا تستطيع تعديل شيء. هذا يُطبَّق في قاعدة البيانات لا في هذه الصفحة.',
   ro_toast:'صلاحية الاطّلاع لا تسمح بالتعديل. اطلب من مدير النظام تغيير صلاحيتك.',
+  pw_title:'تغيير كلمة المرور', pw_set_title:'تعيين كلمة مرور جديدة',
+  pw_recovery:'لقد فتحت رابط استعادة. اختر كلمة مرور جديدة لإتمام العملية — الرابط يعمل مرة واحدة فقط.',
+  pw_who:'للحساب', pw_new:'كلمة المرور الجديدة', pw_again:'أعد كتابتها',
+  pw_save:'حفظ كلمة المرور', pw_saving:'جارٍ الحفظ…',
+  pw_note:'٨ أحرف على الأقل. يسري التغيير فوراً، ويبقى هذا الجهاز مسجَّلاً. أما الأجهزة الأخرى فتبقى مسجَّلة حتى تنتهي صلاحية جلساتها.',
+  pw_short:'استخدم ٨ أحرف على الأقل.',
+  pw_mismatch:'الإدخالان غير متطابقين.',
+  pw_done:'تم تغيير كلمة المرور.',
+  pw_err:'لم يتم تغيير كلمة المرور:',
+  pw_link_dead:'لا يمكن استخدام هذا الرابط:',
   rl_admin:'مدير النظام', rl_manager:'مدير', rl_viewer:'مطّلع',
   rl_admin_d:'كل ما يستطيعه المدير، إضافةً إلى قائمة المستخدمين: إضافة الأشخاص وتغيير الصلاحيات وإيقاف الوصول.',
   rl_manager_d:'العمل اليومي — جهات الاتصال والعقود وأوامر العمل والتكاليف والإعلانات والمستندات.',
@@ -5937,6 +5957,47 @@ const SB = (function(){
     return true;
   }
 
+  /* ----------------------------- passwords -------------------------------
+     Two things the console could not do before, and both are needed by
+     everyone who will ever hold an account here.
+
+     setPassword changes it for whoever is signed in. It goes out on the
+     session token, so the server decides whether the caller is entitled —
+     there is no client-side check to get wrong, and no way to aim it at
+     another account.
+
+     adoptRecovery reads the session Supabase puts in the URL fragment after
+     someone follows a recovery link. Without this the link was worthless:
+     the fragment was ignored, the page showed its ordinary sign-in card, and
+     the link — which is single use — had been spent for nothing. The tokens
+     are taken out of the address bar immediately afterwards, because a
+     recovery link left in history is a way back into the account. */
+  async function setPassword(next){
+    if(!signedIn()) throw new Error('not signed in');
+    return await call('/auth/v1/user', {
+      method:'PUT',
+      headers: hdr({'Content-Type':'application/json'}),
+      body: JSON.stringify({password: next})});
+  }
+
+  function adoptRecovery(){
+    const h = String(location.hash || '').replace(/^#/, '');
+    if(!h) return null;
+    const p = new URLSearchParams(h);
+    const at = p.get('access_token');
+    const kind = p.get('type');
+    const err = p.get('error_description') || p.get('error');
+    const clean = () => { try{ history.replaceState(null, '',
+                            location.pathname + location.search); }catch(e){} };
+    if(err){ clean(); return {type:'error', message:err.replace(/\+/g,' ')}; }
+    if(!at) return null;
+    save({access_token: at, refresh_token: p.get('refresh_token') || null,
+          token_type: p.get('token_type') || 'bearer',
+          expires_in: Number(p.get('expires_in') || 3600)});
+    clean();
+    return {type: kind || 'session'};
+  }
+
   /* --------------------------------- rest -------------------------------- */
   const sel = (t,q)      => call('/rest/v1/'+t+(q?'?'+q:''), {headers:hdr()});
   const ins = (t,rows)   => call('/rest/v1/'+t, {method:'POST',
@@ -6031,6 +6092,7 @@ const SB = (function(){
   return {
     base: BASE, configured: () => !!(BASE && KEY),
     signIn, signOut, refresh, ready, signedIn, isStaff, email, claims,
+    setPassword, adoptRecovery,
     sel, ins, ups, upd, del, rpc, upload, signedUrl,
     watch, stopWatching, rtState: () => rt
   };
@@ -6579,6 +6641,47 @@ function sbStatusLine(){
                                       : ' — متصل، لكن قناة التحديث الفوري: ' + rt))}</span></div>`;
 }
 
+/* ---------------------------- change password ----------------------------
+   Reached two ways: from the connection drawer while signed in, and from a
+   recovery link, where the session came out of the URL fragment and the
+   person may not be staff at all — recovering a password is not a staff
+   action, so nothing here is gated on that.
+
+   The new value is typed twice. A single field plus a typo locks somebody out
+   of an account that only the dashboard can rescue, and the dashboard is the
+   thing they were trying not to need. */
+function pwOpen(recovery){
+  openDrawer(recovery ? T('pw_set_title') : T('pw_title'), `
+    ${recovery ? `<div class="note" style="margin:0 0 12px">${T('pw_recovery')}</div>` : ''}
+    <div class="note" style="margin:0 0 12px">${T('pw_who')} <b>${esc(SB.email() || '—')}</b></div>
+    <div style="margin:14px 0"><label class="f">${T('pw_new')}</label>
+      <input class="inp" id="pwA" type="password" autocomplete="new-password"></div>
+    <div style="margin-bottom:4px"><label class="f">${T('pw_again')}</label>
+      <input class="inp" id="pwB" type="password" autocomplete="new-password"
+             onkeydown="if(event.key==='Enter')pwDo()"></div>
+    <button class="btn pri" id="pwGo" style="margin-top:12px" onclick="pwDo()">${T('pw_save')}</button>
+    <div class="note" style="margin-top:14px">${T('pw_note')}</div>`);
+}
+
+async function pwDo(){
+  const a = ($('pwA') && $('pwA').value) || '';
+  const b = ($('pwB') && $('pwB').value) || '';
+  if(a.length < 8)  return toast(T('pw_short'));
+  if(a !== b)       return toast(T('pw_mismatch'));
+  const btn = $('pwGo');
+  if(btn){ btn.disabled = true; btn.textContent = T('pw_saving'); }
+  try{
+    await SB.setPassword(a);
+    if($('pwA')) $('pwA').value = '';
+    if($('pwB')) $('pwB').value = '';
+    closeDrawer();
+    toast(T('pw_done'));
+  }catch(e){
+    toast(T('pw_err') + ' ' + (e.message || e));
+    if(btn){ btn.disabled = false; btn.textContent = T('pw_save'); }
+  }
+}
+
 function sbOpen(){
   const inn = SB.signedIn();
   openDrawer(L('Backend connection','الاتصال بقاعدة البيانات'), `
@@ -6587,6 +6690,7 @@ function sbOpen(){
       <div class="note" style="margin:12px 0">${L(
         'Signed in as a member of staff. The register, the jobs, the documents and the announcements on every screen are coming from the database.',
         'تم تسجيل الدخول كموظف. السجل والأعمال والمستندات والإعلانات في كل الشاشات تأتي من قاعدة البيانات.')}</div>
+      <button class="btn" onclick="pwOpen(false)" style="margin-bottom:8px">${T('pw_title')}</button>
       <button class="btn" onclick="sbDoSignOut()">${L('Sign out','تسجيل الخروج')}</button>
     ` : `
       <div style="margin:14px 0"><label class="f">${L('Work email','البريد الإلكتروني')}</label>
@@ -6699,6 +6803,16 @@ function lastCostMonth(){
   label();
   sbLabelTick = label;
   if(!SB.configured()) return;
+
+  /* A recovery link, if that is how we got here. Read before anything else,
+     because it carries the session the rest of this function depends on. */
+  let arrived = null;
+  try{ arrived = SB.adoptRecovery(); }catch(e){ arrived = null; }
+  if(arrived && arrived.type === 'error'){
+    render();
+    toast(T('pw_link_dead') + ' ' + arrived.message);
+  }
+
   try{
     if(await SB.ready() && SB.isStaff()){
       if(await LIVE.start()){
@@ -6714,6 +6828,9 @@ function lastCostMonth(){
     }
   }catch(e){ console.error('backend boot', e); }
   label();
+  /* Last, so it sits on top of whatever the register painted. A recovery link
+     has one job and the person followed it deliberately. */
+  if(arrived && arrived.type === 'recovery') pwOpen(true);
   setInterval(label, 5000);
 })();
 
