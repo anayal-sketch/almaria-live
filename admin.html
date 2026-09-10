@@ -321,7 +321,7 @@ tr.fromapp td:first-child::after{content:'';display:inline-block;width:6px;heigh
     <button class="tbtn" id="impBtn" onclick="importOpen()"></button>
     <button class="tbtn" id="expBtn" onclick="toast(T('t_export'))"></button>
     <div class="who">
-      <div class="av">MS</div>
+      <div class="av" id="whoAv"></div>
       <div>
         <div class="nm" id="whoNm"></div>
         <div class="rl" id="whoRl"></div>
@@ -496,7 +496,6 @@ const D={
   t_rep:'Reports', s_rep:'Management reporting pack',
   t_ann:'Announcements', s_ann:'Building notices — bilingual required before publishing',
   t_sup:'Suppliers', s_sup:'Contractor performance and spend — R11',
-  who:'Mostafa Saleh', role:'Building supervisor',
   link_on:'Linked to resident app', link_off:'Link unavailable',
   imp_title:'Import register from the rent statement',
   imp_privacy:'Imported data stays in this browser. It is never uploaded, and anyone else opening this link sees the published figures, not yours.',
@@ -1016,7 +1015,6 @@ const D={
   t_rep:'التقارير', s_rep:'حزمة التقارير الإدارية',
   t_ann:'الإعلانات', s_ann:'إشعارات المبنى — اللغتان مطلوبتان قبل النشر',
   t_sup:'الموردون', s_sup:'أداء المقاولين والإنفاق — تقرير ١١',
-  who:'مصطفى صالح', role:'مشرف المبنى',
   export:'تصدير', t_export:'نموذج تجريبي — التصدير ينتج ملف إكسل.',
   st_open:'أوامر عمل مفتوحة', st_breach:'تجاوزت المدة',
   st_sla:'الالتزام بالمدة، الشهر', st_close:'متوسط زمن الإغلاق', st_cost:'التكلفة المسجلة، الشهر',
@@ -2898,6 +2896,8 @@ function renderLocked(){
   $('pgTitle').textContent = T('lock_title');
   $('pgSub').textContent = '';
   $('whoNm').textContent = ''; $('whoRl').textContent = '';
+  { const a = $('whoAv'); if(a) a.textContent = ''; }
+  ME.clear();
   $('brandSub').textContent = T('console');
   $('sideFoot').textContent = '';
   for(const id of ['expBtn','impBtn']){ const e=$(id); if(e) e.style.display='none'; }
@@ -2912,6 +2912,58 @@ function renderLocked(){
     </div>`;
 }
 
+/* --------------------------- who is signed in ----------------------------
+   The header used to read two constants. Every operator was told they were
+   the same person — a name and a job title that belong to nobody with an
+   account — and the local document path stamped that same name onto records
+   as their author. Neither claim had a source behind it.
+   Both now come from the roster row of the account that is actually signed
+   in. A staff member may read their own row and no other (policy
+   staff_members_self), so a viewer sees their own name exactly as an admin
+   does, and this needs no privilege the console did not already have.
+   If the roster carries no name, the account is named instead. The console
+   never invents a person. */
+const ME = (function(){
+  let row = null, loadedFor = null, loading = false;
+  const email = () => (SB.email() || '');
+  function name(){
+    const n = row && L(row.name_en, row.name_ar);
+    if(n && String(n).trim()) return String(n).trim();
+    const e = email();
+    return e ? e.split('@')[0] : '';
+  }
+  function subtitle(){
+    if(row && row.job_title && String(row.job_title).trim())
+      return String(row.job_title).trim();
+    return row && row.role ? T('rl_' + row.role) : '';
+  }
+  function initials(){
+    const parts = name().replace(/[._\-]+/g,' ').trim().split(/\s+/).filter(Boolean);
+    if(!parts.length) return '';
+    return (parts.length === 1 ? parts[0].slice(0,2)
+                               : parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  /* Fetch once per signed-in address, then repaint. Never blocks a render. */
+  function ensure(after){
+    const e = email().toLowerCase();
+    if(!e || loading || loadedFor === e) return;
+    loading = true;
+    SB.sel('staff_members', 'select=email,name_en,name_ar,job_title,role&limit=1')
+      .then(r => { row = (r && r[0]) || null; })
+      .catch(() => { row = null; })
+      .then(() => { loadedFor = e; loading = false; if(after) after(); });
+  }
+  return {ensure, name, subtitle, initials, email,
+          clear(){ row = null; loadedFor = null; }};
+})();
+
+function paintWho(){
+  const nm = $('whoNm'), rl = $('whoRl'), av = $('whoAv');
+  if(nm) nm.textContent = ME.name();
+  if(rl) rl.textContent = ME.subtitle();
+  if(av) av.textContent = ME.initials();
+}
+
 function render(){
  if(!unlocked()) return renderLocked();
  for(const id of ['expBtn','impBtn']){ const e=$(id); if(e) e.style.display=''; }
@@ -2922,7 +2974,7 @@ function render(){
  const mb=$('menuBtn'); if(mb) mb.setAttribute('aria-label', T('m_menu'));
  $('pgTitle').textContent=T('t_'+PAGE);
  $('pgSub').textContent=T('s_'+PAGE);
- $('whoNm').textContent=T('who'); $('whoRl').textContent=T('role');
+ paintWho(); ME.ensure(paintWho);
  $('brandSub').textContent=T('console');
  $('expBtn').innerHTML=I('dl',15)+'<span>'+T('export')+'</span>';
  $('impBtn').innerHTML=I('up',15)+'<span>'+T('imp_btn')+'</span>';
@@ -4035,7 +4087,8 @@ async function docAttach(file, ref, kind){
     key: docKey(ref), ref, kind,
     name: file.name, mime: file.type||'', size: file.size,
     algo: fp.algo, hash: fp.hex,
-    at: new Date().toISOString(), by: T('who'),
+    /* The account that is signed in, not a label from the interface. */
+    at: new Date().toISOString(), by: (SB.email() || ''),
     readable: read.ok, why: read.why,
     storage: put.mode, path: put.path
   };
