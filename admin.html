@@ -2943,13 +2943,27 @@ const ME = (function(){
     return (parts.length === 1 ? parts[0].slice(0,2)
                                : parts[0][0] + parts[1][0]).toUpperCase();
   }
-  /* Fetch once per signed-in address, then repaint. Never blocks a render. */
+  /* Fetch once per signed-in address, then repaint. Never blocks a render.
+
+     Ask for the row by address, and then check the row that comes back is
+     that address. Both halves are load-bearing. Leaving the filter off and
+     trusting the policy to narrow it is what this code did first, and it was
+     wrong: staff_members carries a self policy AND an admin policy, and RLS
+     ORs them — so a viewer got their own row and an administrator got the
+     whole roster, of which limit=1 handed back an arbitrary colleague. The
+     header then named that colleague. Never render a row whose address is
+     not the one signed in; be nameless instead. */
   function ensure(after){
     const e = email().toLowerCase();
     if(!e || loading || loadedFor === e) return;
     loading = true;
-    SB.sel('staff_members', 'select=email,name_en,name_ar,job_title,role&limit=1')
-      .then(r => { row = (r && r[0]) || null; })
+    SB.sel('staff_members',
+           'select=email,name_en,name_ar,job_title,role'
+           + '&email=eq.' + encodeURIComponent(e) + '&limit=1')
+      .then(r => {
+        const got = r && r[0];
+        row = (got && String(got.email || '').toLowerCase() === e) ? got : null;
+      })
       .catch(() => { row = null; })
       .then(() => { loadedFor = e; loading = false; if(after) after(); });
   }
