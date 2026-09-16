@@ -871,6 +871,7 @@ const D={
   x_notready:'The export log is not installed on the database yet, so nothing was exported.',
   x_failed:'The export could not be recorded, so nothing was written.',
   x_filters:'Filter', x_rows:'Rows',
+  rp_broken:'This report did not build. Nothing is shown rather than an empty table that would read as a real answer.',
   u_headlease:'{n} apartments in the head lease are not lettable and are not shown: {ids}. Confirmed by Ahmed El Nayal, 15 September 2026.',
   u_headlease_n:'Not shown',
   /* stats */
@@ -1147,6 +1148,7 @@ const D={
   x_notready:'سجل التصدير غير مُثبَّت في قاعدة البيانات بعد، فلم يُصدَّر شيء.',
   x_failed:'تعذّر تسجيل عملية التصدير، فلم يُكتب شيء.',
   x_filters:'التصفية', x_rows:'عدد الصفوف',
+  rp_broken:'تعذّر بناء هذا التقرير. لا يُعرض شيء بدلاً من جدول فارغ قد يُقرأ كإجابة حقيقية.',
   u_headlease:'{n} من الشقق المدرجة في عقد الإيجار الرئيسي غير قابلة للتأجير ولا تظهر هنا: {ids}. بتأكيد أحمد النيال في ١٥ سبتمبر ٢٠٢٦.',
   u_headlease_n:'غير معروضة',
   st_open:'أوامر عمل مفتوحة', st_breach:'تجاوزت المدة',
@@ -3825,7 +3827,7 @@ function woDetail(id){
 
   <div class="card mb"><div class="bd">
    <dl class="kv">
-    <dt>${T('unit')}</dt><dd>${NUM(w.unit)} · ${(UNITS.find(u=>u.u===w.unit)||{}).type||'—'}</dd>
+    <dt>${T('unit')}</dt><dd>${NUM(w.unit)} · ${esc((UNITS.find(u=>u.u===w.unit)||{}).type||'—')}</dd>
     <dt>${T('resident')}</dt><dd>${esc(L(w.tenant,w.tenant_ar))}</dd>
     <dt>${T('category')}</dt><dd>${catName(c)}</dd>
     <dt>${T('intake')}</dt><dd>${T('ch_'+(w.ch==='wa'?'wa':w.ch))}</dd>
@@ -3993,7 +3995,8 @@ function pgPPM(){
 function pgUnits(){
  const max=Math.max(...costByUnit.map(x=>x.cost));
  return `<div class="card">
-  <div class="hd"><div style="flex:1"><h2>${T('t_units')}</h2><div class="d">${T('s_units')}</div></div>
+  <div class="hd"><div style="flex:1"><h2>${T('t_units')}</h2>
+    <div class="d">${T('s_units').replace('{n}', lettable ? NUM(lettable) : '—')}</div></div>
    <button class="tbtn" onclick="exportUnits()">${I('down',15)}<span>${T('export')}</span></button></div>
   <div class="tw"><table>
   <thead><tr><th>${T('unit')}</th><th>${T('floor')}</th><th>${T('type')}</th><th class="num">${T('area')}</th>
@@ -5048,19 +5051,38 @@ function pgRep(){
   if(!RP.id) return costsWarning() + rpLibrary();
   const meta = REPORTS.find(r=>r.id===RP.id);
   if(!meta){ RP.id=null; return rpLibrary(); }
-  let out;
-  try{ out = costsWarning() + meta.f(); }
-  catch(e){ return rpLibrary() + `<div class="card"><div class="bd"><div class="warnbox">${I('alert',16,2.2)}<span>${e.message}</span></div></div></div>`; }
+  /* CON-01, 16 September. This line read
+
+         out = costsWarning() + meta.f();
+
+     costsWarning() returns a STRING — usually the empty one — and meta.f() returns
+     the report OBJECT. A string plus an object is a string: "[object Object]".
+     After that, out.rows, out.stats, out.period and out.blocked were all
+     undefined, `empty` was true, and every one of the twenty reports rendered
+     "Nothing to report" while its builder was returning thirty-nine rows.
+
+     It went in with the cost-state warning on the 15th and was live through
+     three deploys on the 16th. Nothing caught it because every check drove the
+     builders and read the DOM for errors, NaN and policy violations, and an
+     empty state is none of those. check_reports_render.mjs now opens each
+     report in a browser and counts the rows it puts on screen.
+
+     The warning is prose; the report is data. They are kept apart. */
+  let out, warn = '';
+  try{ warn = costsWarning(); out = meta.f(); }
+  catch(e){ return rpLibrary() + `<div class="card"><div class="bd"><div class="warnbox">${I('alert',16,2.2)}<span>${esc(String(e && e.message || e))}</span></div></div></div>`; }
+  if(!out || typeof out !== 'object')
+    return rpLibrary() + `<div class="card"><div class="bd"><div class="warnbox">${I('alert',16,2.2)}<span>${esc(T('rp_broken'))}</span></div></div></div>`;
 
   const back = `<button class="tbtn" onclick="RP.id=null;render()">${I('chev',15)}<span>${T('rp_all')}</span></button>`;
 
-  if(out.blocked) return `
+  if(out.blocked) return warn + `
     <div class="filters">${back}<div style="flex:1"></div>${rpChip('blocked')}</div>
     <div class="card"><div class="hd"><div><h2>${rpName(RP.id)}</h2><div class="d">${rpDesc(RP.id)}</div></div></div>
       <div class="bd">${emptyState(T('rp_cantyet'), T('rp_needs_'+out.blocked.needs))}</div></div>`;
 
   const empty = !out.rows || !out.rows.length;
-  return `
+  return warn + `
   <div class="filters">
     ${back}
     ${out.period?`<select onchange="RP.period=this.value;render()">
@@ -5164,6 +5186,11 @@ function rpLibrary(){
 const csvCell = v => {
     if(v === null || v === undefined) return '';
     if(v instanceof Date) return v.toISOString().slice(0,10);
+    /* CON-05. A finite NUMBER is a number and leaves as one. The formula guard
+       below is for text somebody typed; applied to -670 it produced '-670 — a
+       legitimate negative balance turned into a string a spreadsheet will not
+       sum. The type is decided here, from the value, before any text rule. */
+    if(typeof v === 'number') return Number.isFinite(v) ? String(v) : '';
     let s = String(v).replace(/<[^>]*>/g,'');
     /* DATA-03. Commas and quotes were escaped; formulas were not. A field that
        begins = + - @ (or a tab or carriage return before one) is executed by
@@ -5176,7 +5203,10 @@ const csvCell = v => {
        "  =cmd()" is the same attack wearing a space. */
     s = s.replace(/^[\s\u0000-\u001F\u200B-\u200F\u2028\u2029]+/, '');
     if(/^[=+\-@]/.test(s)) s = "'" + s;
-    return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+    /* CON-05. A carriage return is a row delimiter to some readers, and one in
+       the middle of a value could start a new row with a formula-looking cell.
+       It is quoted like the line feed it was already quoting. */
+    return /[",\n\r]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
 };
 
 const csvSheet = (title, cols, rows, foot) => {
@@ -5533,7 +5563,7 @@ function pgFin(){
        const u=r.u;
        return `<tr class="click" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" onclick="finDetail('${u.u}')">
         <td class="strong">${NUM(u.u)}</td>
-        <td>${u.type}</td>
+        <td>${esc(u.type)}</td>
         <td>${u.occupied?`<span class="pill p-good">${I('check',12,2.1)}${T('occupied')}</span>`:`<span class="pill p-neut">${T('vacant')}</span>`}</td>
         <td class="sub2">${u.occupied?esc(L(u.tenant,u.tenant_ar)):'—'}</td>
         <td class="num mono">${u.occupied?money(r.annual):'—'}</td>
@@ -5590,7 +5620,9 @@ function finDetail(uid){
      return `<button class="tbtn" onclick="recordPayment('${u.u}',${x.q})">${x.billed?L('Record','تسجيل'):L('Record early','تسجيل مقدّم')}</button> ` + attach;
    })()}</td></tr>`;
  };
- openDrawer(`${L('Apartment','شقة')} ${NUM(u.u)}<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${u.type} · ${NUM(u.area)} m² · ${L('Floor','الدور')} ${floorName(u.floor)}</div>`,
+ /* CON-04. The Units table escaped this field; this heading did not. Sixth
+    time in this repair that esc() existed and one site did not call it. */
+ openDrawer(`${L('Apartment','شقة')} ${NUM(u.u)}<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${esc(u.type)} · ${NUM(u.area)} m² · ${L('Floor','الدور')} ${floorName(u.floor)}</div>`,
   !u.occupied ? `
    <div class="card"><div class="bd">
      <div class="warnbox">${I('alert',16,2.2)}<span>${T('f_vacantnote')}</span></div>
@@ -6885,15 +6917,20 @@ const SB = (function(){
     opt = opt || {};
     const ctl = new AbortController();
     const bell = setTimeout(() => ctl.abort(), opt.timeout || TIMEOUT);
-    let r;
+    let r, txt;
+    /* CON-07. The deadline used to be cleared the moment the HEADERS arrived,
+       and the body was read outside it. A server or proxy that sends headers
+       and then stalls left the request pending for ever, past the timeout the
+       caller thought it had. The body is read inside the timed region now, and
+       the clock stops only when the whole response is in hand. */
     try {
       r = await fetch(BASE + path, Object.assign({}, opt, {signal: ctl.signal}));
+      txt = await r.text();
     } catch(e) {
       if(e && e.name === 'AbortError')
         throw Object.assign(new Error('the request timed out'), {timeout: true});
       throw e;
     } finally { clearTimeout(bell); }
-    const txt = await r.text();
     let body = null;
     try{ body = txt ? JSON.parse(txt) : null; }catch(e){ body = txt; }
     if(!r.ok){
