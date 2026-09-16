@@ -1610,7 +1610,11 @@ function emptyState(ico,t,d,cta){
 }
 
 /* ------- new request sheet ------- */
+/* CON-03. One open of the sheet is one submission, however many times Send is
+   pressed before it succeeds. See the matching note in admin.html. */
+let REQ_KEY = null;
 function sheetNewRequest(catId){
+  REQ_KEY = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : null;
   FORM = {cat: catId || null, pri:'routine', time:'any'};
   openSheet(T('newRequest'), formHTML());
 }
@@ -1725,6 +1729,8 @@ async function submitRequest(){
   try{
     const st = LINK.commit(s=>{
       s.newWO.push({id:rec.id, unit:RESIDENT.unit, cat:rec.cat,
+        /* CON-03. The key this sheet was opened with. See sheetNewRequest. */
+        request_key: REQ_KEY,
         /* `desc` is what the office record has always called the long text, so
            the description goes there and the title travels beside it. Where the
            resident wrote nothing, the title stands in rather than an empty
@@ -1757,6 +1763,7 @@ async function submitRequest(){
      trusting `rec` is the whole fix: `rec` was built before the write. */
   if(out.refs && out.refs[rec.id]) rec.id = out.refs[rec.id];
 
+  REQ_KEY = null;                               /* this submission is done with */
   REQUESTS.unshift(rec);
   closeAll(); TAB='svc'; SVC_TAB='open'; render();
   toast(T('toastReq'));
@@ -2209,6 +2216,15 @@ const SB = (function(){
                             body.error || body.hint)) || ('HTTP ' + r.status);
       throw Object.assign(new Error(msg), {status:r.status, body:body});
     }
+    /* CON-08. A paging loop needs to know how many rows exist, not only how
+       many came back — a server cap below the page size makes those two
+       different numbers, and "fewer than I asked for" then means "capped",
+       not "finished". PostgREST says in Content-Range: "0-99/250". */
+    if(opt.withRange){
+      let range = null;
+      try{ range = r.headers && r.headers.get ? r.headers.get('content-range') : null; }catch(e){}
+      return {body, range};
+    }
     return body;
   }
 
@@ -2343,7 +2359,23 @@ const SB = (function(){
   const authedWrite = make => authed(make, {replay: false});
 
   /* --------------------------------- rest -------------------------------- */
-  const sel = (t,q)      => authedRead(() => call('/rest/v1/'+t+(q?'?'+q:''), {headers:hdr()}));
+  /* CON-08. sel() can be asked for the count. It then sends Prefer:
+     count=exact, reads the server's total off Content-Range, and hands the
+     rows back with `total` attached as a non-enumerable property — so a
+     caller that did not ask sees the same plain array it always saw, and a
+     harness that stubs SB.sel with a plain array is read as "no total
+     offered". The paging loop below goes through API.sel for exactly that
+     reason: a private counted read broke twenty-seven suites in one go, each
+     of which had stubbed SB.sel and was suddenly talking to the network. */
+  const sel = (t,q,o) => authedRead(() => call('/rest/v1/'+t+(q?'?'+q:''),
+      {headers:hdr(o && o.count ? {Prefer:'count=exact'} : undefined), withRange: !!(o && o.count)}))
+    .then(r => {
+      if(!(o && o.count)) return r;
+      const rows = Array.isArray(r.body) ? r.body : [];
+      const m = /^(\d+)-(\d+)\/(\d+|\*)$/.exec(String(r.range || ''));
+      try{ Object.defineProperty(rows, 'total', {value: m && m[3] !== '*' ? Number(m[3]) : null, enumerable:false}); }catch(e){}
+      return rows;
+    });
   const ins = (t,rows)   => authedWrite(() => call('/rest/v1/'+t, {method:'POST',
                               headers:hdr({'Content-Type':'application/json', Prefer:'return=representation'}),
                               body:JSON.stringify(rows)}));
@@ -2459,8 +2491,12 @@ const SB = (function(){
            Only on a RE-join. The first join follows the read that start() has
            just done, and catching up on that would read the same rows twice
            every time the page opens. */
-        if(joined) watchers.forEach(fn => { try{ fn({catchup:'rejoin'}); }
-                                            catch(e){ console.error('SB.watch', e); } });
+        /* CON-06, 16 September. "Only on a re-join" left a gap: the read that
+           start() does and the join that follows are two moments, and a change
+           that landed between them reached nobody. One extra read on first
+           join is cheap; a change nobody saw is not. Same as the console. */
+        watchers.forEach(fn => { try{ fn({catchup: joined ? 'rejoin' : 'first'}); }
+                                 catch(e){ console.error('SB.watch', e); } });
         joined = true;
       }
       if(m.event === 'phx_reply' && m.ref === joinRef && m.topic === TOPIC &&
@@ -2511,16 +2547,43 @@ const SB = (function(){
      a future cache, a retry policy — is inherited rather than bypassed. A
      layer that reaches past its own public surface is how two code paths come
      to disagree, which is most of what this week has been about. */
+  /* CON-08. Two things this loop got wrong before 16 September:
+
+       - it stepped by the page size it ASKED for. A server whose max-rows is
+         below that answers with fewer rows than requested, and "fewer than
+         requested" was read as "that was the last page". With a cap of 100
+         and 250 rows present it returned 100 and called it complete.
+       - it had no idea how many rows existed, so it could not tell a short
+         final page from a capped one.
+
+     It asks for the count now, steps by the rows that actually arrived, and
+     stops when the server's own total is reached. A server that will not
+     count (Content-Range ends in "*") is not PostgREST, and a short page is
+     taken as the end there — see the note in the loop.
+
+     The order must end in a unique key. With equal timestamps at a page
+     boundary and no tie-breaker, offset paging is allowed to return a row
+     twice and another never; every caller here orders by a timestamp AND by
+     id, and this refuses an order that does not name id, seq or a key. */
   API.selAll = async (t, q, pageSize) => {
-    if(!/(^|&)order=/.test(q || ''))
-      throw new Error('selAll(' + t + ') needs an order, or the pages overlap');
+    const m = /(^|&)order=([^&]*)/.exec(q || '');
+    if(!m) throw new Error('selAll(' + t + ') needs an order, or the pages overlap');
+    if(!/(^|,)(id|seq|lease_id|contact_id|key)(\.(asc|desc))?(\.nulls(first|last))?$/.test(m[2]))
+      throw new Error('selAll(' + t + ') order "' + m[2] + '" does not end in a unique key, so a page boundary can drop or repeat a row');
     const size = pageSize || 1000;
     const out = [];
-    for(let from = 0; ; from += size){
-      const page = await API.sel(t, q + '&limit=' + size + '&offset=' + from);
-      if(!Array.isArray(page)) return page;
-      out.push(...page);
-      if(page.length < size) return out;
+    for(;;){
+      const rows = await API.sel(t, q + '&limit=' + size + '&offset=' + out.length, {count:true});
+      if(!Array.isArray(rows)) return rows;
+      const total = (rows.total === undefined) ? null : rows.total;
+      out.push(...rows);
+      if(!rows.length) return out;                          /* nothing more, whatever the count said */
+      if(total !== null && out.length >= total) return out; /* the server's own total */
+      /* No total offered. PostgREST always offers one when asked, so this is
+         a server that is not PostgREST — a test double, most likely — and a
+         short page is taken as the end. Under a cap that would truncate; the
+         cap case is what the total is for, and the total is always there. */
+      if(total === null && rows.length < size) return out;
       if(out.length >= 100000)
         throw new Error('refusing to read more than 100000 rows from ' + t);
     }
@@ -2583,7 +2646,8 @@ const LIVE = (function(){
                        'units(type,area,floor),instalments(seq,amount,due_on,paid,paid_on,receipt_ref)' +
                        '&status=eq.active&resident_id=eq.' + encodeURIComponent(me.id) +
                        '&order=starts_on.desc&limit=1'),
-      SB.sel('announcements', 'select=*&status=eq.published&order=published_at.desc')
+      /* CON-08. The whole published list, paged, ordered to a unique key. */
+      SB.selAll('announcements', 'select=*&status=eq.published&order=published_at.desc,id.desc')
     ]);
     const lease = (leases && leases[0]) || null;
     if(lease && String(lease.resident_id) !== String(me.id))
@@ -2606,7 +2670,7 @@ const LIVE = (function(){
     const wos = lease
       ? await SB.selAll('work_orders',
           'select=*&unit_id=eq.' + encodeURIComponent(lease.unit_id) +
-          '&order=raised_at.desc')
+          '&order=raised_at.desc,id.desc')
       : [];
     const mine = lease
       ? (wos || []).filter(w => String(w.unit_id) === String(lease.unit_id))
@@ -2893,8 +2957,35 @@ const LIVE = (function(){
 
      This is a recognition rule, not an idempotency key. The durable fix is a
      column — sql/2026-09-15_request_key.sql, written and not applied. */
+  /* CON-03 / REQ-01, the durable half.
+
+     Until 16 September the collision handler decided whether a 409 meant "my
+     own submission already landed" by matching reference, raised time, flat
+     and description. Desk jobs logged for the same day all carry 09:00:00Z
+     and a description that defaults to the service name — so a SAR 200 job
+     and a different SAR 300 job on the same flat looked identical, and the
+     second one was adopted as the first. Two jobs became one.
+
+     Every intended submission now mints a uuid ONCE, before its first attempt,
+     and carries it on every retry: work_orders.request_key, unique where not
+     null (sql/2026-09-15_request_key.sql). The question "did mine land?" is
+     answered by that key and nothing else. A 409 on the primary key with no
+     row under my key is a competitor for the reference — renumber and try
+     again with the SAME key. A 409 on the key is my own row, whether or not
+     the read of it succeeds. */
+  const mintKey = () => { try{ return crypto.randomUUID(); }catch(e){ return null; } };
+  const keyCollision = e => /request_key/.test(
+    String((e && e.message) || '') + ' ' + String((e && e.body && e.body.message) || ''));
+
   async function alreadyMine(body){
     try{
+      if(body.request_key){
+        const rows = await SB.sel('work_orders',
+          'select=*&request_key=eq.' + encodeURIComponent(body.request_key));
+        return (rows && rows[0]) || null;
+      }
+      /* A row written before the column existed carries no key. The old
+         four-field recognition stays for those, and only those. */
       const rows = await SB.sel('work_orders',
         'select=*&id=eq.' + encodeURIComponent(body.id) +
         '&raised_at=eq.' + encodeURIComponent(body.raised_at));
@@ -2904,7 +2995,7 @@ const LIVE = (function(){
                 && String(r.description == null ? '' : r.description)
                    === String(body.description == null ? '' : body.description);
       return same ? r : null;
-    }catch(e){ return null; }        /* cannot tell: fall through and renumber */
+    }catch(e){ return null; }
   }
 
   async function insertWO(body, renamed){
@@ -2923,6 +3014,11 @@ const LIVE = (function(){
           if(mine.id !== from) renamed[from] = mine.id;
           return [mine];
         }
+        /* The key says the submission is already there and the read of it did
+           not come back. Renumbering now would file it a second time — the
+           exact thing the key exists to prevent. Fail, and let the next sync
+           adopt it. */
+        if(body.request_key && keyCollision(e)) throw e;
         body = Object.assign({}, body, {id: bumpRef(body.id)});
       }
     }
@@ -2936,6 +3032,7 @@ const LIVE = (function(){
     (after.newWO || []).forEach(w => {
       if((before.newWO || []).some(x => x.id === w.id)) return;
       const body = {id:w.id, unit_id:RESIDENT.unit, category:w.cat, description:w.desc,
+                    request_key: w.request_key || null,
                     /* APP-02. The form asks for a title and for the hour the
                        resident will be home, and the resident answers both.
                        Neither left the browser. The office received a category

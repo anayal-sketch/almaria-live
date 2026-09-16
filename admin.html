@@ -221,6 +221,13 @@ tbody tr.click:hover{background:#F7FAFB}
 /* drawer */
 .scrim{position:fixed;inset:0;background:rgba(9,26,34,.42);opacity:0;pointer-events:none;transition:.2s;z-index:40}
 .scrim.on{opacity:1;pointer-events:auto}
+/* CON-02. While a write is in flight the drawer stays open and its controls
+   are visibly out of reach. The person sees the thing they pressed, greyed,
+   until the database has answered — not a green toast and a closed drawer
+   over a refusal that has not arrived yet. */
+body.saving #drawer .btn, body.saving #drawer .tbtn, body.saving #drawer .inp,
+body.saving #drawer select{opacity:.55; pointer-events:none}
+body.saving #drawer{cursor:progress}
 .drawer{
   position:fixed;top:0;bottom:0;inset-inline-end:0;width:min(600px,94vw);background:var(--plane);
   z-index:50;transform:translateX(102%);transition:transform .26s cubic-bezier(.3,.8,.35,1);
@@ -871,6 +878,12 @@ const D={
   x_notready:'The export log is not installed on the database yet, so nothing was exported.',
   x_failed:'The export could not be recorded, so nothing was written.',
   x_filters:'Filter', x_rows:'Rows',
+  x_costs_gone:'COST FIGURES MISSING: the maintenance cost register could not be read when this file was made. Cost cells are left empty, not zero.',
+  x_costs_stale:'COST FIGURES MAY BE OUT OF DATE: the cost register could not be re-read at {t}. Cost cells are the last figures that arrived.',
+  pay_not_recorded:'The payment was NOT recorded — the database did not accept it. Nothing has changed on the resident\'s schedule.',
+  log_not_done:'The job was NOT logged — the database did not accept it.',
+  wo_not_saved:'That change was NOT saved — the database did not accept it. The job is as it was.',
+  saving_now:'Saving…',
   rp_broken:'This report did not build. Nothing is shown rather than an empty table that would read as a real answer.',
   u_headlease:'{n} apartments in the head lease are not lettable and are not shown: {ids}. Confirmed by Ahmed El Nayal, 15 September 2026.',
   u_headlease_n:'Not shown',
@@ -1148,6 +1161,12 @@ const D={
   x_notready:'سجل التصدير غير مُثبَّت في قاعدة البيانات بعد، فلم يُصدَّر شيء.',
   x_failed:'تعذّر تسجيل عملية التصدير، فلم يُكتب شيء.',
   x_filters:'التصفية', x_rows:'عدد الصفوف',
+  x_costs_gone:'أرقام التكلفة مفقودة: تعذّرت قراءة سجل تكاليف الصيانة عند إنشاء هذا الملف. خلايا التكلفة تُركت فارغة وليست صفراً.',
+  x_costs_stale:'أرقام التكلفة قد تكون غير محدّثة: تعذّرت إعادة قراءة سجل التكاليف عند {t}. خلايا التكلفة هي آخر ما ورد.',
+  pay_not_recorded:'لم تُسجَّل الدفعة — لم تقبلها قاعدة البيانات. لم يتغير شيء في جدول الساكن.',
+  log_not_done:'لم يُسجَّل العمل — لم تقبله قاعدة البيانات.',
+  wo_not_saved:'لم يُحفظ التغيير — لم تقبله قاعدة البيانات. الطلب كما كان.',
+  saving_now:'جارٍ الحفظ…',
   rp_broken:'تعذّر بناء هذا التقرير. لا يُعرض شيء بدلاً من جدول فارغ قد يُقرأ كإجابة حقيقية.',
   u_headlease:'{n} من الشقق المدرجة في عقد الإيجار الرئيسي غير قابلة للتأجير ولا تظهر هنا: {ids}. بتأكيد أحمد النيال في ١٥ سبتمبر ٢٠٢٦.',
   u_headlease_n:'غير معروضة',
@@ -3002,9 +3021,16 @@ function toast(m){const e=$('toast');e.innerHTML=I('check',17,2.2)+'<span>'+esc(
    must not repaint over the one that is — or reopen one that was closed. */
 let DRAWER_SEQ = 0;
 function closeDrawer(){
-  $('drawer').classList.remove('on');$('scrim').classList.remove('on');
+  const d = $('drawer');
+  d.classList.remove('on');$('scrim').classList.remove('on');
+  d.removeAttribute('aria-modal');
   DRAWER_SEQ++;
   try{ if(typeof ID_SHOWN !== 'undefined') ID_SHOWN = null; }catch(e){}
+  /* CON-09. Focus goes back to where it was, if that is still on the page. */
+  try{
+    const back = DRAWER_RETURN_FOCUS; DRAWER_RETURN_FOCUS = null;
+    if(back && back !== document.body && document.contains(back) && typeof back.focus === 'function') back.focus();
+  }catch(e){}
 }
 
 /* ------------------------ schedule reconciliation ------------------------ */
@@ -3114,11 +3140,30 @@ async function rcApplyImport(){
             'رفضت قاعدة البيانات هذا التغيير: ' + (e && e.message || '')));
   }
 }
+/* CON-09. The drawer is a dialog and says so: a role, a name taken from its
+   own heading, focus moved in when it opens and handed back to whatever had
+   it when it closes, and Escape to close it. Without the role a screen reader
+   read it as more page; without the focus move a keyboard user was left on a
+   control behind the scrim. */
+let DRAWER_RETURN_FOCUS = null;
 function openDrawer(title,body){
- $('drawer').innerHTML=`<div class="dh"><h2>${title}</h2><div style="flex:1"></div>
+ const d = $('drawer');
+ if(!d.classList.contains('on')){
+   try{ DRAWER_RETURN_FOCUS = document.activeElement; }catch(e){ DRAWER_RETURN_FOCUS = null; }
+ }
+ d.innerHTML=`<div class="dh"><h2 id="drawerTitle" tabindex="-1">${title}</h2><div style="flex:1"></div>
    <button class="x" type="button" onclick="closeDrawer()"
      aria-label="${esc(T('a_close'))}">${I('x',20,2)}</button></div><div class="db">${body}</div>`;
- $('drawer').classList.add('on');$('scrim').classList.add('on');}
+ d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true');
+ d.setAttribute('aria-labelledby', 'drawerTitle');
+ d.classList.add('on');$('scrim').classList.add('on');
+ /* Focus goes to the first control if there is one, else to the heading —
+    after the slide-in, so a screen reader announces the dialog it landed in. */
+ setTimeout(() => { try{
+   const first = d.querySelector('.db input:not([type=hidden]), .db select, .db textarea, .db button, .db [tabindex="0"]');
+   (first || d.querySelector('#drawerTitle') || d).focus();
+ }catch(e){} }, 60);
+}
 
 /* ------------------------------ charts ------------------------------ */
 const SER=['var(--series-1)','var(--series-2)','var(--series-3)','var(--series-4)'];
@@ -3301,6 +3346,8 @@ function navToggle(){ navSet(!document.body.classList.contains('navopen')); }
 function navClose(){ navSet(false); }
 document.addEventListener('keydown', e => {
  if(e.key==='Escape' && document.body.classList.contains('navopen')) navClose();
+ /* CON-09. Escape closes the dialog. */
+ else if(e.key==='Escape' && $('drawer') && $('drawer').classList.contains('on')) closeDrawer();
 });
 
 /* Choosing a destination closes the sheet. Leaving it open over the page the
@@ -3596,7 +3643,14 @@ const emptyState = (title, body, action) => `
    this way are marked noSla and left out of the SLA and average-close figures
    rather than counted as having met a target nobody measured.
    --------------------------------------------------------------------------- */
+/* CON-03. The key is minted when the FORM opens and reused for every press of
+   Save on that form. Minting it on Save was the first version and it had a
+   hole CON-02 made visible: the save lands, the answer is lost, the person is
+   told it did not happen, presses Save again — and a fresh key files the same
+   job a second time. One form, one submission, one key. */
+let JOB_KEY = null;
 function logJobOpen(){
+  JOB_KEY = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : null;
   const let_ = UNITS.filter(u=>u.occupied).sort((a,b)=>a.u.localeCompare(b.u,'en',{numeric:true}));
   const iso = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   openDrawer(T('log_t'), `
@@ -3628,7 +3682,7 @@ function logJobOpen(){
    <button class="btn pri" onclick="logJobSave()">${I('check',16,2.2)} ${T('log_save')}</button>`);
 }
 
-function logJobSave(){
+async function logJobSave(){
   /* The database refuses a viewer's write; this is so the refusal arrives as a
      sentence rather than as a 42501 from PostgREST. */
   if(!writeGate()) return;
@@ -3642,7 +3696,9 @@ function logJobSave(){
     unit, cat, date, supplier: sup,
     desc: ($('jDesc').value || '').trim() || catName(CAT(cat)),
     mat: Number(mat) || 0, labH: Number($('jLab').value) || 0,
-    inv: ($('jInv').value || '').trim()
+    inv: ($('jInv').value || '').trim(),
+    /* CON-03. The key this form was opened with. See logJobOpen. */
+    request_key: JOB_KEY
   };
   /* The reference is minted here, from the shared record's own counter, and
      the counter moves in the same commit that records the job. logJobAdd used
@@ -3655,11 +3711,19 @@ function logJobSave(){
   const seq  = Math.max(Number(st0.nextSeq) || 0, WOS.length + 1);
   rec.id = 'MR-' + String(d.getFullYear()).slice(2) + String(d.getMonth()+1).padStart(2,'0')
          + '-I' + String(seq).padStart(3,'0');
-  const id = logJobAdd(rec, u, d);
+  /* CON-02. The job joins the list on screen only once the database holds
+     it. The form stays open, values intact, until then. */
+  const key = 'job:' + rec.id; if(PENDING.has(key)) return;
+  saving(key, true);
   LINK.commit(st => {
-    st.jobs = st.jobs || []; st.jobs.push({...rec, id});
+    st.jobs = st.jobs || []; st.jobs.push({...rec, id: rec.id});
     st.nextSeq = Math.max(Number(st.nextSeq) || 0, seq + 1);
   }, 'console');
+  const ok = await settledOK();
+  saving(key, false);
+  if(!ok){ toast(T('log_not_done')); return; }
+  JOB_KEY = null;                              /* this submission is done with */
+  logJobAdd(rec, u, d);
   recompute(); closeDrawer(); render();
   toast(T('log_done'));
 }
@@ -3886,12 +3950,13 @@ function woDetail(id){
     </dl></div></div>`}
  `);
 }
-function closeWO(id){
+async function closeWO(id){
   if(!writeGate()) return;
  const lab=$('cLab').value, mat=$('cMat').value;
  if(lab===''||mat===''){toast(T('t_needcost'));return;}
  const note=$('cNote')?$('cNote').value:'';
  const w=WOS.find(x=>x.id===id); if(!w) return;
+ const key='wo:'+id; if(PENDING.has(key)) return;
  /* The clock stops here. Until 14 September this function set status and cost
     and nothing else: closeH stayed 0 and breached stayed false, so a job closed
     a week past target read as met, and the average close time counted it as
@@ -3900,27 +3965,40 @@ function closeWO(id){
     shown. The close time travels with the record so the other console and the
     database stamp the same moment rather than each reading its own now. */
  const at = new Date();
+ const labH=parseFloat(lab)||0, matN=parseFloat(mat)||0;
+ saving(key, true);
+ LINK_wo(id,{status:'done', labH:labH, mat:matN, note:note,
+             closedAt: at.toISOString()});
+ const ok = await settledOK();
+ saving(key, false);
+ if(!ok){ toast(T('wo_not_saved')); return; }
  markClosed(w, at);
- w.status='done'; w.labH=parseFloat(lab)||0; w.mat=parseFloat(mat)||0;
+ w.status='done'; w.labH=labH; w.mat=matN;
  w.note=note;
  recompute();
- LINK_wo(id,{status:'done', labH:w.labH, mat:w.mat, note:note,
-             closedAt: at.toISOString()});
  closeDrawer(); render(); toast(T('t_closed'));
 }
 
 /* record an instalment as received; the resident's schedule flips to Paid */
-function recordPayment(unit, q){
+async function recordPayment(unit, q){
   if(!writeGate()) return;
  const u = UNITS.find(x=>x.u===unit); if(!u) return;
  const row = (u.inst||[]).find(x=>x.q===q); if(!row || row.paid) return;
+ const key = 'pay:' + unit + ':' + q; if(PENDING.has(key)) return;
  const d = new Date();
  const ref = 'RCT-'+String(d.getFullYear()).slice(2)+'-'+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
- row.paid = true; row.paidOn = d; row.ref = ref;
+ /* CON-02. The row is NOT touched here. It flips only when the database says
+    the instalment is paid; until then the drawer shows the instalment as it
+    is, with its button greyed. */
+ saving(key, true);
  LINK.commit(s=>{
    s.pay[unit] = s.pay[unit] || {paid:{}};
    s.pay[unit].paid[q] = {ref, on:d.toISOString()};
  }, 'console');
+ const ok = await settledOK();
+ saving(key, false);
+ if(!ok){ render(); toast(T('pay_not_recorded')); return; }
+ row.paid = true; row.paidOn = d; row.ref = ref;
  recompute(); closeDrawer(); render();
  const early = row.due && row.due > TODAY;
  toast(early
@@ -3939,23 +4017,33 @@ function knownTechs(){
  SUPPLIERS.forEach(s=>set.add(s.n));
  return [...set].sort();
 }
-function assignWO(id){
+async function assignWO(id){
  if(!writeGate()) return;
  const w=WOS.find(x=>x.id===id); if(!w) return;
  const el=$('aTech'); const name=(el?el.value:'').trim();
  if(!name){toast(L('Enter who is going.','أدخل اسم من سيقوم بالعمل.'));return;}
  const t=SUPPLIERS.find(x=>x.n===name)?{n:name,ar:name,type:'sup'}:{n:name,ar:name,type:'in'};
+ const key='wo:'+id; if(PENDING.has(key)) return;
+ saving(key, true);
+ LINK_wo(id,{status:'assigned', tech:t.n, tech_ar:t.ar});
+ const ok = await settledOK();
+ saving(key, false);
+ if(!ok){ toast(T('wo_not_saved')); return; }
  w.status='assigned'; w.tech=t.n; w.tech_ar=t.ar; w.supplier=t.type==='sup';
  recompute();
- LINK_wo(id,{status:'assigned', tech:t.n, tech_ar:t.ar});
  closeDrawer(); render(); toast(L('Assigned. The resident can see it.','تم الإسناد، ويظهر ذلك للساكن.'));
 }
-function startWO(id){
+async function startWO(id){
  if(!writeGate()) return;
  const w=WOS.find(x=>x.id===id); if(!w) return;
  if(w.tech==='—'){toast(L('Assign the job before starting it.','أسند الطلب قبل بدء التنفيذ.'));return;}
- w.status='progress'; recompute();
+ const key='wo:'+id; if(PENDING.has(key)) return;
+ saving(key, true);
  LINK_wo(id,{status:'progress'});
+ const ok = await settledOK();
+ saving(key, false);
+ if(!ok){ toast(T('wo_not_saved')); return; }
+ w.status='progress'; recompute();
  closeDrawer(); render(); toast(L('Marked in progress.','تم وضعه قيد التنفيذ.'));
 }
 
@@ -5258,7 +5346,23 @@ async function exportRows(spec){
      the scanner's allow-list; it is to stop writing non-markup strings in the
      one syntax the scanner has to read as markup. */
   const line = (a, b) => '\n' + csvCell(a) + (b === undefined ? '' : ',' + csvCell(b));
-  let csv = csvSheet(spec.title, spec.cols, rows, spec.foot);
+
+  /* CON-05a. The screen warned when the cost register could not be read; the
+     file did not, and went out with a cost of zero in every cell. A zero in a
+     spreadsheet is a figure somebody will sum. When the register has NEVER
+     arrived the cost cells leave empty, and either way the file carries the
+     warning the screen carried — with the time of the last good read, so the
+     reader knows how stale "stale" is. */
+  let costState = {ok:true};
+  try{ costState = LIVE.costsState(); }catch(e){}
+  const costCols = (spec.costCols || []).filter(k => (spec.cols || []).some(c => c.k === k));
+  let outRows = rows, outFoot = spec.foot;
+  if(costState && !costState.ok && !costState.everLoaded && costCols.length){
+    const strip = r => { const c = Object.assign({}, r); costCols.forEach(k => { c[k] = null; }); return c; };
+    outRows = rows.map(strip);
+    outFoot = spec.foot ? strip(spec.foot) : spec.foot;
+  }
+  let csv = csvSheet(spec.title, spec.cols, outRows, outFoot);
   if(spec.extra && spec.extra.rows && spec.extra.rows.length)
     csv += '\n\n' + csvSheet(spec.extra.title, spec.extra.cols, spec.extra.rows, spec.extra.foot);
   /* TODAY, not fmtD(TODAY). csvCell turns a Date into an ISO date; fmtD is for
@@ -5269,6 +5373,11 @@ async function exportRows(spec){
   if(spec.period)  csv += line(T('rp_period'), spec.period);
   if(spec.filters) csv += line(T('x_filters'), spec.filters);
   if(spec.note)    csv += line(String(spec.note).replace(/<[^>]*>/g, ''));
+  if(costState && !costState.ok && costCols.length){
+    const when = costState.since instanceof Date
+      ? String(costState.since.getHours()).padStart(2,'0') + ':' + String(costState.since.getMinutes()).padStart(2,'0') : '';
+    csv += line(costState.everLoaded ? T('x_costs_stale').replace('{t}', when) : T('x_costs_gone'));
+  }
 
   await saveFile('almaria-' + spec.what + '-' + TODAY.toISOString().slice(0,10) + '.csv',
                  '﻿' + csv, 'text/csv;charset=utf-8');
@@ -5282,8 +5391,17 @@ function rpExport(id){
      is read off the columns rather than kept in a second list beside them that
      somebody has to remember to update. */
   const personal = (out.cols||[]).some(c => ['tenant','name','resident','phone','email'].includes(c.k));
+  /* CON-05a. The columns that come from the cost register. In a maintenance
+     report every money column does; elsewhere only `cost`, `maint` and `net`
+     (collected less maintenance) do — `rent`, `billed`, `avg` rent and the
+     like come from the lease schedule and a failed cost read leaves them
+     exactly as they are. The key alone is not enough: `avg` is average rent
+     in one report and average job cost in another, which is why the group
+     decides first. */
+  const costCols = (out.cols||[]).filter(c => c.money &&
+      (meta.g === 'maint' || ['cost','maint','net'].includes(c.k))).map(c => c.k);
   return exportRows({
-    what: id, personal, title: rpName(id),
+    what: id, personal, title: rpName(id), costCols,
     cols: out.cols, rows: out.rows||[], foot: out.foot, extra: out.extra,
     period: out.period ? rpPeriodLabel() : null,
     note: out.note
@@ -5369,7 +5487,7 @@ function exportArrears(){
 
 function exportUnits(){
   return exportRows({
-    what:'units', personal:true, title:T('t_units'),
+    what:'units', personal:true, title:T('t_units'), costCols:['cost'],
     cols:[{k:'unit',l:T('unit')},{k:'floor',l:T('floor')},{k:'type',l:T('type')},
           {k:'area',l:T('area')},{k:'status',l:T('status')},{k:'tenant',l:T('tenant')},
           {k:'leaseEnd',l:T('leaseend')},{k:'open',l:T('openjobs')},{k:'cost',l:T('costytd')}],
@@ -5793,13 +5911,15 @@ const CRM = (function(){
     loading = true; err = null;
     try{
       const [c, d, t, r, a, ten, ids] = await Promise.all([
-        SB.sel('contacts',   'select=*&order=name_en.asc'),
-        SB.sel('deals',      'select=*,contacts(name_en,name_ar)&order=stage_since.desc'),
-        SB.sel('tasks_open', 'select=*&order=due_on.asc.nullslast'),
-        SB.sel('renewals_due','select=*&order=ends_on.asc'),
-        SB.sel('supplier_agreements_due','select=*&order=ends_on.asc.nullslast'),
-        SB.sel('contact_tenancy','select=*&order=contact_id.asc,ends_on.desc'),
-        SB.sel('identity_documents','select=*&order=uploaded_at.desc')
+        /* CON-08. Whole collections, paged, with a unique key at the end of
+           every order. The views carry the key of the row they derive from. */
+        SB.selAll('contacts',   'select=*&order=name_en.asc,id.asc'),
+        SB.selAll('deals',      'select=*,contacts(name_en,name_ar)&order=stage_since.desc,id.desc'),
+        SB.selAll('tasks_open', 'select=*&order=due_on.asc.nullslast,id.asc'),
+        SB.selAll('renewals_due','select=*&order=ends_on.asc,lease_id.asc'),
+        SB.selAll('supplier_agreements_due','select=*&order=ends_on.asc.nullslast,id.asc'),
+        SB.selAll('contact_tenancy','select=*&order=contact_id.asc,ends_on.desc,lease_id.desc'),
+        SB.selAll('identity_documents','select=*&order=uploaded_at.desc,id.desc')
       ]);
       contacts = c; deals = d; tasks = t; renewals = r; agreements = a;
       /* Grouped by person, current lease first. A resident with a renewal
@@ -5940,6 +6060,43 @@ const rolesViewer = () => {
 function writeGate(){
   if(rolesViewer()){ toast(T('ro_toast')); return false; }
   return true;
+}
+
+/* ------------------------------- CON-02 -------------------------------
+   Say it happened after it happened.
+
+   recordPayment, logJobSave, assignWO, startWO and closeWO all did the same
+   thing: change the row on screen, hand the change to LINK.commit, close the
+   drawer and announce success — before the database had answered. A refused
+   save still produced a paid row and a green toast, and a reload a moment
+   later quietly took the row back. The operator had already told the resident.
+
+   The rule now: nothing on screen changes and nothing is announced until the
+   write is acknowledged. LINK.settled() is the promise of the most recent
+   push, resolving to {held, failed}. On failure the drawer stays open with its
+   values, the person is told in words that the thing did NOT happen, and the
+   row is exactly as it was. On success the row changes, the drawer closes, and
+   the toast is earned.
+
+   PENDING guards a second press on the same control while the first is in
+   flight; body.saving greys the drawer's controls so that the wait is visible
+   rather than implied. */
+const PENDING = new Set();
+function saving(key, on){
+  if(on) PENDING.add(key); else PENDING.delete(key);
+  try{ document.body.classList.toggle('saving', PENDING.size > 0); }catch(e){}
+}
+async function settledOK(){
+  try{
+    /* Not signed in: LINK is the localStorage record, commit is synchronous,
+       and the only failure it knows is a full store, which healthy() reports. */
+    if(typeof LINK.settled !== 'function')
+      return typeof LINK.healthy === 'function' ? LINK.healthy() !== false : true;
+    const r = await LINK.settled();
+    /* Held is not failed, but it is not recorded either: the write is sitting
+       in the reconciliation panel waiting for a decision. Nothing was saved. */
+    return !(r && (r.failed || r.held));
+  }catch(e){ return false; }
 }
 
 /* Shown instead of a CRM screen when nobody has signed in. It explains the
@@ -6198,39 +6355,39 @@ function contactOpen(id){
   const c = id ? CRM.contacts().find(x => x.id === id) : null;
   const v = k => c && c[k] ? esc(c[k]) : '';
   openDrawer(c ? T('crm_edit') : T('crm_add'), `
-    <div style="margin:10px 0"><label class="f">${T('crm_name_en')}</label>
+    <div style="margin:10px 0"><label class="f" for="cNameEn">${T('crm_name_en')}</label>
       <input class="inp" id="cNameEn" value="${v('name_en')}" placeholder="Faisal Al-Otaibi"></div>
-    <div style="margin:10px 0"><label class="f">${T('crm_name_ar')}</label>
+    <div style="margin:10px 0"><label class="f" for="cNameAr">${T('crm_name_ar')}</label>
       <input class="inp" id="cNameAr" dir="rtl" value="${v('name_ar')}" placeholder="فيصل العتيبي"></div>
-    <div style="margin:10px 0"><label class="f">${T('crm_kind')}</label>
+    <div style="margin:10px 0"><label class="f" for="cKind">${T('crm_kind')}</label>
       <select class="inp" id="cKind">
         ${KINDS.map(([kv,kk])=>`<option value="${kv}" ${kv===(c?c.kind:'unknown')?'selected':''}>${T(kk)}</option>`).join('')}
       </select>
       <div class="note" style="margin-top:6px">${T('crm_kind_note')}</div></div>
-    <div style="margin:10px 0"><label class="f">${T('crm_phone')}</label>
+    <div style="margin:10px 0"><label class="f" for="cPhone">${T('crm_phone')}</label>
       <input class="inp" id="cPhone" value="${v('phone')}" placeholder="+9665..."></div>
-    <div style="margin:10px 0"><label class="f">${T('crm_email')}</label>
+    <div style="margin:10px 0"><label class="f" for="cEmail">${T('crm_email')}</label>
       <input class="inp" id="cEmail" type="email" value="${v('email')}"></div>
     <div class="f" style="margin:20px 0 8px">${T('crm_ident')}</div>
-    <div style="margin:10px 0"><label class="f">${T('crm_id_type')}</label>
+    <div style="margin:10px 0"><label class="f" for="cIdType">${T('crm_id_type')}</label>
       <select class="inp" id="cIdType">
         ${IDTYPES.map(([tv,tk])=>`<option value="${tv}" ${tv===(c?c.id_type:'unknown')?'selected':''}>${T(tk)}</option>`).join('')}
       </select></div>
-    <div style="margin:10px 0"><label class="f">${T('crm_id_no')}</label>
+    <div style="margin:10px 0"><label class="f" for="cIdNo">${T('crm_id_no')}</label>
       <input class="inp" id="cIdNo" inputmode="numeric" autocomplete="off"
              placeholder="${c && c.id_number ? T('crm_id_keep') : ''}">
       <div class="note" style="margin-top:6px">${
         c && c.id_number ? T('crm_id_on_file_note') + ' ' + T('crm_id_note') : T('crm_id_note')}</div></div>
-    <div style="margin:10px 0"><label class="f">${T('crm_id_exp')}</label>
+    <div style="margin:10px 0"><label class="f" for="cIdExp">${T('crm_id_exp')}</label>
       <input class="inp" id="cIdExp" type="date" value="${c && c.id_expires_on ? c.id_expires_on : ''}">
       <div class="note" style="margin-top:6px">${T('crm_id_exp_note')}</div></div>
-    <div style="margin:10px 0"><label class="f">${T('crm_nat')}</label>
+    <div style="margin:10px 0"><label class="f" for="cNat">${T('crm_nat')}</label>
       <input class="inp" id="cNat" value="${v('nationality')}"></div>
-    <div style="margin:10px 0"><label class="f">${T('crm_job')}</label>
+    <div style="margin:10px 0"><label class="f" for="cJob">${T('crm_job')}</label>
       <input class="inp" id="cJob" value="${v('job_title')}"></div>
-    <div style="margin:10px 0"><label class="f">${T('crm_emp')}</label>
+    <div style="margin:10px 0"><label class="f" for="cEmp">${T('crm_emp')}</label>
       <input class="inp" id="cEmp" value="${v('employer')}"></div>
-    <div style="margin:10px 0"><label class="f">${T('crm_note_f')}</label>
+    <div style="margin:10px 0"><label class="f" for="cNote">${T('crm_note_f')}</label>
       <textarea class="inp" id="cNote" rows="3">${v('note')}</textarea></div>
     <button class="btn pri" style="margin-top:12px" onclick="contactSave(${id || 'null'})">${T('save')}</button>
     <div class="note" style="margin-top:12px">${T('crm_id_handling')}</div>`);
@@ -6888,10 +7045,23 @@ const SB = (function(){
   let sess = null;
   try{ sess = JSON.parse(localStorage.getItem(SKEY) || 'null'); }catch(e){ sess = null; }
 
+  /* CON-06. The socket sent its token once, when it opened, and never again.
+     save() updated memory and storage, so every HTTP request went out with the
+     fresh token while the subscription sat on the one that had expired — a
+     console left open across an expiry had current credentials for reads and a
+     dead channel for changes. Realtime has a message for exactly this; it is
+     sent whenever the token this tab holds changes hands, by whichever route. */
+  function pushToken(){
+    try{
+      if(sess && sess.access_token && typeof onTokenChange === 'function') onTokenChange(sess.access_token);
+    }catch(e){}
+  }
   function save(s){
+    const was = sess && sess.access_token;
     sess = s || null;
     try{ sess ? localStorage.setItem(SKEY, JSON.stringify(sess)) : localStorage.removeItem(SKEY); }
     catch(e){}
+    if(sess && sess.access_token !== was) pushToken();
   }
   /* What is in storage RIGHT NOW, which is not always what this tab has in
      hand: another tab signing in, refreshing or signing out writes here. */
@@ -6937,6 +7107,15 @@ const SB = (function(){
       const msg = (body && (body.message || body.error_description || body.msg ||
                             body.error || body.hint)) || ('HTTP ' + r.status);
       throw Object.assign(new Error(msg), {status:r.status, body:body});
+    }
+    /* CON-08. A paging loop needs to know how many rows exist, not only how
+       many came back — a server cap below the page size makes those two
+       different numbers, and "fewer than I asked for" then means "capped",
+       not "finished". PostgREST says in Content-Range: "0-99/250". */
+    if(opt.withRange){
+      let range = null;
+      try{ range = r.headers && r.headers.get ? r.headers.get('content-range') : null; }catch(e){}
+      return {body, range};
     }
     return body;
   }
@@ -7010,6 +7189,7 @@ const SB = (function(){
         const other = stored();
         if(other && other.access_token && sess && other.access_token !== sess.access_token){
           sess = other;                       /* adopt, do not overwrite */
+          pushToken();                        /* CON-06: the socket follows */
           return stale() ? null : sess;
         }
         if(revoked(e)) save(null);
@@ -7113,7 +7293,23 @@ const SB = (function(){
   }
 
   /* --------------------------------- rest -------------------------------- */
-  const sel = (t,q)      => authedRead(() => call('/rest/v1/'+t+(q?'?'+q:''), {headers:hdr()}));
+  /* CON-08. sel() can be asked for the count. It then sends Prefer:
+     count=exact, reads the server's total off Content-Range, and hands the
+     rows back with `total` attached as a non-enumerable property — so a
+     caller that did not ask sees the same plain array it always saw, and a
+     harness that stubs SB.sel with a plain array is read as "no total
+     offered". The paging loop below goes through API.sel for exactly that
+     reason: a private counted read broke twenty-seven suites in one go, each
+     of which had stubbed SB.sel and was suddenly talking to the network. */
+  const sel = (t,q,o) => authedRead(() => call('/rest/v1/'+t+(q?'?'+q:''),
+      {headers:hdr(o && o.count ? {Prefer:'count=exact'} : undefined), withRange: !!(o && o.count)}))
+    .then(r => {
+      if(!(o && o.count)) return r;
+      const rows = Array.isArray(r.body) ? r.body : [];
+      const m = /^(\d+)-(\d+)\/(\d+|\*)$/.exec(String(r.range || ''));
+      try{ Object.defineProperty(rows, 'total', {value: m && m[3] !== '*' ? Number(m[3]) : null, enumerable:false}); }catch(e){}
+      return rows;
+    });
   const ins = (t,rows)   => authedWrite(() => call('/rest/v1/'+t, {method:'POST',
                               headers:hdr({'Content-Type':'application/json', Prefer:'return=representation'}),
                               body:JSON.stringify(rows)}));
@@ -7195,6 +7391,18 @@ const SB = (function(){
 
   const send = o => { try{ if(ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }catch(e){} };
 
+  /* CON-06. Called by save() and by the adopt-another-tab path with the token
+     the tab now holds. Sent only when there is a socket to send it on; a socket
+     that opens later sends the current token itself in onopen. */
+  let lastSentToken = null;
+  function onTokenChange(tok){
+    if(!tok || tok === lastSentToken) return;
+    if(ws && ws.readyState === 1){
+      send({topic:TOPIC, event:'access_token', ref:String(++ref), payload:{access_token: tok}});
+      lastSentToken = tok;
+    }
+  }
+
   function connect(){
     if(ws || !watchers.length) return;
     rt = 'joining';
@@ -7208,8 +7416,9 @@ const SB = (function(){
       send({topic:TOPIC, event:'phx_join', ref:joinRef, payload:{config:{
         broadcast:{self:false}, presence:{key:''}, private:false,
         postgres_changes: tables.map(t=>({event:'*', schema:'public', table:t}))}}});
-      if(sess) send({topic:TOPIC, event:'access_token', ref:String(++ref),
-                     payload:{access_token: sess.access_token}});
+      if(sess){ send({topic:TOPIC, event:'access_token', ref:String(++ref),
+                      payload:{access_token: sess.access_token}});
+                lastSentToken = sess.access_token; }
       hb = setInterval(()=>send({topic:'phoenix', event:'heartbeat', ref:String(++ref), payload:{}}), 25000);
     };
     ws.onmessage = ev => {
@@ -7237,12 +7446,23 @@ const SB = (function(){
            Only on a RE-join. The first join follows the read that start() has
            just done, and catching up on that would read the same rows twice
            every time the page opens. */
-        if(joined) watchers.forEach(fn => { try{ fn({catchup:'rejoin'}); }
-                                            catch(e){ console.error('SB.watch', e); } });
+        /* CON-06, the other half. "Only on a re-join" left a gap: the read that
+           start() did and the join that followed it are two moments, and a
+           change that landed between them was delivered to nobody. One extra
+           read on first join is cheap; a change nobody saw is not. */
+        watchers.forEach(fn => { try{ fn({catchup: joined ? 'rejoin' : 'first'}); }
+                                 catch(e){ console.error('SB.watch', e); } });
         joined = true;
       }
       if(m.event === 'phx_reply' && m.ref === joinRef && m.topic === TOPIC &&
          m.payload && m.payload.status !== 'ok') rt = 'error';
+      /* CON-06. A channel the server has closed or errored is not going to
+         deliver anything. Closing the socket here hands it to onclose, which
+         already knows how to back off and reconnect. */
+      if((m.event === 'phx_error' || m.event === 'phx_close') && m.topic === TOPIC){
+        rt = 'error';
+        try{ ws && ws.close(); }catch(e){}
+      }
       if(m.event === 'system' && m.payload && m.payload.status === 'error') rt = 'error';
       if(m.event === 'postgres_changes'){
         const d = (m.payload && m.payload.data) || {};
@@ -7290,16 +7510,43 @@ const SB = (function(){
      a future cache, a retry policy — is inherited rather than bypassed. A
      layer that reaches past its own public surface is how two code paths come
      to disagree, which is most of what this week has been about. */
+  /* CON-08. Two things this loop got wrong before 16 September:
+
+       - it stepped by the page size it ASKED for. A server whose max-rows is
+         below that answers with fewer rows than requested, and "fewer than
+         requested" was read as "that was the last page". With a cap of 100
+         and 250 rows present it returned 100 and called it complete.
+       - it had no idea how many rows existed, so it could not tell a short
+         final page from a capped one.
+
+     It asks for the count now, steps by the rows that actually arrived, and
+     stops when the server's own total is reached. A server that will not
+     count (Content-Range ends in "*") is not PostgREST, and a short page is
+     taken as the end there — see the note in the loop.
+
+     The order must end in a unique key. With equal timestamps at a page
+     boundary and no tie-breaker, offset paging is allowed to return a row
+     twice and another never; every caller here orders by a timestamp AND by
+     id, and this refuses an order that does not name id, seq or a key. */
   API.selAll = async (t, q, pageSize) => {
-    if(!/(^|&)order=/.test(q || ''))
-      throw new Error('selAll(' + t + ') needs an order, or the pages overlap');
+    const m = /(^|&)order=([^&]*)/.exec(q || '');
+    if(!m) throw new Error('selAll(' + t + ') needs an order, or the pages overlap');
+    if(!/(^|,)(id|seq|lease_id|contact_id|key)(\.(asc|desc))?(\.nulls(first|last))?$/.test(m[2]))
+      throw new Error('selAll(' + t + ') order "' + m[2] + '" does not end in a unique key, so a page boundary can drop or repeat a row');
     const size = pageSize || 1000;
     const out = [];
-    for(let from = 0; ; from += size){
-      const page = await API.sel(t, q + '&limit=' + size + '&offset=' + from);
-      if(!Array.isArray(page)) return page;
-      out.push(...page);
-      if(page.length < size) return out;
+    for(;;){
+      const rows = await API.sel(t, q + '&limit=' + size + '&offset=' + out.length, {count:true});
+      if(!Array.isArray(rows)) return rows;
+      const total = (rows.total === undefined) ? null : rows.total;
+      out.push(...rows);
+      if(!rows.length) return out;                          /* nothing more, whatever the count said */
+      if(total !== null && out.length >= total) return out; /* the server's own total */
+      /* No total offered. PostgREST always offers one when asked, so this is
+         a server that is not PostgREST — a test double, most likely — and a
+         short page is taken as the end. Under a cap that would truncate; the
+         cap case is what the total is for, and the total is always there. */
+      if(total === null && rows.length < size) return out;
       if(out.length >= 100000)
         throw new Error('refusing to read more than 100000 rows from ' + t);
     }
@@ -7371,12 +7618,14 @@ const LIVE = (function(){
   async function pull(){
     const [units, leases, inst, wos, anns, docs, costs] = await Promise.all([
       SB.selAll('units', 'select=*&order=id.asc'),
-      SB.sel('leases', 'select=id,unit_id,starts_on,ends_on,contract_value,status,' +
-                       'residents(name_en,name_ar)&status=eq.active&order=unit_id.asc'),
+      /* CON-08. Every collection the console needs whole goes through selAll,
+         and every order ends in a unique key. */
+      SB.selAll('leases', 'select=id,unit_id,starts_on,ends_on,contract_value,status,' +
+                          'residents(name_en,name_ar)&status=eq.active&order=unit_id.asc,id.asc'),
       SB.selAll('instalments', 'select=*&order=lease_id.asc,seq.asc'),
-      SB.selAll('work_orders', 'select=*&order=raised_at.desc'),
-      SB.sel('announcements', 'select=*&order=published_at.desc'),
-      SB.selAll('documents', 'select=*&order=uploaded_at.desc'),
+      SB.selAll('work_orders', 'select=*&order=raised_at.desc,id.desc'),
+      SB.selAll('announcements', 'select=*&order=published_at.desc,id.desc'),
+      SB.selAll('documents', 'select=*&order=uploaded_at.desc,id.desc'),
       /* The office's own registers. This layer was written a week before
          building_costs existed, so signing in used to EMPTY the maintenance
          page: work_orders has no rows, and nothing here had been told about
@@ -7840,8 +8089,35 @@ const LIVE = (function(){
 
      This is a recognition rule, not an idempotency key. The durable fix is a
      column — sql/2026-09-15_request_key.sql, written and not applied. */
+  /* CON-03 / REQ-01, the durable half.
+
+     Until 16 September the collision handler decided whether a 409 meant "my
+     own submission already landed" by matching reference, raised time, flat
+     and description. Desk jobs logged for the same day all carry 09:00:00Z
+     and a description that defaults to the service name — so a SAR 200 job
+     and a different SAR 300 job on the same flat looked identical, and the
+     second one was adopted as the first. Two jobs became one.
+
+     Every intended submission now mints a uuid ONCE, before its first attempt,
+     and carries it on every retry: work_orders.request_key, unique where not
+     null (sql/2026-09-15_request_key.sql). The question "did mine land?" is
+     answered by that key and nothing else. A 409 on the primary key with no
+     row under my key is a competitor for the reference — renumber and try
+     again with the SAME key. A 409 on the key is my own row, whether or not
+     the read of it succeeds. */
+  const mintKey = () => { try{ return crypto.randomUUID(); }catch(e){ return null; } };
+  const keyCollision = e => /request_key/.test(
+    String((e && e.message) || '') + ' ' + String((e && e.body && e.body.message) || ''));
+
   async function alreadyMine(body){
     try{
+      if(body.request_key){
+        const rows = await SB.sel('work_orders',
+          'select=*&request_key=eq.' + encodeURIComponent(body.request_key));
+        return (rows && rows[0]) || null;
+      }
+      /* A row written before the column existed carries no key. The old
+         four-field recognition stays for those, and only those. */
       const rows = await SB.sel('work_orders',
         'select=*&id=eq.' + encodeURIComponent(body.id) +
         '&raised_at=eq.' + encodeURIComponent(body.raised_at));
@@ -7851,7 +8127,7 @@ const LIVE = (function(){
                 && String(r.description == null ? '' : r.description)
                    === String(body.description == null ? '' : body.description);
       return same ? r : null;
-    }catch(e){ return null; }        /* cannot tell: fall through and renumber */
+    }catch(e){ return null; }
   }
 
   async function insertWO(body, renamed){
@@ -7870,10 +8146,26 @@ const LIVE = (function(){
           if(mine.id !== from) renamed[from] = mine.id;
           return [mine];
         }
+        /* The key says the submission is already there and the read of it did
+           not come back. Renumbering now would file it a second time — the
+           exact thing the key exists to prevent. Fail, and let the next sync
+           adopt it. */
+        if(body.request_key && keyCollision(e)) throw e;
         body = Object.assign({}, body, {id: bumpRef(body.id)});
       }
     }
   }
+
+  /* CON-02. An UPDATE that matched no row comes back 200 with an empty array,
+     and RLS filters rather than raises — so a write a viewer is not allowed to
+     make, or one aimed at a row that is not there, used to look identical to a
+     success. SB.upd asks for the rows back; no rows means nothing changed, and
+     nothing changed is a failure with a name. */
+  const touched = (p, what) => p.then(rows => {
+    if(!Array.isArray(rows) || !rows.length)
+      throw new Error('nothing was changed for ' + what + ' — the row is missing or the write was not permitted');
+    return rows;
+  });
 
   async function push(before, after){
     const jobs = [];
@@ -7896,13 +8188,14 @@ const LIVE = (function(){
       if(a.mat    !== undefined) p.material    = a.mat;
       if(a.note   !== undefined) p.note        = a.note;
       if(a.rating !== undefined) p.rating      = a.rating;
-      jobs.push(SB.upd('work_orders', 'id=eq.' + encodeURIComponent(id), p));
+      jobs.push(touched(SB.upd('work_orders', 'id=eq.' + encodeURIComponent(id), p), 'job ' + id));
     });
 
     (after.newWO || []).forEach(w => {
       if((before.newWO || []).some(x => x.id === w.id)) return;
       jobs.push(insertWO({
         id:w.id, unit_id:w.unit, category:w.cat, description:w.desc,
+        request_key: w.request_key || null,
         /* APP-02. The resident app collects a title and a preferred visit
            window as well as the description; both were being dropped on the
            floor here. Sent as null rather than '' when absent, so "not stated"
@@ -7922,6 +8215,7 @@ const LIVE = (function(){
          dies on the primary key while the job sits on screen looking logged. */
       jobs.push(insertWO({
         id:j.id, unit_id:j.unit, category:j.cat, description:j.desc,
+        request_key: j.request_key || null,
         priority:'routine', channel:'desk', status:'done', technician:j.supplier || null,
         raised_at:day, closed_at:j.date + 'T12:00:00Z',
         labour_hrs:j.labH || 0, material:j.mat || 0,
@@ -7942,11 +8236,18 @@ const LIVE = (function(){
       Object.keys(A).forEach(q => {
         if(eq(A[q], B[q])) return;
         const lid = leaseOf[unit];
-        if(!lid) return;
-        jobs.push(SB.upd('instalments', 'lease_id=eq.' + lid + '&seq=eq.' + q, {
+        /* CON-02. This used to `return` — and a payment recorded against a
+           flat with no active lease was dropped on the floor with nothing
+           pushed, nothing failed, and settled() reporting a clean success. It
+           is a failure, and it is one the operator has to hear about. */
+        if(!lid){
+          jobs.push(Promise.reject(new Error('no active lease on ' + unit + ' to record a payment against')));
+          return;
+        }
+        jobs.push(touched(SB.upd('instalments', 'lease_id=eq.' + lid + '&seq=eq.' + q, {
           paid:true,
           paid_on:(A[q].on || new Date().toISOString()).slice(0,10),
-          receipt_ref:A[q].ref || null}));
+          receipt_ref:A[q].ref || null}), 'instalment ' + q + ' on ' + unit));
       });
     });
 
