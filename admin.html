@@ -402,7 +402,6 @@ tr.fromapp td:first-child::after{content:'';display:inline-block;width:6px;heigh
     <a class="linkchip" id="linkdot" href="index.html" target="_blank" rel="noopener" title="Open the resident app in a second tab — the two update each other"><i></i><span id="linkLbl"></span></a>
     <button class="tbtn" id="sbBtn" onclick="sbOpen()"></button>
     <button class="tbtn" id="impBtn" onclick="importOpen()"></button>
-    <button class="tbtn" id="expBtn" onclick="toast(T('t_export'))"></button>
     </div>
     <div class="who">
       <div class="av" id="whoAv"></div>
@@ -866,7 +865,12 @@ const D={
   doc_cov_n:'A figure with no document behind it is somebody’s recollection. This report is the list of figures in that position — start at the top, where the most payments are unevidenced.',
   rp_evidence_t:'Evidence coverage',
   rp_evidence_d:'Which figures are backed by a document and which are not — contracts against leases, receipts against payments, invoices against completed work.',
-  export:'Export', t_export:'Prototype — export would produce an Excel workbook.',
+  export:'Export',
+  x_empty:'There is nothing in this list to export.',
+  x_denied:'A viewer may read resident details on screen but may not take a copy out. Ask an administrator.',
+  x_notready:'The export log is not installed on the database yet, so nothing was exported.',
+  x_failed:'The export could not be recorded, so nothing was written.',
+  x_filters:'Filter', x_rows:'Rows',
   /* stats */
   st_open:'Open work orders', st_breach:'past target',
   st_sla:'SLA compliance, month', st_close:'Avg time to close', st_cost:'Cost booked, month',
@@ -1135,7 +1139,12 @@ const D={
   t_rep:'التقارير', s_rep:'حزمة التقارير الإدارية',
   t_ann:'الإعلانات', s_ann:'إشعارات المبنى — اللغتان مطلوبتان قبل النشر',
   t_sup:'الموردون', s_sup:'أداء المقاولين والإنفاق — تقرير ١١',
-  export:'تصدير', t_export:'نموذج تجريبي — التصدير ينتج ملف إكسل.',
+  export:'تصدير',
+  x_empty:'لا يوجد في هذه القائمة ما يُصدَّر.',
+  x_denied:'يمكن للمستخدم المطّلع قراءة بيانات الساكن على الشاشة دون أخذ نسخة منها. راجع المسؤول.',
+  x_notready:'سجل التصدير غير مُثبَّت في قاعدة البيانات بعد، فلم يُصدَّر شيء.',
+  x_failed:'تعذّر تسجيل عملية التصدير، فلم يُكتب شيء.',
+  x_filters:'التصفية', x_rows:'عدد الصفوف',
   st_open:'أوامر عمل مفتوحة', st_breach:'تجاوزت المدة',
   st_sla:'الالتزام بالمدة، الشهر', st_close:'متوسط زمن الإغلاق', st_cost:'التكلفة المسجلة، الشهر',
   st_occ:'الإشغال', st_adopt:'الطلبات عبر التطبيق',
@@ -3319,7 +3328,7 @@ function renderLocked(){
   ME.clear();
   $('brandSub').textContent = T('console');
   $('sideFoot').textContent = '';
-  for(const id of ['expBtn','impBtn']){ const e=$(id); if(e) e.style.display='none'; }
+  { const e=$('impBtn'); if(e) e.style.display='none'; }
   $('page').innerHTML = `
     <div class="card" style="max-width:640px;margin:6vh auto 0">
       <div class="bd" style="text-align:center;padding:34px 26px">
@@ -3399,7 +3408,7 @@ function paintWho(){
 
 function render(){
  if(!unlocked()) return renderLocked();
- for(const id of ['expBtn','impBtn']){ const e=$(id); if(e) e.style.display=''; }
+ { const e=$('impBtn'); if(e) e.style.display=''; }
  for(const sel of ['.who', '#linkdot']){
    const e = document.querySelector(sel); if(e) e.style.display = '';
  }
@@ -3413,7 +3422,6 @@ function render(){
  $('pgSub').textContent = T('s_'+PAGE).replace('{n}', lettable ? NUM(lettable) : '—');
  paintWho(); ME.ensure(paintWho);
  $('brandSub').textContent=T('console');
- $('expBtn').innerHTML=I('dl',15)+'<span>'+T('export')+'</span>';
  $('impBtn').innerHTML=I('up',15)+'<span>'+T('imp_btn')+'</span>';
  $('langLbl').textContent=LANG==='en'?'العربية':'English';
  (function(){
@@ -3729,6 +3737,7 @@ function pgWO(){
   </select>
   <input aria-label="${T('search')}" placeholder="${T('search')}" value="${WF.q}" oninput="WF.q=this.value;clearTimeout(window._t);window._t=setTimeout(render,220)" style="min-width:250px">
   <div style="flex:1"></div>
+  <button class="tbtn" onclick="exportWO()">${I('down',15)}<span>${T('export')}</span></button>
   <button class="tbtn pri" onclick="logJobOpen()">${I('plus',15)}<span>${T('log_open')}</span></button>
  </div>
  <div class="card">${rows.length?`<div class="tw">
@@ -3979,7 +3988,10 @@ function pgPPM(){
 /* ---------- units ---------- */
 function pgUnits(){
  const max=Math.max(...costByUnit.map(x=>x.cost));
- return `<div class="card"><div class="tw"><table>
+ return `<div class="card">
+  <div class="hd"><div style="flex:1"><h2>${T('t_units')}</h2><div class="d">${T('s_units')}</div></div>
+   <button class="tbtn" onclick="exportUnits()">${I('down',15)}<span>${T('export')}</span></button></div>
+  <div class="tw"><table>
   <thead><tr><th>${T('unit')}</th><th>${T('floor')}</th><th>${T('type')}</th><th class="num">${T('area')}</th>
    <th>${T('status')}</th><th>${T('tenant')}</th><th>${T('leaseend')}</th><th class="num">${T('openjobs')}</th><th>${T('costytd')}</th></tr></thead>
   <tbody>${UNITS.map(u=>{
@@ -5115,10 +5127,35 @@ function rpLibrary(){
 }
 
 /* ------------------------------ export ------------------------------ */
-function rpExport(id){
-  const meta = REPORTS.find(r=>r.id===id); if(!meta) return;
-  const out = meta.f(); if(out.blocked) return;
-  const esc = v => {
+/* DATA-08. There were three Export buttons in this console. ONE of them
+   worked — the one inside a report, which called the function below. The other
+   two, the header button and the one over the arrears table, were:
+
+       onclick="toast('Prototype — export would produce an Excel workbook.')"
+
+   The machinery here was complete and hardened and reachable from exactly one
+   place. That is the fourth time in this repair that a correct mechanism turned
+   out to have a site that did not call it.
+
+   The header button is GONE rather than wired. An Export sitting above the
+   table it exports tells you what you are about to take; one in the header, on
+   every screen, does not. Ahmed's call, 16 September 2026.
+
+   ORDER. record_export() runs FIRST, and the file is built only if it returns.
+   It decides whether this caller may take a copy — a viewer may read resident
+   details on screen and may not export them — and it writes the log row with
+   the actor taken from the token, never from what this page sends. A log
+   written after the file is a log missing every export that went wrong, and a
+   permission checked after the file is not a permission at all.
+
+   AND WHAT IT IS WORTH. This is an accountability record, not a technical
+   prevention. Anybody who can read a screen can copy it — with the browser,
+   with a script, with a photograph. Written down here so that nobody later
+   reads the log as a guarantee it cannot be. */
+
+/* One cell. Lifted out of rpExport unchanged so that every export gets it and
+   not just the one that happened to be written first. */
+const csvCell = v => {
     if(v === null || v === undefined) return '';
     if(v instanceof Date) return v.toISOString().slice(0,10);
     let s = String(v).replace(/<[^>]*>/g,'');
@@ -5134,22 +5171,87 @@ function rpExport(id){
     s = s.replace(/^[\s\u0000-\u001F\u200B-\u200F\u2028\u2029]+/, '');
     if(/^[=+\-@]/.test(s)) s = "'" + s;
     return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
-  };
-  const sheet = (title, cols, rows, foot) => {
-    const lines = [title, cols.map(c=>esc(c.l)).join(',')];
-    rows.forEach(r=>lines.push(cols.map(c=>esc(r[c.k])).join(',')));
-    if(foot) lines.push(cols.map(c=>esc(foot[c.k])).join(','));
-    return lines.join('\n');
-  };
-  let csv = sheet(rpName(id), out.cols, out.rows||[], out.foot);
-  if(out.extra && out.extra.rows && out.extra.rows.length)
-    csv += '\n\n' + sheet(out.extra.title, out.extra.cols, out.extra.rows, out.extra.foot);
-  csv += `\n\n${esc(T('rp_exported'))},${esc(fmtD(TODAY))}`;
-  if(out.period) csv += `\n${esc(T('rp_period'))},${esc(rpPeriodLabel())}`;
-  if(out.note) csv += `\n${esc(out.note.replace(/<[^>]*>/g,''))}`;
+};
 
-  saveFile('almaria-' + id + '-' + TODAY.toISOString().slice(0,10) + '.csv',
-           '﻿' + csv, 'text/csv;charset=utf-8');
+const csvSheet = (title, cols, rows, foot) => {
+  const lines = [title, cols.map(c=>csvCell(c.l)).join(',')];
+  rows.forEach(r=>lines.push(cols.map(c=>csvCell(r[c.k])).join(',')));
+  if(foot) lines.push(cols.map(c=>csvCell(foot[c.k])).join(','));
+  return lines.join('\n');
+};
+
+/* Which refusal it was, in words the person can act on. A bare "failed" sends
+   somebody to the wrong place: a missing function is the administrator's job,
+   a refused role is theirs to ask about, and a dropped connection is neither. */
+function exportRefusal(e){
+  const st = e && e.status;
+  const msg = String((e && e.message) || '');
+  if(st === 404 || /PGRST202|could not find the function/i.test(msg)) return T('x_notready');
+  if(st === 401 || st === 403 || /42501/.test(msg)) return T('x_denied');
+  return T('x_failed');
+}
+
+/* The one door every export goes through. */
+async function exportRows(spec){
+  const rows = spec.rows || [];
+  if(!rows.length){ toast(T('x_empty')); return false; }
+  try{
+    await SB.rpcAppend('record_export', {
+      p_what:      spec.what,
+      p_personal:  !!spec.personal,
+      p_row_count: rows.length,
+      p_filters:   spec.filters || null
+    });
+  }catch(e){
+    console.error('exportRows', e);
+    toast(exportRefusal(e));
+    return false;                       /* and no file is written */
+  }
+  /* Assembled by concatenation, not with a template literal, and that is not a
+     matter of style.
+
+     check_html_sinks.mjs walks every `${…}` in this file on the premise that a
+     substitution is a markup sink. That premise holds everywhere else here. The
+     first version of these lines used template literals and tripped it on
+     `spec.note` — and the ORIGINAL rpExport escaped the same check only because
+     its local CSV escaper happened to be named `esc`, the same name as the HTML
+     escaper the scanner looks for. A markup check was being satisfied by a CSV
+     function that shared its name.
+
+     Renaming it to csvCell made that visible. The answer is not a new entry in
+     the scanner's allow-list; it is to stop writing non-markup strings in the
+     one syntax the scanner has to read as markup. */
+  const line = (a, b) => '\n' + csvCell(a) + (b === undefined ? '' : ',' + csvCell(b));
+  let csv = csvSheet(spec.title, spec.cols, rows, spec.foot);
+  if(spec.extra && spec.extra.rows && spec.extra.rows.length)
+    csv += '\n\n' + csvSheet(spec.extra.title, spec.extra.cols, spec.extra.rows, spec.extra.foot);
+  /* TODAY, not fmtD(TODAY). csvCell turns a Date into an ISO date; fmtD is for
+     a reader and in Arabic it renders ٠١٢٣, which a spreadsheet takes as text.
+     Same reason the columns below carry Dates rather than formatted strings. */
+  csv += '\n' + line(T('rp_exported'), TODAY);
+  csv += line(T('x_rows'), rows.length);
+  if(spec.period)  csv += line(T('rp_period'), spec.period);
+  if(spec.filters) csv += line(T('x_filters'), spec.filters);
+  if(spec.note)    csv += line(String(spec.note).replace(/<[^>]*>/g, ''));
+
+  await saveFile('almaria-' + spec.what + '-' + TODAY.toISOString().slice(0,10) + '.csv',
+                 '﻿' + csv, 'text/csv;charset=utf-8');
+  return true;
+}
+
+function rpExport(id){
+  const meta = REPORTS.find(r=>r.id===id); if(!meta) return;
+  const out = meta.f(); if(out.blocked) return;
+  /* A report that names tenants is a report of personal data, and the decision
+     is read off the columns rather than kept in a second list beside them that
+     somebody has to remember to update. */
+  const personal = (out.cols||[]).some(c => ['tenant','name','resident','phone','email'].includes(c.k));
+  return exportRows({
+    what: id, personal, title: rpName(id),
+    cols: out.cols, rows: out.rows||[], foot: out.foot, extra: out.extra,
+    period: out.period ? rpPeriodLabel() : null,
+    note: out.note
+  });
 }
 
 /* Saving a file means different things in different places. Opened from a
@@ -5186,6 +5288,108 @@ async function saveFile(name, text, mime){
   }
 }
 
+
+/* The four tables that earn an Export of their own. Each takes what is on
+   screen, with the filters the operator has applied, because an export that
+   quietly differs from the list above it is worse than no export. */
+
+function exportArrears(){
+  const rows = arrearsRows();
+  return exportRows({
+    what:'arrears', personal:true, title:T('f_arr'),
+    cols:[{k:'unit',l:T('unit')},{k:'tenant',l:T('tenant')},{k:'amount',l:T('f_amount')},
+          {k:'due',l:T('f_arr_due')},{k:'days',l:T('f_arr_age')}],
+    rows: rows.map(a=>({unit:a.u.u, tenant:L(a.u.tenant,a.u.tenant_ar),
+                        amount:a.amt, due:a.due, days:a.days})),
+    foot:{unit:T('rp_total'), amount:rows.reduce((t,x)=>t+x.amt,0)},
+    note:T('f_arr_note')
+  });
+}
+
+function exportUnits(){
+  return exportRows({
+    what:'units', personal:true, title:T('t_units'),
+    cols:[{k:'unit',l:T('unit')},{k:'floor',l:T('floor')},{k:'type',l:T('type')},
+          {k:'area',l:T('area')},{k:'status',l:T('status')},{k:'tenant',l:T('tenant')},
+          {k:'leaseEnd',l:T('leaseend')},{k:'open',l:T('openjobs')},{k:'cost',l:T('costytd')}],
+    /* Numbers go out as numbers. NUM() renders Arabic-Indic digits, which are
+       right on screen and are text to a spreadsheet — a column of them will
+       not sum. The labels translate; the figures do not. */
+    rows: UNITS.map(u=>{
+      const cu = costByUnit.find(x=>x.u.u===u.u);
+      return {unit:u.u, floor:u.floor, type:u.type, area:u.area,
+        status: u.occupied?T('occupied'):T('vacant'),
+        tenant: u.occupied?L(u.tenant,u.tenant_ar):'',
+        /* Occupied with no recorded lease end is not a blank. It is the thing
+           DATA-05 is open about, and the export says so in words rather than
+           handing somebody an empty cell to read as "fine". */
+        leaseEnd: !u.occupied ? '' : u.leaseEnd ? u.leaseEnd : T('u_nolease'),
+        open: OPEN.filter(w=>w.unit===u.u).length,
+        cost: cu ? cu.cost : 0};
+    })
+  });
+}
+
+function exportWO(){
+  const rows = woFiltered();
+  const filters = [T('status')+': '+T({open:'f_open',breach:'f_breach',urgent:'f_urgent',all:'f_all'}[WF.status]),
+                   WF.cat!=='all' ? T('category')+': '+catName(CAT(WF.cat)) : null,
+                   WF.q ? T('search')+': '+WF.q : null].filter(Boolean).join(' · ');
+  return exportRows({
+    what:'work-orders', personal:false, title:T('t_wo'), filters,
+    cols:[{k:'ref',l:T('ref')},{k:'unit',l:T('unit')},{k:'cat',l:T('category')},
+          {k:'desc',l:T('desc')},{k:'pri',l:T('priority')},{k:'raised',l:T('raised_c')},
+          {k:'age',l:T('age')},{k:'target',l:T('targetc')},
+          {k:'assignee',l:T('assignee')},{k:'status',l:T('status')}],
+    /* woFiltered(), not the page slice. SCALE-01 was the console showing 60 of
+       100 rows; an export of the visible page would be the same defect wearing
+       a different hat. */
+    rows: rows.map(w=>{
+      const open = ['submitted','assigned','progress','hold'].includes(w.status);
+      return {ref:w.id, unit:w.unit, cat:catName(CAT(w.cat)), desc:w.desc,
+        pri:T('pr_' + priOK(w.pri)), raised:w.raised,
+        age: open ? Math.round(ageH(w)) : '',
+        target: Math.round(w.target),
+        assignee: w.status==='submitted' ? '' : techName(w),
+        status: STA[w.status] ? T(STA[w.status][2]) : w.status};
+    })
+  });
+}
+
+function exportContacts(){
+  const rows = CRM.contacts().filter(c => {
+    if(CF.kind !== 'all' && c.kind !== CF.kind) return false;
+    if(!CF.q) return true;
+    const q = CF.q.toLowerCase();
+    return (c.name_en||'').toLowerCase().includes(q) || (c.name_ar||'').includes(CF.q)
+        || (c.phone||'').includes(CF.q) || (c.email||'').toLowerCase().includes(q);
+  });
+  const filters = [CF.kind!=='all' ? T('crm_kind')+': '+kindName(CF.kind) : null,
+                   CF.q ? T('search')+': '+CF.q : null].filter(Boolean).join(' · ');
+  return exportRows({
+    what:'contacts', personal:true, title:T('t_crm'), filters,
+    cols:[{k:'name',l:T('crm_name')},{k:'kind',l:T('crm_kind')},{k:'phone',l:T('crm_phone')},
+          {k:'unit',l:T('crm_unit')},{k:'lease',l:T('crm_lease')},
+          {k:'email',l:T('crm_email')},{k:'idType',l:T('crm_id_on_file')}],
+    /* The identity NUMBER is not here, and that is deliberate. The console
+       holds it, the screen shows it to one person at a time behind a drawer,
+       and a spreadsheet of 40 of them on somebody's laptop is a different
+       thing entirely. The export says whether one is on file, not what it is. */
+    rows: rows.map(c=>{
+      const t = CRM.tenancy(c.id), cur = t[0] || null;
+      return {name:cName(c), kind:kindName(c.kind), phone:c.phone||'',
+        unit: cur ? cur.unit_id + (cur.is_current ? '' : ' (' + T('crm_ended') + ')') : '',
+        /* One tenancy of several, without saying there are others, is the same
+           half-truth the screen refused to tell. */
+        lease: cur ? (cur.starts_on ? fmtISO(cur.starts_on) : '—') + ' → ' +
+                     (cur.ends_on   ? fmtISO(cur.ends_on)   : '—') +
+                     (t.length > 1 ? ' (+' + (t.length-1) + ' ' + T('crm_earlier') + ')' : '')
+                   : '',
+        email:c.email||'',
+        idType: c.id_number ? idTypeName(c.id_type) : ''};
+    })
+  });
+}
 
 /* ---------- unit performance (R8 + R14) ---------- */
 let FSORT={k:'unit',dir:1}, FONLY=false;
@@ -5241,7 +5445,7 @@ function pgFin(){
 
  <div class="card mb">
   <div class="hd"><div style="flex:1"><h2>${T('f_arr')}</h2><div class="d">${T('f_arr_d')}</div></div>
-   <button class="tbtn" onclick="toast(T('t_export'))">${I('down',15)}<span>${T('export')}</span></button></div>
+   <button class="tbtn" onclick="exportArrears()">${I('down',15)}<span>${T('export')}</span></button></div>
   ${arrearsRows().length?`<div class="tw"><table>
    <thead><tr><th>${T('unit')}</th><th>${T('tenant')}</th><th class="num">${T('f_amount')}</th>
     <th>${T('f_arr_due')}</th><th class="num">${T('f_arr_age')}</th></tr></thead>
@@ -5717,6 +5921,11 @@ function pgCRM(){
    <input placeholder="${T('crm_search')}" value="${CF.q}"
      oninput="CF.q=this.value;clearTimeout(window._ct);window._ct=setTimeout(render,220)" style="min-width:240px">
    <div style="flex:1"></div>
+   ${/* Hidden from a viewer because the server will refuse it anyway, and a
+         button that always fails is a worse answer than no button. The refusal
+         still lives in Postgres: this is the courtesy, not the control. */
+     rolesViewer() ? '' :
+     `<button class="tbtn" onclick="exportContacts()">${I('down',15)}<span>${T('export')}</span></button>`}
    ${rolesViewer() ? '' :
      `<button class="tbtn pri" onclick="contactOpen()">${I('plus',15)}<span>${T('crm_add')}</span></button>`}
   </div>
@@ -6862,6 +7071,14 @@ const SB = (function(){
   const rpc = (fn,args)  => authedRead(() => call('/rest/v1/rpc/'+fn, {method:'POST',
                               headers:hdr({'Content-Type':'application/json'}),
                               body:JSON.stringify(args || {})}));
+  /* The comment above says a function that appends would have to go through
+     authedWrite. `record_export` appends, so here is that door rather than a
+     fifth use of the wrong one. A replayed export log is a second row claiming
+     a second export that never happened — a quiet lie in the one table whose
+     whole purpose is to be believed. */
+  const rpcAppend = (fn,args) => authedWrite(() => call('/rest/v1/rpc/'+fn, {method:'POST',
+                              headers:hdr({'Content-Type':'application/json'}),
+                              body:JSON.stringify(args || {})}));
 
   /* ------------------------------- storage ------------------------------- */
   /* The bucket is private. Nothing is ever fetched by a plain URL; a link is
@@ -6985,7 +7202,7 @@ const SB = (function(){
     base: BASE, configured: () => !!(BASE && KEY),
     signIn, signOut, refresh, ready, signedIn, isStaff, email, claims,
     setPassword, adoptRecovery,
-    sel, ins, ups, upd, del, rpc, upload, signedUrl,
+    sel, ins, ups, upd, del, rpc, rpcAppend, upload, signedUrl,
     watch, stopWatching, rtState: () => rt
   };
   /* SCALE-01. PostgREST answers with at most `db-max-rows` — 1,000 by default —
