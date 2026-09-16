@@ -2,7 +2,47 @@
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<!-- SEC-04. What a static page can do about its own response headers, which
+     on GitHub Pages is: this, and not the rest.
+
+     The valuable clause is connect-src. The staff token lives in localStorage
+     and this application has had unescaped HTML sinks as recently as this
+     morning, so the question that matters is not only "can a script be
+     injected" but "where could it send what it found". With this, nowhere: the
+     only host the page may talk to is the project's own API.
+
+     WHAT THIS DOES NOT DO, said plainly rather than left to be assumed.
+
+     script-src carries 'unsafe-inline' because the whole application is one
+     inline script and about a hundred inline handlers. So this does NOT stop an
+     injected inline script from running. Removing that clause means moving
+     every handler to an addEventListener and every style to a class, which is
+     real work and real risk, and it is not done here.
+
+     frame-ancestors cannot be set from a meta element at all — only as a
+     response header — so clickjacking protection is not available from this
+     file. Nor are X-Content-Type-Options, Referrer-Policy or Permissions-Policy.
+     Those need a host that serves configurable headers, which GitHub Pages is
+     not. That is a hosting decision and it is recorded as one. -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'none';
+  script-src 'self' 'unsafe-inline';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data: blob:;
+  font-src 'self' data:;
+  connect-src 'self' https://oaxasgfdfxrkbllzwvna.supabase.co wss://oaxasgfdfxrkbllzwvna.supabase.co;
+  base-uri 'none';
+  form-action 'none';
+  object-src 'none';
+  frame-src 'none';
+  worker-src 'self' blob:;
+  manifest-src 'self'">
+
+<!-- ACC-01. This carried maximum-scale=1 and user-scalable=no, which stops a
+     reader pinching to zoom. On the page a resident reads their rent schedule
+     on. The console has never had it; the two were written months apart and
+     only one of them locked the screen. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -321,6 +361,10 @@ textarea.inp{min-height:92px;resize:none}
   transform:translateX(-102%);transition:transform .26s cubic-bezier(.3,.8,.35,1);display:flex;flex-direction:column
 }
 html[dir="rtl"] .drawer{transform:translateX(102%)}
+/* A language change is a re-layout, not a movement. See setLang. */
+html.reflowing *, html.reflowing *::before, html.reflowing *::after{
+  transition:none!important; animation:none!important
+}
 .drawer.on{transform:translateX(0)!important}
 .drawer .dh{padding:52px 20px 20px;background:linear-gradient(125deg,#00293B,#00506B 60%,#B8912F);color:#fff;position:relative;overflow:hidden}
 .drawer .dh .mk{position:absolute;inset-inline-end:-18px;top:-6px;width:94px;opacity:.13;color:#fff}
@@ -410,6 +454,12 @@ html[dir="rtl"] .drawer{transform:translateX(102%)}
 @keyframes linkpulse{0%{box-shadow:0 0 0 0 rgba(27,158,95,.55)}70%{box-shadow:0 0 0 9px rgba(27,158,95,0)}100%{box-shadow:0 0 0 0 rgba(27,158,95,0)}}
 .linkbar.pulse i{animation:linkpulse 1.1s ease-out}
 @media (min-width:760px){ .linkbar{display:flex} }
+
+/* ACC-01. Keyboard focus has to be visible, and visible on top of whatever it
+   lands on. The default ring disappears against the dark header and under the
+   sheet. */
+:focus-visible{outline:3px solid #0A5B75; outline-offset:2px; border-radius:4px}
+.hero :focus-visible, .tabbar :focus-visible{outline-color:#E9C978}
 </style>
 </head>
 <body>
@@ -546,7 +596,13 @@ const D = {
     nt_body:'You are signed in, but this account is not linked to a current tenancy, so there is nothing here to show. If you are a resident, contact the building office. If this is a staff account, use the management console.',
     tab_home:'Home', tab_svc:'Services', tab_pay:'Payments', tab_com:'Community', tab_prof:'Profile',
     heroKicker:'ALMARIA RESIDENCE', heroTitle:'Everything your home needs, in one place',
-    heroText:'Maintenance, rent, building notices and amenities — 37 apartments, one app.',
+    /* DATA-03. This said "37 apartments". It was true, and the resident app has
+       no way of knowing it: a resident may read exactly one row of the unit
+       register — their own — because that is what the access rules allow. So
+       the number was a constant on a screen with nothing behind it, and it
+       would have gone on reading 37 through any change to the building. The
+       console can count; this app cannot, so it stops saying. */
+    heroText:'Maintenance, rent, building notices and amenities — one app.',
     quick:'Quick actions',
     qa_req:'New request', qa_req_d:'Report a maintenance issue',
     qa_gate:'Visitor pass', qa_gate_d:'Send a QR code in seconds',
@@ -571,6 +627,7 @@ const D = {
     noHist:'Nothing here yet', noHistD:'Completed requests are kept for your records.',
     reqDetail:'Request details', raised:'Raised', unit:'Apartment', category:'Service', priority:'Priority',
     assignedTo:'Assigned to', sla:'Target', progress:'Progress', rate:'Rate this service', rated:'You rated',
+    a_stars:'{n} out of 5', a_rated:'Rated {n} out of 5', a_close:'Close',
     cancelReq:'Cancel request',
     lease:'Your lease', annualRent:'Annual rent', instalment:'Instalment', paid:'Paid', due:'Due', upcoming:'Upcoming',
     overdue:'Overdue', leaseTerm:'Lease term', leaseType:'Apartment type', paidToDate:'Paid to date',
@@ -609,7 +666,7 @@ const D = {
     amen_house_d:'Housekeeping visits can be requested through the app. Rates on request; charged to your account.',
     amen_hotel_d:'Residents have access to Four Points by Sheraton facilities. Show your resident ID at reception.',
     amen_disc_d:'Discounts at Four Points restaurants and café for Almaria residents. Present your resident ID.',
-    bldInfo:'Building information', addr:'Al Sulaymaniyah, Riyadh', units:'37 apartments',
+    bldInfo:'Building information', addr:'Al Sulaymaniyah, Riyadh', units:'Almaria Residence',
     web:'almariaresidence.com'
   },
   ar:{
@@ -621,7 +678,7 @@ const D = {
     nt_body:'تم تسجيل دخولك، لكن هذا الحساب غير مرتبط بعقد سكن حالي، فلا يوجد ما يُعرض هنا. إن كنت ساكناً فتواصل مع إدارة المبنى. وإن كان هذا حساب موظف فاستخدم لوحة الإدارة.',
     tab_home:'الرئيسية', tab_svc:'الخدمات', tab_pay:'المدفوعات', tab_com:'المجتمع', tab_prof:'حسابي',
     heroKicker:'المارية ريزيدنس', heroTitle:'كل ما يحتاجه سكنك في مكان واحد',
-    heroText:'الصيانة والإيجار وإشعارات المبنى والمرافق — ٣٧ شقة، تطبيق واحد.',
+    heroText:'الصيانة والإيجار وإشعارات المبنى والمرافق — تطبيق واحد.',
     quick:'إجراءات سريعة',
     qa_req:'طلب جديد', qa_req_d:'الإبلاغ عن عطل أو صيانة',
     qa_gate:'تصريح زائر', qa_gate_d:'إرسال رمز دخول خلال ثوانٍ',
@@ -646,6 +703,7 @@ const D = {
     noHist:'لا يوجد سجل بعد', noHistD:'تُحفظ الطلبات المكتملة هنا للرجوع إليها.',
     reqDetail:'تفاصيل الطلب', raised:'تاريخ الطلب', unit:'الشقة', category:'الخدمة', priority:'الأولوية',
     assignedTo:'الفني المسؤول', sla:'المدة المستهدفة', progress:'مسار الطلب', rate:'قيّم الخدمة', rated:'تقييمك',
+    a_stars:'{n} من ٥', a_rated:'التقييم {n} من ٥', a_close:'إغلاق',
     cancelReq:'إلغاء الطلب',
     lease:'عقد الإيجار', annualRent:'الإيجار السنوي', instalment:'الدفعة', paid:'مدفوعة', due:'مستحقة', upcoming:'قادمة',
     overdue:'متأخرة', leaseTerm:'مدة العقد', leaseType:'نوع الشقة', paidToDate:'المدفوع حتى تاريخه',
@@ -684,13 +742,17 @@ const D = {
     amen_house_d:'يمكن طلب خدمة التنظيف عبر التطبيق. الأسعار عند الطلب وتُضاف إلى حسابك.',
     amen_hotel_d:'يتمتع السكان بدخول مرافق فندق فور بوينتس باي شيراتون. أبرز بطاقة الساكن في الاستقبال.',
     amen_disc_d:'خصومات على مطاعم ومقهى فور بوينتس لسكان المارية. أبرز بطاقة الساكن.',
-    bldInfo:'معلومات المبنى', addr:'حي السليمانية، الرياض', units:'٣٧ شقة',
+    bldInfo:'معلومات المبنى', addr:'حي السليمانية، الرياض', units:'المارية ريزيدنس',
     web:'almariaresidence.com'
   }
 };
 const T = k => (D[LANG][k] !== undefined ? D[LANG][k] : k);
 const L = (en,ar) => LANG==='en' ? en : ar;
-const NUM = s => LANG==='en' ? String(s) : String(s).replace(/[0-9]/g, d=>'٠١٢٣٤٥٦٧٨٩'[d]);
+/* DATA-04, the same guard the console needed: a value the database does not
+   hold is not the word "null". `money()` and `shown()` below already say so;
+   this is the third door into the same room. */
+const NUM = s => (s===null||s===undefined||s==='') ? '\u2014'
+  : LANG==='en' ? String(s) : String(s).replace(/[0-9]/g, d=>'٠١٢٣٤٥٦٧٨٩'[d]);
 /* An amount the database does not hold is not zero, and must not print as a
    number. This used to throw on null — which is why every caller had been
    given a fallback to the demo lease's figure instead, and that was far worse
@@ -813,9 +875,17 @@ const priLabel = p => T('p_' + priOK(p));
 const rname  = () => L(RESIDENT.name_en, RESIDENT.name_ar) || null;
 const rfirst = () => { const n = rname(); return n ? String(n).trim().split(/\s+/)[0] : null; };
 
+/* SEC-03. `msg` went into innerHTML raw. Most callers pass a translated
+   constant, but not all of them: on 15 September I added
+   `toast(T('toastRateFail') + ' (' + m + ')')`, where `m` is whatever text the
+   database sent back with a refusal — and PostgREST quotes the offending value
+   into its message, so a request title a resident typed could come back out of
+   the server and into the manager's page as markup. The icon is markup this
+   file wrote; the message is text somebody else wrote, and the two are no
+   longer concatenated as if they were the same kind of thing. */
 function toast(msg){
   const el = $('toast');
-  el.innerHTML = `<span style="flex:none;color:#C9A85F">${I('check',18)}</span><span>${msg}</span>`;
+  el.innerHTML = `<span style="flex:none;color:#C9A85F">${I('check',18)}</span><span>${esc(msg)}</span>`;
   el.classList.add('on');
   clearTimeout(el._t); el._t = setTimeout(()=>el.classList.remove('on'), 3400);
 }
@@ -837,7 +907,8 @@ function openSheet(title, body){
     <div class="grab"></div>
     <div class="sh">
       <h3>${esc(title)}</h3>
-      <button class="iconbtn" onclick="closeAll()">${I('x',20)}</button>
+      <button class="iconbtn" type="button" onclick="closeAll()"
+              aria-label="${esc(T('a_close'))}">${I('x',20)}</button>
     </div>
     <div class="sb">${body}</div>`;
   $('sheet').classList.add('on'); $('scrim').classList.add('on');
@@ -1138,9 +1209,16 @@ async function rateRequest(id, n){
 function sheetRate(id){
   const r = REQUESTS.find(x=>x.id===id); if(!r) return;
   openSheet(T('rate'), `
-    <div class="muted" style="margin-bottom:14px">${L('How was the work on','كيف كان العمل على')} ${L(r.title_en,r.title_ar)}?</div>
-    <div style="display:flex;gap:10px;justify-content:center;padding:10px 0 18px">
-      ${[1,2,3,4,5].map(i=>`<button class="iconbtn" style="color:var(--gold)" onclick="rateRequest('${r.id}',${i})">${I('star',34,1.6)}</button>`).join('')}
+    <div class="muted" style="margin-bottom:14px">${L('How was the work on','كيف كان العمل على')} ${esc(L(r.title_en,r.title_ar))}?</div>
+    <div role="group" aria-label="${esc(T('rate'))}"
+         style="display:flex;gap:10px;justify-content:center;padding:10px 0 18px">
+      <!-- ACC-01. Five identical star buttons with no text: a screen reader
+           read five unlabelled buttons and there was no way to tell which was
+           which, or which had been chosen. The name says the number, and the
+           group says what is being rated. -->
+      ${[1,2,3,4,5].map(i=>`<button class="iconbtn" type="button" style="color:var(--gold)"
+        aria-label="${esc(T('a_stars').replace('{n}', NUM(i)))}"
+        onclick="rateRequest('${r.id}',${i})">${I('star',34,1.6)}</button>`).join('')}
     </div>
     <div class="muted" style="text-align:center">${L('Tap a star to rate','اضغط على نجمة للتقييم')}</div>`);
 }
@@ -1194,6 +1272,12 @@ function go(tab){ TAB = tab; closeAll(); render(); $('screen').scrollTop = 0; }
 
 /* ---------------------------- language ---------------------------- */
 function setLang(l){
+  /* The same defect as the console's, in the same place: the closed drawer is
+     parked off the left edge in English and off the right in Arabic, so
+     flipping direction animates it ACROSS the screen for a quarter of a second
+     and anything tapped in that moment lands on it. A language change is a
+     re-layout, not a movement. */
+  try{ document.documentElement.classList.add('reflowing'); }catch(e){}
   LANG = l;
   document.documentElement.lang = l;
   document.documentElement.dir = l==='ar' ? 'rtl' : 'ltr';
@@ -1204,6 +1288,10 @@ function setLang(l){
     : 'تصفّح النموذج كما لو كان على الجوال. استخدم الزر بالأعلى للتبديل بين العربية والإنجليزية (تنقلب الواجهة بالكامل من اليمين لليسار).';
   tick();
   closeAll(); render();
+  try{
+    requestAnimationFrame(() => requestAnimationFrame(() =>
+      document.documentElement.classList.remove('reflowing')));
+  }catch(e){ document.documentElement.classList.remove('reflowing'); }
 }
 
 /* ==========================================================================
@@ -1274,11 +1362,13 @@ function renderLocked(){
       <div class="bd">
         <div class="fgroup">
           <label class="f">${L('Email','البريد الإلكتروني')}</label>
-          <input class="inp" id="sbMail" type="email" autocomplete="username" inputmode="email">
+          <input class="inp" id="sbMail" type="email" autocomplete="username" inputmode="email"
+                 aria-label="${L('Email','البريد الإلكتروني')}">
         </div>
         <div class="fgroup">
           <label class="f">${L('Password','كلمة المرور')}</label>
           <input class="inp" id="sbPass" type="password" autocomplete="current-password"
+                 aria-label="${L('Password','كلمة المرور')}"
                  onkeydown="if(event.key==='Enter')sbIn()">
         </div>
         <button class="btn primary" id="sbGo" style="margin-top:4px" onclick="sbIn()">${
@@ -1661,6 +1751,12 @@ async function submitRequest(){
     return;                         /* the sheet stays open, with what they typed */
   }
 
+  /* REQ-01. If the office gave this request a different reference — because
+     somebody else took the one this phone proposed — the resident is shown the
+     one the office is actually holding. Reading it off `out` rather than
+     trusting `rec` is the whole fix: `rec` was built before the write. */
+  if(out.refs && out.refs[rec.id]) rec.id = out.refs[rec.id];
+
   REQUESTS.unshift(rec);
   closeAll(); TAB='svc'; SVC_TAB='open'; render();
   toast(T('toastReq'));
@@ -1682,7 +1778,8 @@ function sheetRequest(id){
   }).join('');
 
   const stars = r.stars ? `<div class="card"><div class="muted" style="margin-bottom:8px">${T('rated')}</div>
-      <div style="display:flex;gap:5px;color:var(--gold)">${[1,2,3,4,5].map(i=>`<span style="opacity:${i<=r.stars?1:.22}">${I('star',22,1.6)}</span>`).join('')}</div></div>`
+      <div role="img" aria-label="${esc(T('a_rated').replace('{n}', NUM(r.stars)))}"
+           style="display:flex;gap:5px;color:var(--gold)">${[1,2,3,4,5].map(i=>`<span aria-hidden="true" style="opacity:${i<=r.stars?1:.22}">${I('star',22,1.6)}</span>`).join('')}</div></div>`
     : (r.status==='done' ? `<button class="btn ghost" onclick="sheetRate('${esc(String(r.id))}')">${I('star',18)} ${T('rate')}</button>` : '');
 
   openSheet(T('reqDetail'), `
@@ -2072,12 +2169,38 @@ const SB = (function(){
     try{ sess ? localStorage.setItem(SKEY, JSON.stringify(sess)) : localStorage.removeItem(SKEY); }
     catch(e){}
   }
+  /* What is in storage RIGHT NOW, which is not always what this tab has in
+     hand: another tab signing in, refreshing or signing out writes here. */
+  function stored(){
+    try{ return JSON.parse(localStorage.getItem(SKEY) || 'null'); }catch(e){ return null; }
+  }
 
   const token = () => (sess && sess.access_token) || KEY;
   const hdr = extra => Object.assign({apikey:KEY, Authorization:'Bearer '+token()}, extra||{});
 
+  /* AUTH-01. A request with no deadline is a screen that waits for ever. The
+     audit asked for timeouts and there were none: a connection that opens and
+     then stops answering — a captive portal, a dead mobile cell, a proxy that
+     swallows the response — left `await fetch` pending with no upper bound, and
+     the spinner with it.
+
+     A timeout is deliberately shaped like an outage rather than a refusal: no
+     `status`, so `revoked()` answers false, so a request that timed out during
+     a refresh leaves the session alone. That is the same distinction AUTH-01
+     turns on, arriving by a second route. */
+  const TIMEOUT = 20000;
   async function call(path, opt){
-    const r = await fetch(BASE + path, opt || {});
+    opt = opt || {};
+    const ctl = new AbortController();
+    const bell = setTimeout(() => ctl.abort(), opt.timeout || TIMEOUT);
+    let r;
+    try {
+      r = await fetch(BASE + path, Object.assign({}, opt, {signal: ctl.signal}));
+    } catch(e) {
+      if(e && e.name === 'AbortError')
+        throw Object.assign(new Error('the request timed out'), {timeout: true});
+      throw e;
+    } finally { clearTimeout(bell); }
     const txt = await r.text();
     let body = null;
     try{ body = txt ? JSON.parse(txt) : null; }catch(e){ body = txt; }
@@ -2113,14 +2236,58 @@ const SB = (function(){
     save(s);
     return s;
   }
-  async function refresh(){
-    if(!sess || !sess.refresh_token) return null;
-    try{
-      const s = await call('/auth/v1/token?grant_type=refresh_token', {
-        method:'POST', headers:{apikey:KEY, 'Content-Type':'application/json'},
-        body: JSON.stringify({refresh_token: sess.refresh_token})});
-      save(s); return s;
-    }catch(e){ save(null); return null; }
+  /* AUTH-01. This used to be `catch(e){ save(null); return null; }` — one line,
+     and it threw the session away for ANY reason the refresh did not succeed.
+     A tunnel, a dropped wifi, a five-second outage at the auth server: the
+     refresh token was erased from storage, and erased is permanent. The person
+     was signed out and had to find their password, because the network went
+     away for a moment.
+
+     Three things are now separated that were one thing before.
+
+     REFUSED versus UNREACHABLE. Only an answer from the server ends a session.
+     `call` attaches `status` to everything the server answered; a request that
+     never arrived throws a TypeError with no status at all. So no status, or a
+     5xx, or a timeout, means "ask again later" and the session is left exactly
+     as it was. 400, 401, 403 and 422 mean the server looked at the token and
+     said no, and only then is it cleared.
+
+     ONE AT A TIME. Supabase rotates the refresh token: the moment one refresh
+     succeeds, the token it used stops working. Two refreshes racing meant the
+     loser got "Invalid Refresh Token: Already Used" — a 400, a refusal — and
+     destroyed a session that had just been renewed successfully by the winner.
+     Every caller now shares one in-flight promise.
+
+     AND THE OTHER TAB. The same rotation across two tabs is not something a
+     shared promise can fix. Before ending anything, look at what is actually in
+     storage: if it holds a different session with time left on it, another tab
+     refreshed and this failure was a race rather than a revocation, so adopt it
+     instead of signing the person out of both tabs. */
+  const revoked = e => {
+    const s = e && e.status;
+    return s === 400 || s === 401 || s === 403 || s === 422;
+  };
+  let refreshing = null;
+  function refresh(){
+    if(!sess || !sess.refresh_token) return Promise.resolve(null);
+    if(refreshing) return refreshing;
+    refreshing = (async () => {
+      try{
+        const s = await call('/auth/v1/token?grant_type=refresh_token', {
+          method:'POST', headers:{apikey:KEY, 'Content-Type':'application/json'},
+          body: JSON.stringify({refresh_token: sess.refresh_token})});
+        save(s); return s;
+      }catch(e){
+        const other = stored();
+        if(other && other.access_token && sess && other.access_token !== sess.access_token){
+          sess = other;                       /* adopt, do not overwrite */
+          return stale() ? null : sess;
+        }
+        if(revoked(e)) save(null);
+        return null;
+      }finally{ refreshing = null; }
+    })();
+    return refreshing;
   }
   function signOut(){
     try{ fetch(BASE+'/auth/v1/logout', {method:'POST', headers:hdr()}); }catch(e){}
@@ -2135,50 +2302,117 @@ const SB = (function(){
     return true;
   }
 
+  /* …and it is true because EVERY authenticated request goes through here,
+     rather than because `ready()` happens to be called first somewhere at
+     start-up. It was the latter before: one call at boot, and a page left open
+     past the token's hour sent an expired one and got an empty screen.
+
+     The header must be built INSIDE the callback. A header built before the
+     refresh carries the token the refresh has just replaced, which is the
+     failure this is meant to remove, arriving by a different door.
+
+     One retry, not a loop. If a request comes back 401 despite the check above
+     — the clock is off, the token was revoked elsewhere — the session is
+     refreshed once and the request is made once more. A second 401 is a real
+     answer and is allowed through to the caller. */
+  async function authed(make, opts){
+    if(signedIn() && stale()) await refresh();
+    try{
+      return await make();
+    }catch(e){
+      /* AUTH-01. The retry used to apply to everything, writes included. A 401
+         from PostgREST is refused at the auth layer before the statement runs,
+         so replaying an insert almost certainly does not write twice — but
+         "almost certainly" is not a thing to build a rent ledger on, and the
+         audit asked for the opposite default in as many words: retry writes
+         only with an idempotency mechanism.
+
+         So a read retries on its own. A write retries only when the caller has
+         said how a duplicate would be recognised, by passing `replay`. The one
+         caller that does is the work-order insert, which recognises its own row
+         by reading it back. */
+      if(e && e.status === 401 && signedIn() && (!opts || opts.replay !== false)
+         && await refresh()) return await make();
+      throw e;
+    }
+  }
+  /* A read: replaying it changes nothing. */
+  const authedRead = make => authed(make, {replay: true});
+  /* A write: not replayed unless the caller can tell a duplicate from a first
+     attempt. */
+  const authedWrite = make => authed(make, {replay: false});
+
   /* --------------------------------- rest -------------------------------- */
-  const sel = (t,q)      => call('/rest/v1/'+t+(q?'?'+q:''), {headers:hdr()});
-  const ins = (t,rows)   => call('/rest/v1/'+t, {method:'POST',
+  const sel = (t,q)      => authedRead(() => call('/rest/v1/'+t+(q?'?'+q:''), {headers:hdr()}));
+  const ins = (t,rows)   => authedWrite(() => call('/rest/v1/'+t, {method:'POST',
                               headers:hdr({'Content-Type':'application/json', Prefer:'return=representation'}),
-                              body:JSON.stringify(rows)});
-  const ups = (t,rows,c) => call('/rest/v1/'+t+(c?'?on_conflict='+c:''), {method:'POST',
+                              body:JSON.stringify(rows)}));
+  /* An upsert IS its own idempotency mechanism: the conflict target decides,
+     and a second attempt merges rather than duplicating. */
+  const ups = (t,rows,c) => authedRead(() => call('/rest/v1/'+t+(c?'?on_conflict='+c:''), {method:'POST',
                               headers:hdr({'Content-Type':'application/json',
                                 Prefer:'resolution=merge-duplicates,return=representation'}),
-                              body:JSON.stringify(rows)});
-  const upd = (t,q,patch)=> call('/rest/v1/'+t+'?'+q, {method:'PATCH',
+                              body:JSON.stringify(rows)}));
+  /* A PATCH to a filtered set writes the same values twice with the same
+     result; it is idempotent by construction, unlike an insert. */
+  const upd = (t,q,patch)=> authedRead(() => call('/rest/v1/'+t+'?'+q, {method:'PATCH',
                               headers:hdr({'Content-Type':'application/json', Prefer:'return=representation'}),
-                              body:JSON.stringify(patch)});
-  const del = (t,q)      => call('/rest/v1/'+t+'?'+q, {method:'DELETE', headers:hdr()});
+                              body:JSON.stringify(patch)}));
+  const del = (t,q)      => authedRead(() => call('/rest/v1/'+t+'?'+q, {method:'DELETE', headers:hdr()}));
   /* A named write, as against a table write. Where the database decides what a
      resident may change, it decides in a function, and the app asks for the
      function by name rather than reaching for the columns itself. */
-  const rpc = (fn,args)  => call('/rest/v1/rpc/'+fn, {method:'POST',
+  /* A named write. `rate_wo` sets one column to a value the caller supplies, so
+     running it twice leaves the same row; `save_register` applies a whole
+     register and is likewise a replacement rather than an addition. Neither
+     accumulates, so a replay is safe. A function that ever appends would have
+     to be called through authedWrite instead. */
+  const rpc = (fn,args)  => authedRead(() => call('/rest/v1/rpc/'+fn, {method:'POST',
                               headers:hdr({'Content-Type':'application/json'}),
-                              body:JSON.stringify(args || {})});
+                              body:JSON.stringify(args || {})}));
 
   /* ------------------------------- storage ------------------------------- */
   /* The bucket is private. Nothing is ever fetched by a plain URL; a link is
      signed on demand and stops working shortly afterwards. */
-  async function upload(path, file){
-    const r = await fetch(BASE + '/storage/v1/object/documents/' + encodeURI(path), {
-      method:'POST',
-      headers: hdr({'x-upsert':'false', 'Content-Type': file.type || 'application/octet-stream'}),
-      body: file});
-    if(!r.ok){
-      const t = await r.text();
-      throw Object.assign(new Error('upload failed'), {status:r.status, body:t});
-    }
-    return 'documents/' + path;
+  const UPLOAD_TIMEOUT = 2 * 60 * 1000;
+  function upload(path, file){
+    /* Not replayed: an upload that landed and lost its answer would be stored
+       twice under two keys, and the second would be an orphan nobody knows
+       about. A file takes longer than a row, so its deadline is its own. */
+    return authedWrite(async () => {
+      const ctl = new AbortController();
+      const bell = setTimeout(() => ctl.abort(), UPLOAD_TIMEOUT);
+      let r;
+      try {
+        r = await fetch(BASE + '/storage/v1/object/documents/' + encodeURI(path), {
+          method:'POST', signal: ctl.signal,
+          headers: hdr({'x-upsert':'false', 'Content-Type': file.type || 'application/octet-stream'}),
+          body: file});
+      } catch(e) {
+        if(e && e.name === 'AbortError')
+          throw Object.assign(new Error('the upload timed out'), {timeout: true});
+        throw e;
+      } finally { clearTimeout(bell); }
+      if(!r.ok){
+        const t = await r.text();
+        throw Object.assign(new Error('upload failed'), {status:r.status, body:t});
+      }
+      return 'documents/' + path;
+    });
   }
-  async function signedUrl(path, secs){
+  function signedUrl(path, secs){
     const p = String(path).replace(/^documents\//, '');
-    const b = await call('/storage/v1/object/sign/documents/' + encodeURI(p), {
-      method:'POST', headers:hdr({'Content-Type':'application/json'}),
-      body: JSON.stringify({expiresIn: secs || 60})});
-    return BASE + '/storage/v1' + b.signedURL;
+    return authedRead(async () => {
+      const b = await call('/storage/v1/object/sign/documents/' + encodeURI(p), {
+        method:'POST', headers:hdr({'Content-Type':'application/json'}),
+        body: JSON.stringify({expiresIn: secs || 60})});
+      return BASE + '/storage/v1' + b.signedURL;
+    });
   }
 
   /* ------------------------------- realtime ------------------------------ */
-  let ws = null, ref = 0, hb = null, watchers = [], tables = [], back = 0;
+  let ws = null, ref = 0, hb = null, watchers = [], tables = [], back = 0, joinRef = null;
+  let joined = false;                     /* has this page ever had a live channel */
   let rt = 'off';                                  /* off | joining | live | error */
 
   const send = o => { try{ if(ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }catch(e){} };
@@ -2192,7 +2426,8 @@ const SB = (function(){
     }catch(e){ ws = null; rt = 'error'; return; }
 
     ws.onopen = () => {
-      send({topic:TOPIC, event:'phx_join', ref:String(++ref), payload:{config:{
+      joinRef = String(++ref);
+      send({topic:TOPIC, event:'phx_join', ref:joinRef, payload:{config:{
         broadcast:{self:false}, presence:{key:''}, private:false,
         postgres_changes: tables.map(t=>({event:'*', schema:'public', table:t}))}}});
       if(sess) send({topic:TOPIC, event:'access_token', ref:String(++ref),
@@ -2201,7 +2436,35 @@ const SB = (function(){
     };
     ws.onmessage = ev => {
       let m; try{ m = JSON.parse(ev.data); }catch(e){ return; }
-      if(m.event === 'phx_reply' && m.payload && m.payload.status === 'ok'){ rt = 'live'; back = 0; }
+      /* SYNC-02. This used to read: any phx_reply with status ok means the link
+         is live. A heartbeat reply is a phx_reply with status ok — on topic
+         'phoenix', every 25 seconds, for as long as the SOCKET is open. So a
+         channel join that was refused set rt='error' and then the next
+         heartbeat, a few seconds later, set it straight back to 'live'. The
+         badge read live, the socket was open, and no change was ever going to
+         arrive because nothing was subscribed to anything.
+
+         Only the reply to THIS join, on THIS topic, says the channel is
+         joined. A heartbeat says the socket is up, which is a different fact
+         and not the one the badge is reporting. */
+      if(m.event === 'phx_reply' && m.ref === joinRef && m.topic === TOPIC &&
+         m.payload && m.payload.status === 'ok'){
+        rt = 'live'; back = 0;
+        /* SYNC-01, the half that is not about overlapping reads. Reconnecting
+           the socket did not itself fetch anything, so every change made while
+           the connection was down was simply never delivered — the badge went
+           back to live over a screen that had stopped listening minutes ago and
+           had no idea what it had missed.
+
+           Only on a RE-join. The first join follows the read that start() has
+           just done, and catching up on that would read the same rows twice
+           every time the page opens. */
+        if(joined) watchers.forEach(fn => { try{ fn({catchup:'rejoin'}); }
+                                            catch(e){ console.error('SB.watch', e); } });
+        joined = true;
+      }
+      if(m.event === 'phx_reply' && m.ref === joinRef && m.topic === TOPIC &&
+         m.payload && m.payload.status !== 'ok') rt = 'error';
       if(m.event === 'system' && m.payload && m.payload.status === 'error') rt = 'error';
       if(m.event === 'postgres_changes'){
         const d = (m.payload && m.payload.data) || {};
@@ -2210,7 +2473,7 @@ const SB = (function(){
     };
     ws.onerror = () => { rt = 'error'; };
     ws.onclose = () => {
-      clearInterval(hb); ws = null;
+      clearInterval(hb); ws = null; joinRef = null;
       if(rt !== 'off') rt = 'error';
       if(watchers.length){
         back = Math.min(back + 1, 6);
@@ -2224,14 +2487,45 @@ const SB = (function(){
     watchers.push(fn);
     connect();
   }
-  function stopWatching(){ watchers = []; rt = 'off'; try{ if(ws) ws.close(); }catch(e){} }
+  function stopWatching(){ watchers = []; rt = 'off'; joined = false; try{ if(ws) ws.close(); }catch(e){} }
 
-  return {
+  const API = {
     base: BASE, configured: () => !!(BASE && KEY),
     signIn, signOut, refresh, ready, signedIn, isStaff, email, claims,
     sel, ins, ups, upd, del, rpc, upload, signedUrl,
     watch, stopWatching, rtState: () => rt
   };
+  /* SCALE-01. PostgREST answers with at most `db-max-rows` — 1,000 by default —
+     and says nothing about it: a list longer than that comes back truncated and
+     looks exactly like a complete one. Every total computed from it is then
+     quietly wrong, which is the failure mode this project keeps meeting in
+     different clothes.
+
+     A read meant to be COMPLETE therefore asks for pages until a short one
+     arrives. An order is required rather than assumed: paging by offset over an
+     unordered query returns some rows twice and misses others, and the result
+     still looks like a list.
+
+     Defined in terms of the PUBLIC `sel`, deliberately. selAll is sel repeated
+     and nothing else, so anything that wraps or replaces the read — a harness,
+     a future cache, a retry policy — is inherited rather than bypassed. A
+     layer that reaches past its own public surface is how two code paths come
+     to disagree, which is most of what this week has been about. */
+  API.selAll = async (t, q, pageSize) => {
+    if(!/(^|&)order=/.test(q || ''))
+      throw new Error('selAll(' + t + ') needs an order, or the pages overlap');
+    const size = pageSize || 1000;
+    const out = [];
+    for(let from = 0; ; from += size){
+      const page = await API.sel(t, q + '&limit=' + size + '&offset=' + from);
+      if(!Array.isArray(page)) return page;
+      out.push(...page);
+      if(page.length < size) return out;
+      if(out.length >= 100000)
+        throw new Error('refusing to read more than 100000 rows from ' + t);
+    }
+  };
+  return API;
 })();
 
 
@@ -2246,8 +2540,11 @@ const SB = (function(){
    worth having.
    ========================================================================== */
 const LIVE = (function(){
-  const WATCH = ['work_orders','announcements','instalments','leases','documents'];
-  let state = null, subs = [], lastErr = null, pulling = false, timer = null, myLease = null;
+  /* SYNC-03. `residents` was missing, and the resident's own name, phone and
+     unit assignment all come from that table — a change made at the office
+     reached this phone only when something unrelated happened to fire. */
+  const WATCH = ['work_orders','announcements','instalments','leases','documents','residents'];
+  let state = null, subs = [], lastErr = null, pulling = false, again = false, timer = null, myLease = null;
 
   const N = v => (v === null || v === undefined) ? null : Number(v);
   const BLANK = () => ({v:1, rev:0, at:0, by:'', wo:{}, newWO:[], anns:[], pay:{},
@@ -2281,20 +2578,36 @@ const LIVE = (function(){
     if(!me || String(me.auth_uid) !== String(uid))
       return {me:null, lease:null, wos:[], anns:[], noTenancy:true};
 
-    const [leases, wos, anns] = await Promise.all([
+    const [leases, anns] = await Promise.all([
       SB.sel('leases', 'select=id,unit_id,resident_id,starts_on,ends_on,contract_value,status,' +
                        'units(type,area,floor),instalments(seq,amount,due_on,paid,paid_on,receipt_ref)' +
                        '&status=eq.active&resident_id=eq.' + encodeURIComponent(me.id) +
                        '&order=starts_on.desc&limit=1'),
-      SB.sel('work_orders', 'select=*&order=raised_at.desc'),
       SB.sel('announcements', 'select=*&status=eq.published&order=published_at.desc')
     ]);
     const lease = (leases && leases[0]) || null;
     if(lease && String(lease.resident_id) !== String(me.id))
       return {me, lease:null, wos:[], anns, noTenancy:true};
 
-    /* Work orders are read with the same suspicion: the list must belong to
-       the flat this tenancy is for, whatever the server chose to return. */
+    /* SYNC-03 and SCALE-01. This used to be `select=*` with no filter at all —
+       every work order in the building, fetched to the handset, then narrowed
+       here by unit. The access rules did keep other flats' rows out of the
+       answer, so nothing leaked; what was wrong is that the REQUEST asked for
+       everything, and the audit's sentence is the right one: browser filtering
+       is not an access-control boundary. It also does not scale — a hundred
+       residents each pulling the whole maintenance history, and past a
+       thousand rows the answer is silently truncated.
+ 
+       So the read is scoped to the flat, which costs one round trip because
+       the unit is not known until the lease comes back. The filter below stays
+       exactly as it was: a dropped server filter and a backend that ignores one
+       are indistinguishable from here, and the honest answer to either is
+       nothing rather than somebody else's. */
+    const wos = lease
+      ? await SB.selAll('work_orders',
+          'select=*&unit_id=eq.' + encodeURIComponent(lease.unit_id) +
+          '&order=raised_at.desc')
+      : [];
     const mine = lease
       ? (wos || []).filter(w => String(w.unit_id) === String(lease.unit_id))
       : [];
@@ -2457,22 +2770,168 @@ const LIVE = (function(){
     }, 501);
   }
 
+  /* SYNC-01. This used to be `if(pulling) return;` — a change that arrived
+     while a read was in flight was dropped on the floor. The read already
+     running had asked the database before that change existed, so its answer
+     cannot contain it, and nothing was left to ask again. The screen then held
+     stale data until some unrelated event happened to trigger another read.
+     Nobody saw an error; they saw a number that was simply out of date, which
+     is the worst kind of wrong for a rent register.
+
+     Returning early is still right — two concurrent reads would race to paint
+     and the loser would win. What was missing is the note to go round again.
+
+     The loop is bounded. A busy minute should not turn one event into an
+     unbroken chain of reads, so after five passes the remainder is handed to
+     `nudge()`, which debounces. */
+  /* SYNC-03. "Add a visible last-successful-refresh time and a stale-data
+     state." Nothing recorded when a read last worked, so a screen that had
+     stopped refreshing looked exactly like one that had just refreshed — which
+     is the same shape of defect as a heartbeat standing in for a join, one
+     layer up. A read that FAILS does not move this; that is the point of it. */
+  let lastRead = 0;
+  const STALE_AFTER = 2 * 60 * 1000;
+  const freshness = () => ({
+    at: lastRead || null,
+    stale: !lastRead || (Date.now() - lastRead) > STALE_AFTER,
+    secs: lastRead ? Math.round((Date.now() - lastRead) / 1000) : null
+  });
+
+  const MAX_PASSES = 5;
   async function reload(){
-    if(pulling) return;
+    if(pulling){ again = true; return; }
     pulling = true;
-    try{ paint(await pull()); lastErr = null; }
-    catch(e){ lastErr = e; console.error('LIVE.reload', e); }
-    finally{ pulling = false; }
+    try{
+      let n = 0;
+      do {
+        again = false;
+        try{ paint(await pull()); lastErr = null; lastRead = Date.now(); }
+        catch(e){ lastErr = e; console.error('LIVE.reload', e); }
+      } while(again && ++n < MAX_PASSES);
+    } finally { pulling = false; }
+    if(again) nudge();
     subs.forEach(fn => { try{ fn(state, {by:'live'}); }catch(e){} });
   }
-  const nudge = () => { clearTimeout(timer); timer = setTimeout(reload, 400); };
+  /* A debounce with a ceiling. This was a pure trailing debounce, and the audit
+     named what that costs: "prevent continuous events from postponing updates
+     indefinitely through the trailing debounce". A change every 300ms — one
+     busy import, one operator working through a list — reset the timer for ever
+     and the screen never read anything at all.
+
+     So the quiet 400ms still wins when things are quiet, and after two seconds
+     of being pushed back the read happens anyway. */
+  let firstNudge = 0;
+  const MAX_WAIT = 2000;
+  const nudge = () => {
+    const now = Date.now();
+    if(!firstNudge) firstNudge = now;
+    clearTimeout(timer);
+    if(now - firstNudge >= MAX_WAIT){ firstNudge = 0; reload(); return; }
+    timer = setTimeout(() => { firstNudge = 0; reload(); }, 400);
+  };
+  /* Coming back to a tab that has been in the background, or to a device that
+     has just found a network again, is the same situation as a reconnection:
+     whatever happened in between was not delivered here. Both are read as a
+     reason to catch up rather than as a reason to trust the screen. */
+  function watchForeground(){
+    try{
+      document.addEventListener('visibilitychange', () => {
+        if(document.visibilityState === 'visible') nudge();
+      });
+      window.addEventListener('online', nudge);
+      window.addEventListener('pageshow', e => { if(e && e.persisted) nudge(); });
+    }catch(e){}
+  }
 
   /* A resident may do exactly two things to the database: raise a request
      against their own apartment, and rate their own completed job. Both are
      enforced in Postgres, not here — this only sends what the rules allow. */
+  /* REQ-01. The reference a resident is given must be the reference the office
+     has. It was not.
+
+     `work_orders.id` is minted on the device, from a counter the shared record
+     publishes, so two phones that pulled the same state propose the same
+     number. The loser's insert came back 409 and there WAS a retry: it took the
+     next number and inserted successfully. What it did not do was tell anybody.
+     `body.id` moved; the record on the resident's screen and in their list did
+     not. They kept a receipt reading MR-2609-501 for a job the office holds as
+     MR-2609-502. Nobody involved could tell, because both records exist and
+     both look right, and the one number they would quote to each other is the
+     wrong one.
+
+     Three changes. The reference that counts is the one the INSERT returned,
+     not the one that was sent — the row comes back already, because every write
+     asks for the representation, and the database is the boundary. A collision
+     is retried up to eight times rather than once, because one retry only
+     survives one competitor. And a reference that moved is reported back, which
+     is what lets the screen agree with the office. */
+  const bumpRef = id => {
+    const parts = String(id).split('-');
+    const m = /^([A-Za-z]*)(\d+)$/.exec(parts.pop() || '');
+    if(!m) return String(id) + '-2';
+    return parts.concat(m[1] + String(Number(m[2]) + 1).padStart(m[2].length, '0')).join('-');
+  };
+  const refSeq = id => {
+    const n = parseInt(String(String(id).split('-').pop()).replace(/^[A-Za-z]+/, ''), 10);
+    return Number.isFinite(n) ? n : 0;
+  };
+  /* Is the reference already taken BY THIS SUBMISSION? The distinction decides
+     whether to renumber or to stop.
+
+     REQ-01 again, from its other end. The audit put it exactly: there is no
+     durable idempotency key for an accepted request whose response is lost. If
+     an insert lands and the answer never comes back — a tunnel, a timeout, a
+     killed tab — the next attempt gets 409, and the retry that was written to
+     survive a collision would take the next reference and file the request a
+     SECOND time. The fix for one defect is the cause of the other, which is
+     why they are handled in one place.
+
+     Nothing in `work_orders` is a key for an intended submission, so the row is
+     recognised by what only this submission could have produced: the reference,
+     the flat, the moment it was raised, and the text. Two attempts matching all
+     four are the same attempt by any test anybody could apply.
+
+     This is a recognition rule, not an idempotency key. The durable fix is a
+     column — sql/2026-09-15_request_key.sql, written and not applied. */
+  async function alreadyMine(body){
+    try{
+      const rows = await SB.sel('work_orders',
+        'select=*&id=eq.' + encodeURIComponent(body.id) +
+        '&raised_at=eq.' + encodeURIComponent(body.raised_at));
+      const r = rows && rows[0];
+      if(!r) return null;
+      const same = String(r.unit_id) === String(body.unit_id)
+                && String(r.description == null ? '' : r.description)
+                   === String(body.description == null ? '' : body.description);
+      return same ? r : null;
+    }catch(e){ return null; }        /* cannot tell: fall through and renumber */
+  }
+
+  async function insertWO(body, renamed){
+    const from = body.id;
+    for(let tries = 0; ; tries++){
+      try{
+        const rows = await SB.ins('work_orders', body);
+        const landed = (rows && rows[0] && rows[0].id) || body.id;
+        if(landed !== from) renamed[from] = landed;
+        return rows;
+      }catch(e){
+        if(e.status !== 409 || tries >= 8) throw e;
+        const mine = await alreadyMine(body);
+        if(mine){
+          /* It landed. Adopt the row rather than filing it again. */
+          if(mine.id !== from) renamed[from] = mine.id;
+          return [mine];
+        }
+        body = Object.assign({}, body, {id: bumpRef(body.id)});
+      }
+    }
+  }
+
   async function push(before, after, opts){
     opts = opts || {};
     const jobs = [];
+    const renamed = {};                 /* reference sent -> reference that landed */
 
     (after.newWO || []).forEach(w => {
       if((before.newWO || []).some(x => x.id === w.id)) return;
@@ -2489,14 +2948,7 @@ const LIVE = (function(){
                     visit_window: w.visit ? visitOK(w.visit) : null,
                     priority: priOK(w.pri), channel:'app', status:'submitted',
                     raised_at:w.raised};
-      /* the reference series is shared; if this number was taken between the
-         read and the write, take the next one rather than losing the request */
-      jobs.push(SB.ins('work_orders', body).catch(e => {
-        if(e.status !== 409) throw e;
-        const parts = String(w.id).split('-');
-        body.id = parts.slice(0,-1).join('-') + '-' + (parseInt(parts.pop(),10) + 1);
-        return SB.ins('work_orders', body);
-      }));
+      jobs.push(insertWO(body, renamed));
     });
 
     Object.keys(after.wo || {}).forEach(id => {
@@ -2529,8 +2981,19 @@ const LIVE = (function(){
     }else{
       lastErr = null;
     }
+    /* A reference that moved is corrected in every place this device remembers
+       it, so the screen and the office agree without waiting for a reload — and
+       the counter is moved past what was actually taken, so the next request
+       from this handset does not walk into the same collision. */
+    Object.keys(renamed).forEach(from => {
+      const to = renamed[from];
+      (after.newWO || []).forEach(w => { if(w.id === from) w.id = to; });
+      try{ REQUESTS.forEach(r => { if(r.id === from) r.id = to; }); }catch(e){}
+      after.nextSeq = Math.max(Number(after.nextSeq) || 0, refSeq(to) + 1);
+    });
     nudge();
-    return bad.length ? {ok:false, error:bad[0].reason} : {ok:true};
+    return bad.length ? {ok:false, error:bad[0].reason, refs:renamed}
+                      : {ok:true, refs:renamed};
   }
 
   function commit(mutate, who, opts){
@@ -2561,10 +3024,11 @@ const LIVE = (function(){
     LINK.healthy  = () => !lastErr;
     LINK.live     = () => true;
     SB.watch(WATCH, nudge);
+    watchForeground();
     return true;
   }
 
-  return {start, reload, err: () => lastErr, rt: () => SB.rtState()};
+  return {start, reload, err: () => lastErr, freshness, rt: () => SB.rtState()};
 })();
 
 
@@ -2578,20 +3042,22 @@ function sbSheet(){
   const inn = SB.signedIn();
   openSheet(L('Sign in','تسجيل الدخول'), inn ? `
     <div class="note">${L(
-      'Signed in as ' + SB.email() + '. Your apartment, your schedule and your requests are coming from the office system' +
+      'Signed in as ' + esc(SB.email()) + '. Your apartment, your schedule and your requests are coming from the office system' +
       (SB.rtState() === 'live' ? ', and update the moment the office changes them.' : '.'),
-      'تم تسجيل الدخول باسم ' + SB.email() + '. شقتك وجدول الدفعات وطلباتك تأتي من نظام الإدارة' +
+      'تم تسجيل الدخول باسم ' + esc(SB.email()) + '. شقتك وجدول الدفعات وطلباتك تأتي من نظام الإدارة' +
       (SB.rtState() === 'live' ? '، وتتحدّث فور تغييرها لدى الإدارة.' : '.'))}</div>
     <button class="btn ghost" style="margin-top:16px" onclick="sbOut()">${L('Sign out','تسجيل الخروج')}</button>
   ` : `
     <div class="note">${T('lock_body')}</div>
     <div class="fgroup" style="margin-top:16px">
       <label class="f">${L('Email','البريد الإلكتروني')}</label>
-      <input class="inp" id="sbMail" type="email" autocomplete="username" inputmode="email">
+      <input class="inp" id="sbMail" type="email" autocomplete="username" inputmode="email"
+                 aria-label="${L('Email','البريد الإلكتروني')}">
     </div>
     <div class="fgroup">
       <label class="f">${L('Password','كلمة المرور')}</label>
       <input class="inp" id="sbPass" type="password" autocomplete="current-password"
+             aria-label="${L('Password','كلمة المرور')}"
              onkeydown="if(event.key==='Enter')sbIn()">
     </div>
     <button class="btn primary" id="sbGo" style="margin-top:8px" onclick="sbIn()">

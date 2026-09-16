@@ -2,6 +2,42 @@
 <html lang="en" dir="ltr">
 <head>
 <meta charset="utf-8">
+<!-- SEC-04. What a static page can do about its own response headers, which
+     on GitHub Pages is: this, and not the rest.
+
+     The valuable clause is connect-src. The staff token lives in localStorage
+     and this application has had unescaped HTML sinks as recently as this
+     morning, so the question that matters is not only "can a script be
+     injected" but "where could it send what it found". With this, nowhere: the
+     only host the page may talk to is the project's own API.
+
+     WHAT THIS DOES NOT DO, said plainly rather than left to be assumed.
+
+     script-src carries 'unsafe-inline' because the whole application is one
+     inline script and about a hundred inline handlers. So this does NOT stop an
+     injected inline script from running. Removing that clause means moving
+     every handler to an addEventListener and every style to a class, which is
+     real work and real risk, and it is not done here.
+
+     frame-ancestors cannot be set from a meta element at all — only as a
+     response header — so clickjacking protection is not available from this
+     file. Nor are X-Content-Type-Options, Referrer-Policy or Permissions-Policy.
+     Those need a host that serves configurable headers, which GitHub Pages is
+     not. That is a hosting decision and it is recorded as one. -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'none';
+  script-src 'self' 'unsafe-inline';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data: blob:;
+  font-src 'self' data:;
+  connect-src 'self' https://oaxasgfdfxrkbllzwvna.supabase.co wss://oaxasgfdfxrkbllzwvna.supabase.co;
+  base-uri 'none';
+  form-action 'none';
+  object-src 'none';
+  frame-src 'none';
+  worker-src 'self' blob:;
+  manifest-src 'self'">
+
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#00293B">
 <title>Almaria Residence — Building Management Console</title>
@@ -73,6 +109,11 @@ button{font-family:inherit}
 .top h1{margin:0; font-size:19px; font-weight:800; letter-spacing:-.01em}
 .top .sub{font-size:12.5px; color:var(--muted); margin-top:1px}
 .spacer{flex:1}
+.pgid{min-width:0}
+.pgid h1{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* MOB-01. On a desktop the group is not a box at all, so the header is exactly
+   the flex row it always was. */
+.topacts{display:contents}
 .tbtn{
   border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 13px;
   font-size:12.5px; font-weight:700; color:var(--ink-2); cursor:pointer; display:flex; align-items:center; gap:7px
@@ -186,6 +227,10 @@ tbody tr.click:hover{background:#F7FAFB}
   display:flex;flex-direction:column;box-shadow:-14px 0 40px rgba(9,26,34,.18)
 }
 html[dir="rtl"] .drawer{transform:translateX(-102%)}
+/* A language change is a re-layout, not a movement. See setLang. */
+html.reflowing *, html.reflowing *::before, html.reflowing *::after{
+  transition:none!important; animation:none!important
+}
 .drawer.on{transform:translateX(0)!important}
 .drawer .dh{background:#fff;border-bottom:1px solid var(--line);padding:16px 20px;display:flex;align-items:flex-start;gap:12px;flex:none}
 .drawer .dh h2{margin:0;font-size:16px;font-weight:800}
@@ -272,10 +317,44 @@ html[dir="rtl"] .flipi{transform:scaleX(-1)}
   .top{padding:12px 14px; gap:10px}
   .scroll{padding:16px 14px 40px}
 }
+/* MOB-01. At 390 wide, the header was one flex row that did not fit: the
+   connection control started at x=440, Import at x=562, Export at x=663, and
+   the document itself stayed 390 wide — so they were clipped rather than
+   reachable by scrolling. In Arabic they ran off the other edge, which is
+   worse, because the first thing past the edge is the language button.
+
+   The actions become a row of their own, full width, scrollable if the labels
+   are long. Nothing is hidden, nothing moves into a menu that has to be
+   discovered, and the tab order is unchanged — which matters for ACC-01 as much
+   as for this. */
+@media (max-width:560px){
+  .top{flex-wrap:wrap; row-gap:10px; padding:10px 12px; gap:8px}
+  .pgid{flex:1 1 auto}
+  .pgid h1{font-size:16px}
+  .pgid .sub{font-size:11px}
+  .spacer{display:none}
+  .who{order:2; padding-inline-start:10px}
+  .who .rl{display:none}
+  /* They WRAP rather than scroll. A horizontally scrolling strip keeps every
+     control reachable on paper and hides half of them in practice — the whole
+     finding is that a control which is not visible is not available, and a
+     sideways scroll nobody knows is there is the same thing wearing a better
+     excuse. The header gets taller. That is the trade. */
+  .topacts{
+    display:flex; order:3; width:100%; gap:8px; flex-wrap:wrap; row-gap:8px
+  }
+  .topacts > *{flex:none; max-width:100%}
+}
 @media (prefers-reduced-motion:reduce){
   .side, .navscrim{transition:none}
 }
 
+/* ACC-01. Keyboard focus has to be visible, and visible on top of whatever it
+   lands on. The default ring disappears against the dark navigation and under
+   overlapping cards. */
+:focus-visible{outline:3px solid #0A5B75; outline-offset:2px; border-radius:4px}
+.side :focus-visible{outline-color:#8FD3E8}
+.repcard:focus-visible{outline-offset:-3px}
 .linkchip{text-decoration:none;display:inline-flex;align-items:center;gap:7px;padding:6px 11px;border-radius:999px;
   background:#E8F5EE;color:#136B43;font-size:12px;font-weight:700;border:1px solid #BFE3D0;white-space:nowrap}
 .linkchip i{width:7px;height:7px;border-radius:50%;background:#1B9E5F;flex:none}
@@ -307,19 +386,24 @@ tr.fromapp td:first-child::after{content:'';display:inline-block;width:6px;heigh
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
     </button>
-    <div>
+    <div class="pgid">
       <h1 id="pgTitle"></h1>
       <div class="sub" id="pgSub"></div>
     </div>
     <div class="spacer"></div>
+    <!-- MOB-01. The secondary actions are a group, so that at phone width they
+         can become a row of their own instead of running off the edge. On a
+         desktop this element is display:contents and changes nothing. -->
+    <div class="topacts" role="group" aria-label="Console actions">
     <button class="tbtn" onclick="setLang(LANG==='en'?'ar':'en')">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18"/></svg>
       <span id="langLbl">العربية</span>
     </button>
     <a class="linkchip" id="linkdot" href="index.html" target="_blank" rel="noopener" title="Open the resident app in a second tab — the two update each other"><i></i><span id="linkLbl"></span></a>
     <button class="tbtn" id="sbBtn" onclick="sbOpen()"></button>
     <button class="tbtn" id="impBtn" onclick="importOpen()"></button>
     <button class="tbtn" id="expBtn" onclick="toast(T('t_export'))"></button>
+    </div>
     <div class="who">
       <div class="av" id="whoAv"></div>
       <div>
@@ -498,10 +582,10 @@ const D={
   agr_unknown:'Not known',
   agr_notice_unknown:'The notice period has not been read off the contract, so no deadline can be given.',
   agr_note:'A notice deadline is shown only where somebody has read the notice period off the contract. Where it is unknown the column stays blank rather than assuming thirty days — that assumption is the most expensive kind of invented number.',
-  t_over:'Overview', s_over:'Almaria Residence · 37 apartments · Al Sulaymaniyah, Riyadh',
+  t_over:'Overview', s_over:'Almaria Residence · {n} apartments · Al Sulaymaniyah, Riyadh',
   t_wo:'Work orders', s_wo:'Live queue — R1',
   t_ppm:'Planned maintenance', s_ppm:'Asset register and PPM calendar — R10',
-  t_units:'Unit register', s_units:'37 apartments, leases and cost to date',
+  t_units:'Unit register', s_units:'{n} apartments, leases and cost to date',
   t_res:'Residents', s_res:'Accounts, verification and app adoption',
   t_rep:'Reports', s_rep:'Management reporting pack',
   t_ann:'Announcements', s_ann:'Building notices — bilingual required before publishing',
@@ -545,6 +629,8 @@ const D={
   nolog_cost:'No cost has been recorded, so there is nothing to break down by service or by apartment.',
   nolog_sla:'Response times cannot be measured until requests are logged with the time they were raised.',
   nolog_res:'No apartment has an app account, because the app is not in service. This figure becomes meaningful the day residents are invited.',
+  costs_stale_t:'The maintenance cost register could not be re-read at {t}. The cost figures below are the last ones that arrived and may be out of date.',
+  costs_gone_t:'The maintenance cost register could not be read. Every cost figure on this screen is missing, not zero — do not read the totals below as spend.',
   nolog_note:'Every figure on this console is yours: rent, arrears, leases and occupancy from the register, and maintenance from your own invoice registers. Response times stay blank because an invoice does not record when the fault was reported.',
   log_open:'Enter a completed job',
   log_t:'Enter a job from a supplier invoice',
@@ -646,6 +732,14 @@ const D={
   rp_unassigned:'Not assigned',
   rp_repeat:'Repeating faults',
   rp_repeat_d:'same service, same apartment, more than once',
+  pg_range:'{a}\u2013{b} of {n}', pg_prev:'Previous', pg_next:'Next', pg_of:'Page {a} of {b}',
+  a_close:'Close', a_menu:'Menu',
+  doc_e_big:'That file is larger than {n} MB. Nothing was uploaded.',
+  doc_e_type:'That file type cannot be attached. PDFs, photographs and Office documents can.',
+  doc_e_empty:'That file is empty. Nothing was uploaded.',
+  doc_e_meta:'The file reached storage but the office record of it was refused, so it is NOT attached. The stored object is {p} — give that to whoever administers the bucket.',
+  rp_unalloc:'Not against an apartment', rp_unalloc_d:'{m}, {p} of all maintenance spend',
+  rp_recur_scope:'Counted over work booked to an apartment only. {n} job(s), {m}, are booked to the building or to nothing and are not repeat faults in a flat.',
   rp_onrepeat:'spent on repeats',
   rp_affected:'affected',
   rp_times:'Times',
@@ -667,7 +761,9 @@ const D={
   rp_ledger_d:'One row per apartment: contracted, billed, collected, outstanding, maintenance cost and the net.',
   rp_occupancy_t:'Occupancy and vacancy',
   rp_occupancy_d:'Let and vacant by apartment type, with the contracted rent behind each, and every empty apartment named.',
-  rp_occ_n:'Occupancy is measured against all 37 apartments. A vacant apartment carrying a value on the register is showing the last contract, not an asking rent.',
+  rp_occ_n:'Occupancy is measured against the {n} apartments the register marks as lettable. A vacant apartment carrying a value on the register is showing the last contract, not an asking rent.',
+  rp_occ_out:'{n} further row(s) in the register are not lettable and are left out of every figure above: {ids}.',
+  st_occ_none:'no register loaded',
   rp_expiry_t:'Lease expiry and renewal pipeline',
   rp_expiry_d:'Which leases end when, sorted by how soon, with the contract value at risk and any arrears outstanding on the way out.',
   rp_exp_n:'A lease already past its end date and still shown as let needs a decision — either a renewal was agreed and never recorded, or the apartment is being occupied without a contract.',
@@ -869,7 +965,8 @@ const D={
   h_od:'Overdue', h_maint:'Maintenance', h_net:'Net', h_pct:'Maint. % of rent',
   f_none:'No arrears', f_paid:'Paid', f_due:'Due', f_overdue:'Overdue', f_notdue:'Not yet due',
   f_sched:'Instalment schedule', f_hist:'Maintenance history', f_lease:'Lease',
-  f_term:'Term', f_profile:'Payment record', p_good:'On time', p_late:'Habitually late', p_problem:'In arrears',
+  f_term:'Term', f_profile:'Payment record', p_good:'On time', p_late:'Paid late', p_problem:'In arrears',
+  p_none:'Nothing due yet', p_unrecorded:'Not recorded',
   f_netnote:'Net is rent collected less maintenance cost. It is not a full profit and loss — service charge, utilities, management fee, insurance and depreciation are not in this view.',
   f_instal:'Instalment', f_duedate:'Due', f_paidon:'Paid on', f_amount:'Amount',
   f_vacantnote:'Vacant — no rent billed', f_arronly:'Arrears only',
@@ -1030,10 +1127,10 @@ const D={
   agr_unknown:'غير معروف',
   agr_notice_unknown:'لم تُقرأ مدة الإشعار من العقد، فلا يمكن تحديد موعد.',
   agr_note:'يظهر موعد الإشعار فقط حيث قرأ أحدهم مدة الإشعار من العقد. وحين تكون غير معروفة يبقى الحقل فارغاً بدل افتراض ثلاثين يوماً — وهذا الافتراض أغلى أنواع الأرقام المختلقة.',
-  t_over:'نظرة عامة', s_over:'المارية ريزيدنس · ٣٧ شقة · حي السليمانية، الرياض',
+  t_over:'نظرة عامة', s_over:'المارية ريزيدنس · {n} شقة · حي السليمانية، الرياض',
   t_wo:'أوامر العمل', s_wo:'قائمة العمل المباشرة — تقرير ١',
   t_ppm:'الصيانة الوقائية', s_ppm:'سجل الأصول وجدول الصيانة الدورية — تقرير ١٠',
-  t_units:'سجل الوحدات', s_units:'٣٧ شقة، العقود والتكلفة حتى تاريخه',
+  t_units:'سجل الوحدات', s_units:'{n} شقة، العقود والتكلفة حتى تاريخه',
   t_res:'السكان', s_res:'الحسابات والتوثيق ونسبة استخدام التطبيق',
   t_rep:'التقارير', s_rep:'حزمة التقارير الإدارية',
   t_ann:'الإعلانات', s_ann:'إشعارات المبنى — اللغتان مطلوبتان قبل النشر',
@@ -1124,6 +1221,8 @@ const D={
   nolog_cost:'لم تُسجَّل أي تكلفة، فلا يوجد ما يمكن تفصيله حسب الخدمة أو الشقة.',
   nolog_sla:'لا يمكن قياس أزمنة الاستجابة قبل تسجيل الطلبات بوقت رفعها.',
   nolog_res:'لا يوجد حساب تطبيق لأي شقة، لأن التطبيق غير مفعّل بعد. يصبح هذا الرقم ذا معنى يوم دعوة السكان.',
+  costs_stale_t:'تعذّر إعادة قراءة سجل تكاليف الصيانة عند {t}. الأرقام أدناه هي آخر ما ورد وقد تكون غير محدّثة.',
+  costs_gone_t:'تعذّرت قراءة سجل تكاليف الصيانة. أرقام التكلفة مفقودة وليست صفراً — لا تُقرأ الإجماليات أدناه على أنها إنفاق.',
   nolog_note:'كل رقم في هذه المنصة رقمكم: الإيجارات والمتأخرات والعقود والإشغال من السجل، والصيانة من سجلات فواتيركم. أما أزمنة الاستجابة فتبقى فارغة لأن الفاتورة لا تسجّل وقت الإبلاغ عن العطل.',
   log_open:'إدخال عمل منفَّذ',
   log_t:'إدخال عمل من فاتورة مورّد',
@@ -1225,6 +1324,14 @@ const D={
   rp_unassigned:'غير مُسند',
   rp_repeat:'أعطال متكررة',
   rp_repeat_d:'الخدمة نفسها والشقة نفسها أكثر من مرة',
+  pg_range:'{a}\u2013{b} من {n}', pg_prev:'السابق', pg_next:'التالي', pg_of:'صفحة {a} من {b}',
+  a_close:'إغلاق', a_menu:'القائمة',
+  doc_e_big:'حجم الملف أكبر من {n} ميجابايت. لم يتم رفع شيء.',
+  doc_e_type:'لا يمكن إرفاق هذا النوع. يمكن إرفاق ملفات PDF والصور ومستندات أوفيس.',
+  doc_e_empty:'الملف فارغ. لم يتم رفع شيء.',
+  doc_e_meta:'وصل الملف إلى التخزين لكن سجلّ الإدارة رُفض، فهو غير مُرفق. الملف المخزّن هو {p} — أعطِ هذا لمن يدير التخزين.',
+  rp_unalloc:'غير محمَّلة على شقة', rp_unalloc_d:'{m}، {p} من إجمالي إنفاق الصيانة',
+  rp_recur_scope:'يُحتسب على الأعمال المحمَّلة على شقة فقط. هناك {n} عملاً بقيمة {m} محمَّلة على المبنى أو غير محمَّلة، وليست أعطالاً متكررة في شقة.',
   rp_onrepeat:'أُنفقت على التكرار',
   rp_affected:'متأثرة',
   rp_times:'المرات',
@@ -1246,7 +1353,9 @@ const D={
   rp_ledger_d:'صف لكل شقة: التعاقدي والمفوتر والمحصّل والمستحق وتكلفة الصيانة والصافي.',
   rp_occupancy_t:'الإشغال والشواغر',
   rp_occupancy_d:'المؤجر والشاغر حسب نوع الشقة، والإيجار التعاقدي خلف كل نوع، مع تسمية كل شقة شاغرة.',
-  rp_occ_n:'يُحتسب الإشغال على ٣٧ شقة. والشقة الشاغرة التي تحمل قيمة في السجل تعرض آخر عقد لا سعراً مطلوباً.',
+  rp_occ_n:'يُحتسب الإشغال على {n} شقة قابلة للتأجير بحسب السجل. والشقة الشاغرة التي تحمل قيمة في السجل تعرض آخر عقد لا سعراً مطلوباً.',
+  rp_occ_out:'يوجد في السجل {n} وحدة أخرى غير قابلة للتأجير، وهي خارج كل الأرقام أعلاه: {ids}.',
+  st_occ_none:'لم يُحمَّل السجل',
   rp_expiry_t:'انتهاء العقود وخط التجديد',
   rp_expiry_d:'أي عقد ينتهي ومتى، مرتبة بالأقرب، مع القيمة المعرضة وأي متأخرات قائمة.',
   rp_exp_n:'العقد الذي تجاوز تاريخ انتهائه ولا يزال مؤجراً يحتاج قراراً — إما تجديد لم يُسجَّل، أو إشغال بلا عقد.',
@@ -1390,7 +1499,8 @@ const D={
   h_od:'التأخير', h_maint:'الصيانة', h_net:'الصافي', h_pct:'الصيانة ٪ من الإيجار',
   f_none:'لا توجد متأخرات', f_paid:'مدفوعة', f_due:'مستحقة', f_overdue:'متأخرة', f_notdue:'لم تستحق',
   f_sched:'جدول الدفعات', f_hist:'سجل الصيانة', f_lease:'العقد',
-  f_term:'المدة', f_profile:'سجل السداد', p_good:'منتظم', p_late:'متأخر عادةً', p_problem:'عليه متأخرات',
+  f_term:'المدة', f_profile:'سجل السداد', p_good:'منتظم', p_late:'سدّد متأخراً', p_problem:'عليه متأخرات',
+  p_none:'لا توجد دفعة مستحقة بعد', p_unrecorded:'غير مسجل',
   f_netnote:'الصافي هو الإيجار المحصّل ناقص تكلفة الصيانة، وليس قائمة دخل كاملة — رسوم الخدمة والمرافق وأتعاب الإدارة والتأمين والإهلاك غير مدرجة.',
   f_instal:'الدفعة', f_duedate:'الاستحقاق', f_paidon:'تاريخ السداد', f_amount:'المبلغ',
   f_vacantnote:'شاغرة — لا يوجد إيجار مفوتر', f_arronly:'المتأخرات فقط',
@@ -1402,8 +1512,28 @@ const D={
 };
 const T=k=>D[LANG][k]!==undefined?D[LANG][k]:k;
 const L=(en,ar)=>LANG==='en'?en:ar;
-const NUM=s=>LANG==='en'?String(s):String(s).replace(/[0-9]/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
-const money=n=>NUM(Math.round(n).toLocaleString('en-US'));
+/* DATA-04. NUM localises digits; it was also, silently, the last thing between
+   a missing value and the screen — and it printed the words "null" and
+   "undefined" as if they were quantities. A-206 has no area recorded and its
+   drawer read "3BR - null m2". A value the register does not hold is an em
+   dash, here as everywhere else in this console. Strings pass through: NUM is
+   given times and formatted figures as well as numbers. */
+const NUM=s=>(s===null||s===undefined||s==='')?'\u2014'
+  :LANG==='en'?String(s):String(s).replace(/[0-9]/g,d=>'٠١٢٣٤٥٦٧٨٩'[d]);
+/* DATA-04. `Math.round(undefined)` is NaN and `NaN.toLocaleString()` is the
+   string "NaN", so a figure the register does not hold printed as NaN — on
+   seven unit details in the audit's pass — and a ratio over a zero base printed
+   Infinity. Both are the same mistake as DATA-02's: an amount that is missing
+   was being rendered as though it were a number.
+
+   The resident app has had this right since 8 September, in almost these words,
+   and the console did not use it. The em dash is the console's own convention
+   for "no value recorded" — it is what fmtD already answers for a date it does
+   not have. */
+const money=n=>{
+  const v = (n === null || n === undefined || n === '') ? NaN : Number(n);
+  return Number.isFinite(v) ? NUM(Math.round(v).toLocaleString('en-US')) : '\u2014';
+};
 
 /* ------------------------------ icons ------------------------------ */
 const IC={
@@ -1540,7 +1670,10 @@ const UNITS=REGISTER.map(r=>({
 }));
 /* app-account state is the only invented field here — no such system exists yet */
 /* the resident app is not in service, so no apartment has an account yet */
-UNITS.forEach(u=>{ u.account='none'; u.lastSeen=null; u.prefers=null; u.profile='good'; });
+/* The default is 'none', not 'good'. A flat nothing has been computed for yet
+   has no payment record; saying "On time" before looking is the same defect the
+   function below was rewritten for, one line earlier. */
+UNITS.forEach(u=>{ u.account='none'; u.lastSeen=null; u.prefers=null; u.profile='none'; });
 
 /* APP-04. These six months were literals ending in August 2026. They were
    written in August and they were correct for about three weeks. On 1 September
@@ -1934,12 +2067,9 @@ const isOpenWO=w=>['submitted','assigned','progress','hold'].includes(w.status);
    Instalments, amounts and due dates are the real schedule from the register.
    Payment status is reconstructed from the sheet's own collected totals. */
 const addM=(d,n)=>addMonthsClamped(d,n);
-UNITS.forEach(u=>{
-  if(!u.occupied) return;
-  const unpaidBilled=u.inst.filter(x=>x.billed&&!x.paid);
-  u.profile = !unpaidBilled.length ? 'good'
-    : (Math.max(...unpaidBilled.map(x=>(TODAY-x.due)/864e5)) > 60 ? 'problem' : 'late');
-});
+/* The payment profile used to be stamped here and again in applyRegister, with
+   the rule written out twice and recomputed never. recompute() derives it now,
+   and runs before the first render. */
 
 /* An instalment is only in this table once it is billed — due today or
    earlier — so overdueDays is never negative and the first bucket is the money
@@ -1950,6 +2080,44 @@ const AGE_BUCKETS=[
  {k:'b_cur',lo:0,hi:0},{k:'b_30',lo:1,hi:30},{k:'b_60',lo:31,hi:60},
  {k:'b_90',lo:61,hi:90},{k:'b_90p',lo:91,hi:1e9}
 ];
+/* One rule for the payment profile, derived rather than stamped in two places.
+   It is a statement about what is unpaid NOW. It is not a statement about
+   whether past instalments arrived on time — nothing in this register records
+   that, and the labels beside it must not claim it either. */
+/* A payment record the console can actually evidence.
+ *
+ * This returned 'good' — "On time" — for any flat with nothing overdue RIGHT
+ * NOW. Three different situations got that badge and only one of them earned
+ * it: a tenancy that had genuinely paid everything punctually; a lease signed
+ * last week with no instalment due yet; and a tenant who had paid every single
+ * instalment weeks late and happened to be square today. The screen said "On
+ * time" under the heading "Payment record" in all three.
+ *
+ * Punctuality was never measured. It could not have been when this was
+ * written — `paid_on` was being dropped on the way out of the database, which
+ * was DATA-07 — but the label claimed it anyway. The date is carried now, so
+ * the claim can be checked instead of asserted.
+ *
+ *   none        nothing has fallen due yet; there is no record to report
+ *   problem     something has been overdue more than 60 days
+ *   late        something is overdue, or something was paid after its due date
+ *   unrecorded  everything due is paid, but not every payment has a date, so
+ *               "on time" is not established
+ *   good        everything due is paid, every payment has a date, and none of
+ *               those dates is after the due date
+ *
+ * `unrecorded` is the one that matters. It is the state the old code called
+ * 'good', and the difference between "we have no evidence of lateness" and "we
+ * have evidence of punctuality" is the whole finding. */
+const payProfile = u => {
+  const due = (u.inst || []).filter(x => x.billed);
+  if(!due.length) return 'none';
+  const overdue = due.filter(x => !x.paid);
+  if(overdue.length)
+    return Math.max(...overdue.map(x => (TODAY - x.due)/864e5)) > 60 ? 'problem' : 'late';
+  if(due.some(x => x.paidOn && x.paidOn > x.due)) return 'late';
+  return due.every(x => x.paidOn) ? 'good' : 'unrecorded';
+};
 const unitCost=u=>{const c=costByUnitLookup[u.u];return c?c.cost:0;};
 let costByUnitLookup={};
 
@@ -2003,7 +2171,8 @@ function markClosed(w, at){
 }
 
 let byMonth,costByCat,costByUnit,totalCost,monthCost,prevCost,slaNow,slaPrev,
-    avgClose,breached,occupied,activated,appShare,ratings,avgRating,ageing,FIN,measured;
+    avgClose,breached,occupied,activated,appShare,ratings,avgRating,ageing,FIN,measured,
+    lettable,notLettable;
 
 /* Every figure in the console is derived from WOS and UNITS. Anything that mutates
    those (closing a work order, recording a payment) must call this, or the reports
@@ -2051,6 +2220,13 @@ function recompute(){
  measured=WOS.filter(w=>!w.noSla&&w.status!=='cancelled').length;
  breached=OPEN.filter(isBreached);
  occupied=UNITS.filter(u=>u.occupied).length;
+ /* DATA-03. The occupancy denominator was the literal 37, in four places, over
+    a register of 39 rows. Two of those rows are marked not lettable, so 37 was
+    the right answer to a question nobody had written down — and it stayed 37
+    whatever the register said, which is the part that matters. It is counted
+    now, from the same rows the numerator comes from. */
+ lettable=UNITS.filter(u=>u.lettable).length;
+ notLettable=UNITS.length-lettable;
  activated=UNITS.filter(u=>u.account==='verified').length;
  appShare=WOS.length? Math.round(WOS.filter(w=>w.ch==='app').length/WOS.length*100):0;
  ratings=DONE.filter(w=>w.rating);
@@ -2074,22 +2250,42 @@ function recompute(){
     const d = x.due instanceof Date ? x.due : (x.due ? new Date(x.due) : null);
     if(d && !isNaN(d)) x.billed = d <= TODAY;
   });
-  u.billed=u.inst.filter(x=>x.billed).reduce((a,x)=>a+x.amt,0);
-  u.collected=u.inst.filter(x=>x.paid).reduce((a,x)=>a+x.amt,0);
-  u.outstanding=u.billed-u.collected;
+  const sum = f => u.inst.filter(f).reduce((a,x)=>a+x.amt,0);
+  u.billed    = sum(x => x.billed);        /* has fallen due */
+  u.collected = sum(x => x.paid);          /* cash in, whenever it was due */
+  /* DATA-01. Three positions, not one net.
+     An instalment that has fallen due and is unpaid is ARREARS. One paid before
+     it fell due is PREPAID. What is unpaid at all is the remaining contractual
+     balance. These are different facts about a tenancy and netting them hides
+     both: a flat owing SAR 100 on an instalment that fell due last month, with
+     SAR 100 already received against one due next quarter, reported NOTHING
+     outstanding — and dropped out of the arrears table altogether, while the
+     line beside it still read 45 days overdue.
+     The rule was already written three lines below, for the portfolio total,
+     and had never been applied to an apartment. */
+  u.arrears   = sum(x =>  x.billed && !x.paid);
+  u.prepaid   = sum(x => !x.billed &&  x.paid);
+  u.unpaid    = sum(x => !x.paid);
+  /* `outstanding` means arrears wherever it is read, and can no longer go
+     negative: money paid early is a position of its own, not a discount on a
+     debt that is already late. */
+  u.outstanding = u.arrears;
   const unpaid=u.inst.filter(x=>x.billed&&!x.paid).sort((a,b)=>a.due-b.due)[0];
   u.overdueDays=unpaid?Math.floor((TODAY-unpaid.due)/864e5):0;
+  /* Derived here rather than stamped twice at load, so a payment recorded in
+     this session moves it without a reload. */
+  u.profile = payProfile(u);
  });
  ageing=AGE_BUCKETS.map(b=>{
-  const hit=UNITS.filter(u=>u.occupied&&u.outstanding>0&&u.overdueDays>=b.lo&&u.overdueDays<=b.hi);
-  return {b, amt:hit.reduce((a,u)=>a+u.outstanding,0), n:hit.length};
+  const hit=UNITS.filter(u=>u.occupied&&u.arrears>0&&u.overdueDays>=b.lo&&u.overdueDays<=b.hi);
+  return {b, amt:hit.reduce((a,u)=>a+u.arrears,0), n:hit.length};
  });
  FIN={billed:UNITS.reduce((a,u)=>a+(u.billed||0),0),
       collected:UNITS.reduce((a,u)=>a+(u.collected||0),0),
       contracted:UNITS.filter(u=>u.occupied).reduce((a,u)=>a+u.rent,0)};
  /* arrears and prepayments are separate positions — netting them hides both */
- FIN.outstanding=UNITS.reduce((a,u)=>a+Math.max(0,u.outstanding||0),0);
- FIN.credit=UNITS.reduce((a,u)=>a+Math.max(0,-(u.outstanding||0)),0);
+ FIN.outstanding=UNITS.reduce((a,u)=>a+(u.arrears||0),0);
+ FIN.credit=UNITS.reduce((a,u)=>a+(u.prepaid||0),0);
  FIN.rate=FIN.billed?Math.min(100,Math.round(FIN.collected/FIN.billed*100)):0;
  FIN.over30=ageing.filter(x=>x.b.lo>=31).reduce((a,x)=>a+x.amt,0);
 }
@@ -2709,6 +2905,11 @@ async function importApply(){
 function applyRegister(rows){
   const built = rows.map(r => ({
     u:r.id, floor:r.floor, type:r.type, area:r.area,
+    /* A register imported from a spreadsheet carries no lettable column, and
+       every row in one is a flat somebody means to let. Absent means lettable;
+       only an explicit false takes a row out of the denominator. */
+    lettable: r.lettable !== false,
+    lettableSource: r.lettableSource || null,
     occupied:r.let, tenant:r.tenant, tenant_ar:r.tenantAr,
     rent:r.value||0, leaseStart:r.start?new Date(r.start):null, leaseEnd:r.end?new Date(r.end):null,
     inst:(r.inst||[]).map(x=>({q:x.n, amt:x.amt, due:x.due?new Date(x.due):null,
@@ -2726,14 +2927,8 @@ function applyRegister(rows){
     u.account = k.account || 'none';
     u.lastSeen = k.lastSeen ?? null;
     u.prefers = k.prefers || null;
-    u.profile = 'good';
+    u.profile = 'none';
     UNITS.push(u);
-  });
-  UNITS.forEach(u => {
-    if(!u.occupied) return;
-    const unpaidBilled = u.inst.filter(x => x.billed && !x.paid);
-    u.profile = !unpaidBilled.length ? 'good'
-      : (Math.max(...unpaidBilled.map(x => (TODAY - x.due)/864e5)) > 60 ? 'problem' : 'late');
   });
   recompute();
 }
@@ -2775,7 +2970,10 @@ const prPill=p=>{const v=priOK(p);
        :                   `<span class="pill p-neut">${T('pr_routine')}</span>`;};
 const techName=w=>L(w.tech,w.tech_ar);
 
-function toast(m){const e=$('toast');e.innerHTML=I('check',17,2.2)+'<span>'+m+'</span>';e.classList.add('on');
+/* SEC-03. `m` went into innerHTML raw — see the same note in index.html. A
+   database refusal carries the value it refused, and that value is often text
+   a resident typed. */
+function toast(m){const e=$('toast');e.innerHTML=I('check',17,2.2)+'<span>'+esc(m)+'</span>';e.classList.add('on');
  clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),3600);}
 /* Closing the drawer also un-reveals any identity number that was showing in
    it. The reveal was documented as per-view — "nothing is remembered" — but
@@ -2903,7 +3101,8 @@ async function rcApplyImport(){
 }
 function openDrawer(title,body){
  $('drawer').innerHTML=`<div class="dh"><h2>${title}</h2><div style="flex:1"></div>
-   <button class="x" onclick="closeDrawer()">${I('x',20,2)}</button></div><div class="db">${body}</div>`;
+   <button class="x" type="button" onclick="closeDrawer()"
+     aria-label="${esc(T('a_close'))}">${I('x',20,2)}</button></div><div class="db">${body}</div>`;
  $('drawer').classList.add('on');$('scrim').classList.add('on');}
 
 /* ------------------------------ charts ------------------------------ */
@@ -3207,7 +3406,11 @@ function render(){
  renderNav();
  const mb=$('menuBtn'); if(mb) mb.setAttribute('aria-label', T('m_menu'));
  $('pgTitle').textContent=T('t_'+PAGE);
- $('pgSub').textContent=T('s_'+PAGE);
+ /* DATA-03. The two page subtitles asserted "37 apartments" as a constant, in
+    both languages, on a register of 39 rows. They carry {n} now and it is
+    filled from the same count the occupancy stat divides by — and when nothing
+    has loaded, the sentence loses the clause rather than printing a zero. */
+ $('pgSub').textContent = T('s_'+PAGE).replace('{n}', lettable ? NUM(lettable) : '—');
  paintWho(); ME.ensure(paintWho);
  $('brandSub').textContent=T('console');
  $('expBtn').innerHTML=I('dl',15)+'<span>'+T('export')+'</span>';
@@ -3234,6 +3437,31 @@ function render(){
  }
 }
 
+/* DATA-03. One place, so the dashboard and the maintenance screen cannot drift,
+   and so the denominator can be MISSING rather than wrong: a register that has
+   not loaded has no lettable count, and an em dash is the honest answer to
+   "what is the occupancy" before anything has been read. Dividing by zero and
+   printing NaN% was the alternative. */
+function occPct(){ return lettable ? Math.round(occupied / lettable * 100) : null; }
+function occStat(){
+  const pct = occPct();
+  return stat(T('st_occ'),
+              lettable ? NUM(occupied) + '/' + NUM(lettable) : '\u2014',
+              {t: pct === null ? T('st_occ_none') : NUM(pct) + '%', cls:'flat'},
+              `<div class="meter"><i style="width:${pct === null ? 0 : pct}%"></i></div>`);
+}
+
+/* One pill, five states, so a state added to the function cannot quietly fall
+   through to "In arrears" at the render — which is what the old three-way
+   ternary did with anything it did not recognise. */
+function payPill(p){
+  const map = { good:['p-good','check','p_good'], late:['p-warn','clock','p_late'],
+                problem:['p-crit','alert','p_problem'], none:['p-neut','clock','p_none'],
+                unrecorded:['p-neut','alert','p_unrecorded'] };
+  const [cls, ico, key] = map[p] || map.unrecorded;
+  return `<span class="pill ${cls}">${I(ico,12,2.1)}${T(key)}</span>`;
+}
+
 const stat=(k,v,meta,extra='')=>`<div class="stat"><div class="k">${k}</div><div class="v">${v}</div>
   <div class="m ${meta.cls||'flat'}">${meta.ic?I(meta.ic,13,2.2):''}${meta.t}</div>${extra}</div>`;
 
@@ -3243,14 +3471,14 @@ function pgOver(){
  const due=PPM.filter(p=>new Date(p.next)<=new Date(2026,8,15)).sort((a,b)=>new Date(a.next)-new Date(b.next));
  const today=OPEN.filter(w=>w.status==='assigned'||w.status==='progress').slice(0,5);
  return `
+ ${costsWarning()}
  ${NOLOG()?`
  <div class="card mb"><div class="bd">
    <div class="warnbox">${I('alert',16,2.2)}<span>${T('nolog_note')}</span></div>
  </div></div>
 
  <div class="grid g3 mb">
-  ${stat(T('st_occ'),NUM(occupied)+'/'+NUM(37),{t:NUM(Math.round(occupied/37*100))+'%',cls:'flat'},
-    `<div class="meter"><i style="width:${occupied/37*100}%"></i></div>`)}
+  ${occStat()}
   ${stat(T('f_outstanding'),money(FIN.outstanding),{t:NUM(UNITS.filter(u=>u.outstanding>0).length)+' '+L('apartments','شقق'),cls:FIN.outstanding?'down':'flat',ic:FIN.outstanding?'alert':null})}
   ${stat(T('f_collected'),money(FIN.collected),{t:NUM(FIN.rate)+'% '+T('f_rate'),cls:FIN.rate>=95?'up':'down',ic:FIN.rate>=95?'up':'down'},
     `<div class="meter"><i style="width:${FIN.rate}%;background:${FIN.rate>=95?'var(--good)':'var(--warning)'}"></i></div>`)}
@@ -3271,8 +3499,7 @@ function pgOver(){
   ${(function(){var lm=(monthCost===0)?lastCostMonth():null; return lm
     ? stat(T('st_cost'),money(monthCost),{t:L('last booked ','آخر تسجيل ')+lm,cls:'flat'})
     : stat(T('st_cost'),money(monthCost),{t:(costDelta>=0?'+':'−')+NUM(Math.abs(costDelta))+'% '+T('vs'),cls:costDelta<=0?'up':'down',ic:costDelta<=0?'down':'up'});})()}
-  ${stat(T('st_occ'),NUM(occupied)+'/'+NUM(37),{t:NUM(Math.round(occupied/37*100))+'%',cls:'flat'},
-    `<div class="meter"><i style="width:${occupied/37*100}%"></i></div>`)}
+  ${occStat()}
   ${stat(T('st_adopt'),NUM(appShare)+'%',{t:NUM(activated)+' '+T('of')+' '+NUM(occupied)+' '+T('units')+' '+L('activated','مفعّلة'),cls:'flat'},
     `<div class="meter"><i style="width:${appShare}%;background:${appShare>=70?'var(--good)':'var(--warning)'}"></i></div>`)}
  </div>
@@ -3328,6 +3555,19 @@ function pgOver(){
    resident in the app, or entered here from a supplier invoice — the maintenance
    modules stay empty and say why. */
 const NOLOG = () => WOS.length === 0;
+/* DATA-02. Rendered at the top of every screen that states a cost figure. A
+   screen that cannot know what was spent must say so where the number is, not
+   in a console warning nobody reads. */
+function costsWarning(){
+  let c; try{ c = LIVE.costsState(); }catch(e){ return ''; }
+  if(!c || c.ok) return '';
+  const when = c.since instanceof Date
+    ? String(c.since.getHours()).padStart(2,'0') + ':' + String(c.since.getMinutes()).padStart(2,'0')
+    : '';
+  const msg = c.everLoaded ? T('costs_stale_t').replace('{t}', when) : T('costs_gone_t');
+  return `<div class="card mb"><div class="bd">
+    <div class="warnbox">${I('alert',16,2.2)}<span>${esc(msg)}</span></div></div></div>`;
+}
 const emptyState = (title, body, action) => `
   <div class="empty"><span class="ei">${I('wrench',44,1.5)}</span>
    <div class="et">${title}</div><div class="ed">${body}</div>
@@ -3352,7 +3592,7 @@ function logJobOpen(){
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
      <div><label class="f">${T('log_unit')} <span class="req">*</span></label>
        <select class="inp" id="jUnit"><option value="">${L('Choose…','اختر…')}</option>
-       ${let_.map(u=>`<option value="${u.u}">${u.u} — ${L(u.tenant||'',u.tenant_ar||'')}</option>`).join('')}
+       ${let_.map(u=>`<option value="${u.u}">${esc(u.u)} — ${esc(L(u.tenant||'',u.tenant_ar||''))}</option>`).join('')}
        </select></div>
      <div><label class="f">${T('log_cat')} <span class="req">*</span></label>
        <select class="inp" id="jCat"><option value="">${L('Choose…','اختر…')}</option>
@@ -3439,7 +3679,17 @@ function logJobAdd(rec, u, d){
 }
 
 /* ---------- work orders ---------- */
-let WF={q:'',status:'open',cat:'all',pri:'all'};
+let WF={q:'',status:'open',cat:'all',pri:'all',page:0};
+/* SCALE-01. The list showed the first sixty rows of whatever the filters
+   returned and said so in a note at the foot — "60 of 100 records shown" — with
+   no way to reach the other forty. The records were not lost; the Everything
+   report reaches all hundred. But the screen an operator actually works in
+   could not, and the audit is right that this gets worse rather than better as
+   the history grows.
+
+   Sixty stays as the page size: it is what the table was built to render
+   without becoming unreadable. What changes is that there is a next page. */
+const WO_PAGE = 60;
 function woFiltered(){
  return WOS.filter(w=>{
   if(WF.status==='open'&&!['submitted','assigned','progress','hold'].includes(w.status))return false;
@@ -3455,10 +3705,21 @@ function woFiltered(){
   return true;
  });
 }
-function setWF(k,v){WF[k]=v;render();}
+/* Any change of filter returns to the first page. Staying on page two of a
+   list that has just become one page long shows an empty table under a filter
+   that matches things, which reads as "nothing found" and is a lie. */
+function setWF(k,v){WF[k]=v;WF.page=0;render();}
+function setWOPage(n){
+  const rows = woFiltered();
+  const last = Math.max(0, Math.ceil(rows.length / WO_PAGE) - 1);
+  WF.page = Math.min(Math.max(0, n), last);
+  render();
+  try{ const t = document.querySelector('#page .tw'); if(t) t.scrollIntoView({block:'start'}); }catch(e){}
+}
 function pgWO(){
  const rows=woFiltered();
  return `
+ ${costsWarning()}
  <div class="filters">
   ${[['open','f_open'],['breach','f_breach'],['urgent','f_urgent'],['all','f_all']].map(([v,k])=>
     `<button class="chipf ${WF.status===v?'on':''}" onclick="setWF('status','${v}')">${T(k)}</button>`).join('')}
@@ -3466,7 +3727,7 @@ function pgWO(){
    <option value="all">${T('f_all')} — ${T('category')}</option>
    ${CATS.map(c=>`<option value="${c.id}" ${WF.cat===c.id?'selected':''}>${catName(c)}</option>`).join('')}
   </select>
-  <input placeholder="${T('search')}" value="${WF.q}" oninput="WF.q=this.value;clearTimeout(window._t);window._t=setTimeout(render,220)" style="min-width:250px">
+  <input aria-label="${T('search')}" placeholder="${T('search')}" value="${WF.q}" oninput="WF.q=this.value;clearTimeout(window._t);window._t=setTimeout(render,220)" style="min-width:250px">
   <div style="flex:1"></div>
   <button class="tbtn pri" onclick="logJobOpen()">${I('plus',15)}<span>${T('log_open')}</span></button>
  </div>
@@ -3476,7 +3737,7 @@ function pgWO(){
    <th>${T('priority')}</th><th>${T('raised_c')}</th><th class="num">${T('age')}</th><th class="num">${T('targetc')}</th>
    <th>${T('assignee')}</th><th>${T('status')}</th></tr></thead>
    <tbody>
-   ${rows.slice(0,60).map(w=>{
+   ${rows.slice(WF.page * WO_PAGE, WF.page * WO_PAGE + WO_PAGE).map(w=>{
      const open=['submitted','assigned','progress','hold'].includes(w.status);
      const a=ageH(w), over=open&&isBreached(w);
      return `<tr class="click" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" onclick="woDetail('${w.id}')">
@@ -3497,7 +3758,26 @@ function pgWO(){
      `<button class="btn pri" style="margin-top:14px" onclick="logJobOpen()">${I('plus',15)} ${T('log_open')}</button>`)
    :`<div class="empty"><span class="ei">${I('search',44,1.5)}</span>
    <div class="et">${T('e_wo')}</div><div class="ed">${T('e_wo_d')}</div></div>`}`}</div>
- ${rows.length?`<div class="note">${NUM(Math.min(rows.length,60))} ${T('of')} ${NUM(rows.length)} ${L('records shown','سجل معروض')}</div>`:''}`;
+ ${rows.length?woPager(rows.length):''}`;
+}
+
+/* The foot of the list: what is on screen, out of what, and how to reach the
+   rest. It used to be the first two of those three. */
+function woPager(total){
+  const pages = Math.max(1, Math.ceil(total / WO_PAGE));
+  const from  = WF.page * WO_PAGE + 1;
+  const to    = Math.min(total, (WF.page + 1) * WO_PAGE);
+  const btn = (n, label, on) => on
+    ? `<button class="tbtn" onclick="setWOPage(${n})">${label}</button>`
+    : `<button class="tbtn" disabled aria-disabled="true">${label}</button>`;
+  return `<div class="note" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+    <span>${T('pg_range').replace('{a}', NUM(from)).replace('{b}', NUM(to))
+                         .replace('{n}', NUM(total))}</span>
+    ${pages > 1 ? `<span style="flex:1"></span>
+    ${btn(WF.page - 1, T('pg_prev'), WF.page > 0)}
+    <span>${T('pg_of').replace('{a}', NUM(WF.page + 1)).replace('{b}', NUM(pages))}</span>
+    ${btn(WF.page + 1, T('pg_next'), WF.page < pages - 1)}` : ''}
+  </div>`;
 }
 
 function woDetail(id){
@@ -3533,7 +3813,7 @@ function woDetail(id){
   <div class="card mb"><div class="bd">
    <dl class="kv">
     <dt>${T('unit')}</dt><dd>${NUM(w.unit)} · ${(UNITS.find(u=>u.u===w.unit)||{}).type||'—'}</dd>
-    <dt>${T('resident')}</dt><dd>${L(w.tenant,w.tenant_ar)}</dd>
+    <dt>${T('resident')}</dt><dd>${esc(L(w.tenant,w.tenant_ar))}</dd>
     <dt>${T('category')}</dt><dd>${catName(c)}</dd>
     <dt>${T('intake')}</dt><dd>${T('ch_'+(w.ch==='wa'?'wa':w.ch))}</dd>
     <dt>${T('raised_c')}</dt><dd>${fmtD(w.raised)}</dd>
@@ -3871,8 +4151,17 @@ function repForecast(){
 }
 
 function repOccupancy(){
+  /* DATA-03. This report counted every row in the register — 39 — while the
+     dashboard counted against a hardcoded 37 and the note under this very table
+     said "measured against all 37 apartments". Three numbers, two screens, one
+     register. A flat that cannot be let is not vacant; it is not on the market
+     at all, and counting it as vacant understates occupancy for ever. Both
+     screens now count the same lettable rows, and the flats left out are named
+     underneath rather than quietly dropped. */
+  const LET = UNITS.filter(u=>u.lettable);
+  const OUT = UNITS.filter(u=>!u.lettable);
   const byType = {};
-  UNITS.forEach(u=>{
+  LET.forEach(u=>{
     const k = u.type||'—';
     byType[k] = byType[k] || {k, total:0, let:0, area:0, rent:0, vacantValue:0};
     const b = byType[k];
@@ -3884,10 +4173,11 @@ function repOccupancy(){
     pct: Math.round(b.let/b.total*100), area:Math.round(b.area/b.total),
     rent:b.rent, avg: b.let? Math.round(b.rent/b.let) : null
   }));
-  const letAll = UNITS.filter(u=>u.occupied).length;
-  const vacant = UNITS.filter(u=>!u.occupied);
+  const letAll = LET.filter(u=>u.occupied).length;
+  const vacant = LET.filter(u=>!u.occupied);
   return {
-    stats:[[T('st_occ'), NUM(letAll)+'/'+NUM(UNITS.length), NUM(Math.round(letAll/UNITS.length*100))+'%'],
+    stats:[[T('st_occ'), LET.length ? NUM(letAll)+'/'+NUM(LET.length) : '\u2014',
+            LET.length ? NUM(Math.round(letAll/LET.length*100))+'%' : T('st_occ_none')],
            [T('rp_vacant_n'), NUM(vacant.length), T('rp_vacant_d')],
            [T('f_contracted'), money(FIN.contracted), T('rp_letonly')]],
     cols:[{k:'type',l:T('type')},{k:'total',l:T('rp_apartments'),num:1},{k:'let',l:L('Let','مؤجرة'),num:1},
@@ -3895,13 +4185,22 @@ function repOccupancy(){
           {k:'area',l:T('rp_avgarea'),num:1},{k:'rent',l:T('f_contracted'),num:1,money:1},
           {k:'avg',l:T('rp_avgrent'),num:1,money:1}],
     rows,
-    foot:{type:T('rp_total'), total:UNITS.length, let:letAll, vacant:vacant.length,
-          pct:Math.round(letAll/UNITS.length*100), rent:FIN.contracted},
+    foot:{type:T('rp_total'), total:LET.length, let:letAll, vacant:vacant.length,
+          pct:LET.length ? Math.round(letAll/LET.length*100) : 0, rent:FIN.contracted},
     extra:{title:T('rp_vacantlist'), cols:[{k:'unit',l:T('unit')},{k:'type',l:T('type')},
       {k:'area',l:T('area'),num:1},{k:'floor',l:T('floor')},{k:'value',l:T('rp_lastvalue'),num:1,money:1}],
       rows: vacant.sort((a,b)=>a.u.localeCompare(b.u,'en',{numeric:true})).map(u=>({
         unit:u.u, type:u.type, area:u.area, floor:floorName(u.floor), value:u.rent||null}))},
-    note:T('rp_occ_n')
+    /* The note states the basis and, where the register holds rows that are not
+       lettable, names them and says where that classification came from. The
+       source column on those rows currently reads that it is a deduction from
+       the head lease and asks for confirmation from the office — which is a
+       fact about the data and belongs on the page, not in a column nobody
+       sees. */
+    note: T('rp_occ_n').replace('{n}', NUM(LET.length)) + (OUT.length ? ' ' +
+      T('rp_occ_out').replace('{n}', NUM(OUT.length))
+                     .replace('{ids}', OUT.map(u=>u.u).join('، ').replace(/، /g, LANG==='ar'?'، ':', '))
+      + (OUT[0] && OUT[0].lettableSource ? ' ' + OUT[0].lettableSource : '') : '')
   };
 }
 
@@ -3909,7 +4208,7 @@ function repExpiry(){
   const rows = UNITS.filter(u=>u.occupied && u.leaseEnd).map(u=>({
     unit:u.u, tenant:L(u.tenant,u.tenant_ar), end:u.leaseEnd,
     inDays: days(u.leaseEnd, TODAY), rent:u.rent,
-    out: Math.max(0, u.outstanding||0)
+    out: u.arrears||0
   })).sort((a,b)=>a.inDays-b.inDays);
   const band = n => rows.filter(r=>r.inDays>=0 && r.inDays<=n);
   return {
@@ -4145,7 +4444,21 @@ function repSla(){
 }
 
 function repRecurring(){
-  const done = WOS.filter(w=>w.status!=='cancelled');
+  /* DATA-06. A repeat fault is a fact about an APARTMENT: the same trade called
+     back to the same flat. Work with no flat against it is not that — it is
+     communal, or it is unallocated, and the two are different things from each
+     other as well. Grouping it by the placeholder that stood in for "no flat"
+     manufactured nine repeating faults in an apartment that does not exist.
+
+     So the metric is computed over allocated work only, and the work left out
+     is stated rather than hidden: how many jobs, how much money, and what share
+     of the total that is. A report that quietly excludes three quarters of the
+     spend is worse than one that includes it wrongly. */
+  const all  = WOS.filter(w=>w.status!=='cancelled');
+  const done = all.filter(w=>w.unit);
+  const loose = all.filter(w=>!w.unit);
+  const looseCost = loose.reduce((a,w)=>a+(w.status==='done'?woCost(w):0),0);
+  const allCost   = all.reduce((a,w)=>a+(w.status==='done'?woCost(w):0),0);
   const by = {};
   done.forEach(w=>{ const k=w.unit+'|'+w.cat; by[k]=by[k]||{unit:w.unit,cat:w.cat,n:0,c:0,last:null};
     by[k].n++; by[k].c+=w.status==='done'?woCost(w):0;
@@ -4157,12 +4470,16 @@ function repRecurring(){
     filling:true,
     stats:[[T('rp_repeat'), NUM(rows.length), T('rp_repeat_d')],
            [T('h_maint'), money(rows.reduce((a,r)=>a+r.cost,0)), T('rp_onrepeat')],
-           [T('rp_apartments'), NUM(new Set(rows.map(r=>r.unit)).size), T('rp_affected')]],
+           [T('rp_apartments'), NUM(new Set(rows.map(r=>r.unit)).size), T('rp_affected')],
+           [T('rp_unalloc'), NUM(loose.length),
+            T('rp_unalloc_d').replace('{m}', money(looseCost))
+              .replace('{p}', allCost ? NUM(Math.round(looseCost/allCost*100)) + '%' : T('f_none'))]],
     cols:[{k:'unit',l:T('unit')},{k:'service',l:T('log_cat')},{k:'times',l:T('rp_times'),num:1},
           {k:'cost',l:T('cost'),num:1,money:1},{k:'last',l:T('rp_lastseen'),date:1}],
     rows,
     foot:{unit:T('rp_total'), cost:rows.reduce((a,r)=>a+r.cost,0)},
-    note:T('rp_recur_n')
+    note:T('rp_recur_n') + ' ' + T('rp_recur_scope')
+           .replace('{n}', NUM(loose.length)).replace('{m}', money(looseCost))
   };
 }
 
@@ -4364,6 +4681,25 @@ const docKey = r => r.type==='unit' ? 'u:'+r.unit
 const docsFor = r => (LINK.get().docs||[]).filter(d=>d.key===docKey(r));
 const docCount = r => docsFor(r).length;
 
+/* DOC-01. One builder, used by every upload, so the two paths cannot drift.
+   `crypto.randomUUID` is present in every browser this console supports; the
+   fallback is there because a page that cannot name a file is a page that
+   cannot accept one, and failing to attach a lease is worse than a key that is
+   merely very unlikely to repeat. */
+function objectKey(file, prefix){
+  const stamp = new Date().toISOString().replace(/[-:T.]/g,'').slice(0,14);
+  const safe  = String(file.name || 'file').replace(/[^\w.\-]+/g,'_').slice(-60);
+  let rnd;
+  try{ rnd = crypto.randomUUID().replace(/-/g,'').slice(0,12); }
+  catch(e){ rnd = Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4); }
+  return (prefix || '') + stamp + '-' + rnd + '-' + safe;
+}
+
+/* What a document may be. An upload that the office cannot open later is not
+   evidence of anything, and an unbounded one is a way to fill a bucket. */
+const DOC_MAX_BYTES = 15 * 1024 * 1024;
+const DOC_TYPES = /^(application\/pdf|image\/(png|jpe?g|webp|heic|heif)|application\/msword|application\/vnd\.openxmlformats-officedocument\.)/i;
+
 async function docAttach(file, ref, kind){
   /* The database refuses a viewer's write; this is so the refusal arrives as a
      sentence rather than as a 42501 from PostgREST. It returned undefined, and
@@ -4371,6 +4707,10 @@ async function docAttach(file, ref, kind){
      followed by "Cannot destructure property 'rec' of undefined" in a warning
      box. null is a refusal the caller can read. */
   if(!writeGate()) return null;
+  /* DOC-01. Bounded before anything leaves the machine. */
+  if(!file || !file.size) return {error:'empty'};
+  if(file.size > DOC_MAX_BYTES) return {error:'too_big', max:DOC_MAX_BYTES, size:file.size};
+  if(file.type && !DOC_TYPES.test(file.type)) return {error:'wrong_type', mime:file.type};
   const buf = await file.arrayBuffer();
   const fp  = await docFingerprint(buf);
   const put = await DOCSTORE.put(file);
@@ -4393,6 +4733,24 @@ async function docAttach(file, ref, kind){
     s.docs = s.docs || [];
     if(!s.docs.some(d=>d.id===rec.id && d.key===rec.key)) s.docs.push(rec);
   }, 'console');
+
+  /* DOC-01. An attachment is two stages — the file, then the record of it —
+     and this used to report success after the first. A metadata write the
+     database refused left the object in the bucket with nothing pointing at it
+     and the operator told the document was attached. They would find out when
+     somebody went looking for a lease that was not there.
+
+     So the second stage is waited for, and a failure says which object is now
+     orphaned rather than swallowing it. Nothing here deletes it: this console
+     does not delete, and a path written into the warning is a path somebody can
+     reconcile. */
+  let landed = null;
+  try{ landed = await LINK.settled(); }catch(e){ landed = {failed:1}; }
+  if(landed && (landed.failed || landed.held)){
+    LINK.commit(s=>{ s.docs = (s.docs||[]).filter(d=>!(d.id===rec.id && d.key===rec.key)); },
+                'console');
+    return {error:'metadata', path: put.path, name: file.name};
+  }
   return {rec, read, dup: dup && dup.key!==rec.key ? dup : null};
 }
 
@@ -4446,6 +4804,18 @@ async function docRun(input){
     const kind = $('dKind').value;
     const out = await docAttach(file, DOCCTX.ref, kind);
     if(!out){ $('dBusy').style.display='none'; return; }   /* refused; writeGate spoke */
+    /* DOC-01. A refusal is a sentence, and an attachment that only half
+       happened is not reported as an attachment. */
+    if(out.error){
+      $('dBusy').style.display='none';
+      const msg = out.error === 'too_big'
+            ? T('doc_e_big').replace('{n}', NUM(Math.round(DOC_MAX_BYTES / 1048576)))
+        : out.error === 'wrong_type' ? T('doc_e_type')
+        : out.error === 'empty'      ? T('doc_e_empty')
+        : T('doc_e_meta').replace('{p}', out.path || '');
+      $('dOut').innerHTML = `<div class="card"><div class="bd"><div class="warnbox">${I('alert',16,2.2)}<span>${esc(msg)}</span></div></div></div>`;
+      return;
+    }
     const {rec, read, dup} = out;
     $('dBusy').style.display='none';
     $('dOut').innerHTML = docResultHtml(rec, read, dup);
@@ -4655,11 +5025,13 @@ const rpChip = s => s==='ready'
   : `<span class="pill p-neut">${T('rp_s_blocked')}</span>`;
 
 function pgRep(){
-  if(!RP.id) return rpLibrary();
+  /* The library itself states no cost figure, but every report reached from it
+     does — so the operator is told before they open one, not after. */
+  if(!RP.id) return costsWarning() + rpLibrary();
   const meta = REPORTS.find(r=>r.id===RP.id);
   if(!meta){ RP.id=null; return rpLibrary(); }
   let out;
-  try{ out = meta.f(); }
+  try{ out = costsWarning() + meta.f(); }
   catch(e){ return rpLibrary() + `<div class="card"><div class="bd"><div class="warnbox">${I('alert',16,2.2)}<span>${e.message}</span></div></div></div>`; }
 
   const back = `<button class="tbtn" onclick="RP.id=null;render()">${I('chev',15)}<span>${T('rp_all')}</span></button>`;
@@ -4695,11 +5067,11 @@ function pgRep(){
         meta.s==='filling'?T('rp_fills'):T('rp_norows_d'),
         meta.s==='filling'?`<button class="btn pri" style="margin-top:14px" onclick="logJobOpen()">${I('plus',15)} ${T('log_open')}</button>`:'')}</div>`
       :rpTable(out.cols, out.rows, out.foot)}
-    ${out.note?`<div class="note">${out.note}</div>`:''}
+    ${out.note?`<div class="note">${esc(out.note)}</div>`:''}
   </div>
 
   ${out.extra&&out.extra.rows&&out.extra.rows.length?`
-  <div class="card"><div class="hd"><div><h2>${out.extra.title}</h2></div></div>
+  <div class="card"><div class="hd"><div><h2>${esc(out.extra.title)}</h2></div></div>
     ${rpTable(out.extra.cols, out.extra.rows, out.extra.foot)}</div>`:''}`;
 }
 
@@ -4720,7 +5092,13 @@ function rpLibrary(){
     return `<div class="sect">${T(k)}</div>
     <div class="grid g3 mb" style="gap:12px">
       ${list.map(r=>`
-      <div class="card" style="cursor:pointer" onclick="RP.id='${r.id}';render()">
+      <!-- ACC-01. These were clickable <div>s: no role, no name, not in the tab
+           order, invisible to a screen reader as anything other than text. A
+           report is a thing you open, which is a button. -->
+      <div class="card repcard" role="button" tabindex="0" style="cursor:pointer"
+           aria-label="${esc(rpName(r.id))}"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"
+           onclick="RP.id='${r.id}';render()">
         <div class="bd">
           <div style="display:flex;align-items:flex-start;gap:10px">
             <div style="flex:1">
@@ -4816,7 +5194,7 @@ function finRows(){
  const rows=UNITS.map(u=>{
   const maint=unitCost(u), coll=u.collected||0;
   return {u, annual:u.occupied?u.rent:0, billed:u.billed||0, coll,
-    out:Math.max(0,u.outstanding||0), pre:Math.max(0,-(u.outstanding||0)),
+    out:u.arrears||0, pre:u.prepaid||0,
     od:u.overdueDays||0, maint,
     net:coll-maint, pct:u.billed?maint/u.billed*100:0};
  });
@@ -4832,10 +5210,10 @@ const sortable=(k,label,cls='')=>`<th class="${cls}" style="cursor:pointer;user-
 /* One apartment, one line, aged from its oldest unpaid instalment — the same
    convention the collections sheet uses, so the two can be compared directly. */
 function arrearsRows(){
- return UNITS.filter(u=>u.occupied && u.outstanding>0).map(u=>{
+ return UNITS.filter(u=>u.occupied && u.arrears>0).map(u=>{
    const unpaid=u.inst.filter(x=>x.billed&&!x.paid).sort((a,b)=>a.due-b.due);
    const due=unpaid.length?unpaid[0].due:null;
-   return {u, amt:u.outstanding, due,
+   return {u, amt:u.arrears, due,
            days: due?Math.floor((TODAY-due)/864e5):0};
  }).sort((a,b)=>b.days-a.days);
 }
@@ -4846,9 +5224,13 @@ function pgFin(){
  const totMaint=rows.reduce((a,r)=>a+r.maint,0);
  const totNet=rows.reduce((a,r)=>a+r.net,0);
  return `
+ ${costsWarning()}
  <div class="grid g6 mb">
   ${stat(T('f_contracted'),money(FIN.contracted),{t:NUM(occupied)+' '+L('let units','وحدة مؤجرة'),cls:'flat'})}
-  ${stat(T('f_billed'),money(FIN.billed),{t:L('to 19 Aug 2026','حتى ١٩ أغسطس ٢٠٢٦'),cls:'flat'})}
+  ${/* The subtitle read "to 19 Aug 2026" — a literal left over from the frozen
+        clock APP-04 removed. The figure has been derived from the building's
+        own today since this morning; the label had not moved with it. */
+    stat(T('f_billed'),money(FIN.billed),{t:L('to ','حتى ')+fmtD(TODAY),cls:'flat'})}
   ${stat(T('f_collected'),money(FIN.collected),{t:NUM(FIN.rate)+'% '+T('f_rate'),cls:FIN.rate>=95?'up':'down',ic:FIN.rate>=95?'up':'down'},
     `<div class="meter"><i style="width:${FIN.rate}%;background:${FIN.rate>=95?'var(--good)':'var(--warning)'}"></i></div>`)}
   ${stat(T('f_outstanding'),money(FIN.outstanding),{t:NUM(UNITS.filter(u=>u.outstanding>0).length)+' '+L('units','وحدة'),cls:FIN.outstanding?'down':'flat',ic:FIN.outstanding?'alert':null})}
@@ -4865,7 +5247,7 @@ function pgFin(){
     <th>${T('f_arr_due')}</th><th class="num">${T('f_arr_age')}</th></tr></thead>
    <tbody>${arrearsRows().map(a=>`<tr onclick="finDetail('${a.u.u}')" style="cursor:pointer">
      <td class="strong">${a.u.u}</td>
-     <td>${L(a.u.tenant,a.u.tenant_ar)}</td>
+     <td>${esc(L(a.u.tenant,a.u.tenant_ar))}</td>
      <td class="num mono strong">${money(a.amt)}</td>
      <td class="mono">${fmtD(a.due)}</td>
      <td class="num">${a.days>90?`<span class="pill p-crit">${I('alert',12,2.1)}${NUM(a.days)}</span>`
@@ -4917,7 +5299,7 @@ function pgFin(){
         <td class="strong">${NUM(u.u)}</td>
         <td>${u.type}</td>
         <td>${u.occupied?`<span class="pill p-good">${I('check',12,2.1)}${T('occupied')}</span>`:`<span class="pill p-neut">${T('vacant')}</span>`}</td>
-        <td class="sub2">${u.occupied?L(u.tenant,u.tenant_ar):'—'}</td>
+        <td class="sub2">${u.occupied?esc(L(u.tenant,u.tenant_ar)):'—'}</td>
         <td class="num mono">${u.occupied?money(r.annual):'—'}</td>
         <td class="num mono">${u.occupied?money(r.billed):'—'}</td>
         <td class="num mono">${u.occupied?money(r.coll):'—'}</td>
@@ -4968,7 +5350,7 @@ function finDetail(uid){
    <td class="num">${(()=>{
      const has = docsFor({type:'inst',unit:u.u,inst:x.q}).length;
      const attach = `<button class="tbtn" onclick="docOpen({type:'inst',unit:'${u.u}',inst:${x.q}},'receipt')">${has?I('check',13,2.2):I('up',13)}<span>${has?T('doc_backed'):T('doc_attachbtn')}</span></button>`;
-     if(x.paid) return (x.ref?`<span class="mono sub2" style="margin-inline-end:8px">${x.ref}</span>`:'') + attach;
+     if(x.paid) return (x.ref?`<span class="mono sub2" style="margin-inline-end:8px">${esc(x.ref)}</span>`:'') + attach;
      return `<button class="tbtn" onclick="recordPayment('${u.u}',${x.q})">${x.billed?L('Record','تسجيل'):L('Record early','تسجيل مقدّم')}</button> ` + attach;
    })()}</td></tr>`;
  };
@@ -4981,8 +5363,22 @@ function finDetail(uid){
   : `
   <div class="grid g3 mb" style="gap:10px">
     ${stat(T('h_coll'),money(u.collected),{t:T('h_billed')+' '+money(u.billed),cls:'flat'})}
-    ${stat(T('h_out'),money(u.outstanding),{t:u.overdueDays?NUM(u.overdueDays)+L('d overdue','ي تأخير'):T('f_none'),cls:u.outstanding?'down':'up',ic:u.outstanding?'alert':'check'})}
-    ${stat(T('h_maint'),money(maint),{t:NUM((maint/u.billed*100).toFixed(1))+'% '+L('of billed','من المفوتر'),cls:'flat'})}
+    ${stat(T('h_out'),money(u.arrears),{t:(()=>{
+      /* DATA-01. Both positions, where both exist. A flat can be behind on one
+         instalment and ahead on another, and it used to report the difference
+         as though it were the whole story. */
+      const bits=[];
+      if(u.overdueDays) bits.push(NUM(u.overdueDays)+L('d overdue','ي تأخير'));
+      if(u.prepaid)     bits.push(T('f_ahead')+' '+money(u.prepaid));
+      return bits.length ? bits.join(' · ') : T('f_none');
+    })(),cls:u.arrears?'down':'up',ic:u.arrears?'alert':'check'})}
+    ${stat(T('h_maint'),money(maint),{t: u.billed > 0
+      ? NUM((maint/u.billed*100).toFixed(1))+'% '+L('of billed','من المفوتر')
+      /* DATA-04. A flat with nothing billed yet divided by zero and printed
+         Infinity, or NaN where the figure was missing entirely. There is no
+         ratio to state, so it says so. */
+      : L('no billed rent to compare against','لا يوجد إيجار مفوتر للمقارنة'),
+      cls:'flat'})}
   </div>
 
   <div class="sect" style="margin-top:0">${T('f_lease')}</div>
@@ -4992,12 +5388,10 @@ function finDetail(uid){
              :`<span class="pill p-warn">${I('alert',12,2.1)}${T('doc_unbacked')}</span>`;})()}</div>
     <button class="tbtn" onclick="docOpen({type:'unit',unit:'${u.u}'},'contract')">${I('up',15)}<span>${T('doc_attachbtn')}</span></button></div>
    <div class="bd"><dl class="kv">
-    <dt>${T('tenant')}</dt><dd>${L(u.tenant,u.tenant_ar)}</dd>
+    <dt>${T('tenant')}</dt><dd>${esc(L(u.tenant,u.tenant_ar))}</dd>
     <dt>${T('f_term')}</dt><dd>${fmtD(u.leaseStart)} — ${fmtD(u.leaseEnd)}</dd>
     <dt>${T('h_annual')}</dt><dd>${money(u.rent)} ${T('sar')}</dd>
-    <dt>${T('f_profile')}</dt><dd>${u.profile==='good'?`<span class="pill p-good">${I('check',12,2.1)}${T('p_good')}</span>`
-      :u.profile==='late'?`<span class="pill p-warn">${I('clock',12,2.1)}${T('p_late')}</span>`
-      :`<span class="pill p-crit">${I('alert',12,2.1)}${T('p_problem')}</span>`}</dd>
+    <dt>${T('f_profile')}</dt><dd>${payPill(u.profile)}</dd>
     <dt>${T('h_net')}</dt><dd>${money(u.collected-maint)} ${T('sar')}</dd>
   </dl></div></div>
 
@@ -5456,9 +5850,9 @@ async function idDocUpload(contactId){
     toast(T('idoc_working'));
     const buf  = await file.arrayBuffer();
     const fp   = await docFingerprint(buf);
-    const stamp= new Date().toISOString().replace(/[-:T.]/g,'').slice(0,14);
-    const safe = String(file.name || 'id').replace(/[^\w.\-]+/g,'_').slice(-60);
-    const path = await SB.upload('identity/' + contactId + '/' + stamp + '-' + safe, file);
+    /* DOC-01. The same key builder as every other upload — this path had its
+       own copy of the same colliding scheme. */
+    const path = await SB.upload(objectKey(file, 'identity/' + contactId + '/'), file);
     await SB.ins('documents', [{
       kind:'identity', storage_path:path, filename:file.name,
       mime:file.type || 'application/octet-stream', bytes:file.size,
@@ -5966,11 +6360,25 @@ function esc(s){
 let sbLabelTick = () => {};
 
 function setLang(l){
+ /* Found while measuring the header at phone width. Switching language flips
+    the writing direction, and the CLOSED drawer is parked off the right edge in
+    English and off the left in Arabic — so the transform changes from +102% to
+    -102% and the transition obligingly animates it ACROSS the screen. For a
+    quarter of a second a drawer nobody opened sweeps over the whole console,
+    and anything tapped in that moment lands on it instead.
+
+    Nothing moved. The page was re-laid out, which is not an animation, so
+    transitions are suspended for the frame it takes. */
+ try{ document.documentElement.classList.add('reflowing'); }catch(e){}
  LANG=l;
  document.documentElement.lang=l;
  document.documentElement.dir=l==='ar'?'rtl':'ltr';
  document.body.classList.toggle('ar',l==='ar');
  closeDrawer(); render(); sbLabelTick();
+ try{
+   requestAnimationFrame(() => requestAnimationFrame(() =>
+     document.documentElement.classList.remove('reflowing')));
+ }catch(e){ document.documentElement.classList.remove('reflowing'); }
 }
 
 /* ------------------------------ boot ------------------------------ */
@@ -6212,12 +6620,38 @@ const SB = (function(){
     try{ sess ? localStorage.setItem(SKEY, JSON.stringify(sess)) : localStorage.removeItem(SKEY); }
     catch(e){}
   }
+  /* What is in storage RIGHT NOW, which is not always what this tab has in
+     hand: another tab signing in, refreshing or signing out writes here. */
+  function stored(){
+    try{ return JSON.parse(localStorage.getItem(SKEY) || 'null'); }catch(e){ return null; }
+  }
 
   const token = () => (sess && sess.access_token) || KEY;
   const hdr = extra => Object.assign({apikey:KEY, Authorization:'Bearer '+token()}, extra||{});
 
+  /* AUTH-01. A request with no deadline is a screen that waits for ever. The
+     audit asked for timeouts and there were none: a connection that opens and
+     then stops answering — a captive portal, a dead mobile cell, a proxy that
+     swallows the response — left `await fetch` pending with no upper bound, and
+     the spinner with it.
+
+     A timeout is deliberately shaped like an outage rather than a refusal: no
+     `status`, so `revoked()` answers false, so a request that timed out during
+     a refresh leaves the session alone. That is the same distinction AUTH-01
+     turns on, arriving by a second route. */
+  const TIMEOUT = 20000;
   async function call(path, opt){
-    const r = await fetch(BASE + path, opt || {});
+    opt = opt || {};
+    const ctl = new AbortController();
+    const bell = setTimeout(() => ctl.abort(), opt.timeout || TIMEOUT);
+    let r;
+    try {
+      r = await fetch(BASE + path, Object.assign({}, opt, {signal: ctl.signal}));
+    } catch(e) {
+      if(e && e.name === 'AbortError')
+        throw Object.assign(new Error('the request timed out'), {timeout: true});
+      throw e;
+    } finally { clearTimeout(bell); }
     const txt = await r.text();
     let body = null;
     try{ body = txt ? JSON.parse(txt) : null; }catch(e){ body = txt; }
@@ -6253,14 +6687,58 @@ const SB = (function(){
     save(s);
     return s;
   }
-  async function refresh(){
-    if(!sess || !sess.refresh_token) return null;
-    try{
-      const s = await call('/auth/v1/token?grant_type=refresh_token', {
-        method:'POST', headers:{apikey:KEY, 'Content-Type':'application/json'},
-        body: JSON.stringify({refresh_token: sess.refresh_token})});
-      save(s); return s;
-    }catch(e){ save(null); return null; }
+  /* AUTH-01. This used to be `catch(e){ save(null); return null; }` — one line,
+     and it threw the session away for ANY reason the refresh did not succeed.
+     A tunnel, a dropped wifi, a five-second outage at the auth server: the
+     refresh token was erased from storage, and erased is permanent. The person
+     was signed out and had to find their password, because the network went
+     away for a moment.
+
+     Three things are now separated that were one thing before.
+
+     REFUSED versus UNREACHABLE. Only an answer from the server ends a session.
+     `call` attaches `status` to everything the server answered; a request that
+     never arrived throws a TypeError with no status at all. So no status, or a
+     5xx, or a timeout, means "ask again later" and the session is left exactly
+     as it was. 400, 401, 403 and 422 mean the server looked at the token and
+     said no, and only then is it cleared.
+
+     ONE AT A TIME. Supabase rotates the refresh token: the moment one refresh
+     succeeds, the token it used stops working. Two refreshes racing meant the
+     loser got "Invalid Refresh Token: Already Used" — a 400, a refusal — and
+     destroyed a session that had just been renewed successfully by the winner.
+     Every caller now shares one in-flight promise.
+
+     AND THE OTHER TAB. The same rotation across two tabs is not something a
+     shared promise can fix. Before ending anything, look at what is actually in
+     storage: if it holds a different session with time left on it, another tab
+     refreshed and this failure was a race rather than a revocation, so adopt it
+     instead of signing the person out of both tabs. */
+  const revoked = e => {
+    const s = e && e.status;
+    return s === 400 || s === 401 || s === 403 || s === 422;
+  };
+  let refreshing = null;
+  function refresh(){
+    if(!sess || !sess.refresh_token) return Promise.resolve(null);
+    if(refreshing) return refreshing;
+    refreshing = (async () => {
+      try{
+        const s = await call('/auth/v1/token?grant_type=refresh_token', {
+          method:'POST', headers:{apikey:KEY, 'Content-Type':'application/json'},
+          body: JSON.stringify({refresh_token: sess.refresh_token})});
+        save(s); return s;
+      }catch(e){
+        const other = stored();
+        if(other && other.access_token && sess && other.access_token !== sess.access_token){
+          sess = other;                       /* adopt, do not overwrite */
+          return stale() ? null : sess;
+        }
+        if(revoked(e)) save(null);
+        return null;
+      }finally{ refreshing = null; }
+    })();
+    return refreshing;
   }
   function signOut(){
     try{ fetch(BASE+'/auth/v1/logout', {method:'POST', headers:hdr()}); }catch(e){}
@@ -6274,6 +6752,46 @@ const SB = (function(){
     if(stale()) return !!(await refresh());
     return true;
   }
+
+  /* …and it is true because EVERY authenticated request goes through here,
+     rather than because `ready()` happens to be called first somewhere at
+     start-up. It was the latter before: one call at boot, and a page left open
+     past the token's hour sent an expired one and got an empty screen.
+
+     The header must be built INSIDE the callback. A header built before the
+     refresh carries the token the refresh has just replaced, which is the
+     failure this is meant to remove, arriving by a different door.
+
+     One retry, not a loop. If a request comes back 401 despite the check above
+     — the clock is off, the token was revoked elsewhere — the session is
+     refreshed once and the request is made once more. A second 401 is a real
+     answer and is allowed through to the caller. */
+  async function authed(make, opts){
+    if(signedIn() && stale()) await refresh();
+    try{
+      return await make();
+    }catch(e){
+      /* AUTH-01. The retry used to apply to everything, writes included. A 401
+         from PostgREST is refused at the auth layer before the statement runs,
+         so replaying an insert almost certainly does not write twice — but
+         "almost certainly" is not a thing to build a rent ledger on, and the
+         audit asked for the opposite default in as many words: retry writes
+         only with an idempotency mechanism.
+
+         So a read retries on its own. A write retries only when the caller has
+         said how a duplicate would be recognised, by passing `replay`. The one
+         caller that does is the work-order insert, which recognises its own row
+         by reading it back. */
+      if(e && e.status === 401 && signedIn() && (!opts || opts.replay !== false)
+         && await refresh()) return await make();
+      throw e;
+    }
+  }
+  /* A read: replaying it changes nothing. */
+  const authedRead = make => authed(make, {replay: true});
+  /* A write: not replayed unless the caller can tell a duplicate from a first
+     attempt. */
+  const authedWrite = make => authed(make, {replay: false});
 
   /* ----------------------------- passwords -------------------------------
      Two things the console could not do before, and both are needed by
@@ -6317,49 +6835,76 @@ const SB = (function(){
   }
 
   /* --------------------------------- rest -------------------------------- */
-  const sel = (t,q)      => call('/rest/v1/'+t+(q?'?'+q:''), {headers:hdr()});
-  const ins = (t,rows)   => call('/rest/v1/'+t, {method:'POST',
+  const sel = (t,q)      => authedRead(() => call('/rest/v1/'+t+(q?'?'+q:''), {headers:hdr()}));
+  const ins = (t,rows)   => authedWrite(() => call('/rest/v1/'+t, {method:'POST',
                               headers:hdr({'Content-Type':'application/json', Prefer:'return=representation'}),
-                              body:JSON.stringify(rows)});
-  const ups = (t,rows,c) => call('/rest/v1/'+t+(c?'?on_conflict='+c:''), {method:'POST',
+                              body:JSON.stringify(rows)}));
+  /* An upsert IS its own idempotency mechanism: the conflict target decides,
+     and a second attempt merges rather than duplicating. */
+  const ups = (t,rows,c) => authedRead(() => call('/rest/v1/'+t+(c?'?on_conflict='+c:''), {method:'POST',
                               headers:hdr({'Content-Type':'application/json',
                                 Prefer:'resolution=merge-duplicates,return=representation'}),
-                              body:JSON.stringify(rows)});
-  const upd = (t,q,patch)=> call('/rest/v1/'+t+'?'+q, {method:'PATCH',
+                              body:JSON.stringify(rows)}));
+  /* A PATCH to a filtered set writes the same values twice with the same
+     result; it is idempotent by construction, unlike an insert. */
+  const upd = (t,q,patch)=> authedRead(() => call('/rest/v1/'+t+'?'+q, {method:'PATCH',
                               headers:hdr({'Content-Type':'application/json', Prefer:'return=representation'}),
-                              body:JSON.stringify(patch)});
-  const del = (t,q)      => call('/rest/v1/'+t+'?'+q, {method:'DELETE', headers:hdr()});
+                              body:JSON.stringify(patch)}));
+  const del = (t,q)      => authedRead(() => call('/rest/v1/'+t+'?'+q, {method:'DELETE', headers:hdr()}));
   /* The three Postgres functions a signed-in user is allowed to call. All
      three answer about the CALLER and nobody else: what role they hold, and —
      once, on first sign-in — linking their roster row to their account. */
-  const rpc = (fn,args)  => call('/rest/v1/rpc/'+fn, {method:'POST',
+  /* A named write. `rate_wo` sets one column to a value the caller supplies, so
+     running it twice leaves the same row; `save_register` applies a whole
+     register and is likewise a replacement rather than an addition. Neither
+     accumulates, so a replay is safe. A function that ever appends would have
+     to be called through authedWrite instead. */
+  const rpc = (fn,args)  => authedRead(() => call('/rest/v1/rpc/'+fn, {method:'POST',
                               headers:hdr({'Content-Type':'application/json'}),
-                              body:JSON.stringify(args || {})});
+                              body:JSON.stringify(args || {})}));
 
   /* ------------------------------- storage ------------------------------- */
   /* The bucket is private. Nothing is ever fetched by a plain URL; a link is
      signed on demand and stops working shortly afterwards. */
-  async function upload(path, file){
-    const r = await fetch(BASE + '/storage/v1/object/documents/' + encodeURI(path), {
-      method:'POST',
-      headers: hdr({'x-upsert':'false', 'Content-Type': file.type || 'application/octet-stream'}),
-      body: file});
-    if(!r.ok){
-      const t = await r.text();
-      throw Object.assign(new Error('upload failed'), {status:r.status, body:t});
-    }
-    return 'documents/' + path;
+  const UPLOAD_TIMEOUT = 2 * 60 * 1000;
+  function upload(path, file){
+    /* Not replayed: an upload that landed and lost its answer would be stored
+       twice under two keys, and the second would be an orphan nobody knows
+       about. A file takes longer than a row, so its deadline is its own. */
+    return authedWrite(async () => {
+      const ctl = new AbortController();
+      const bell = setTimeout(() => ctl.abort(), UPLOAD_TIMEOUT);
+      let r;
+      try {
+        r = await fetch(BASE + '/storage/v1/object/documents/' + encodeURI(path), {
+          method:'POST', signal: ctl.signal,
+          headers: hdr({'x-upsert':'false', 'Content-Type': file.type || 'application/octet-stream'}),
+          body: file});
+      } catch(e) {
+        if(e && e.name === 'AbortError')
+          throw Object.assign(new Error('the upload timed out'), {timeout: true});
+        throw e;
+      } finally { clearTimeout(bell); }
+      if(!r.ok){
+        const t = await r.text();
+        throw Object.assign(new Error('upload failed'), {status:r.status, body:t});
+      }
+      return 'documents/' + path;
+    });
   }
-  async function signedUrl(path, secs){
+  function signedUrl(path, secs){
     const p = String(path).replace(/^documents\//, '');
-    const b = await call('/storage/v1/object/sign/documents/' + encodeURI(p), {
-      method:'POST', headers:hdr({'Content-Type':'application/json'}),
-      body: JSON.stringify({expiresIn: secs || 60})});
-    return BASE + '/storage/v1' + b.signedURL;
+    return authedRead(async () => {
+      const b = await call('/storage/v1/object/sign/documents/' + encodeURI(p), {
+        method:'POST', headers:hdr({'Content-Type':'application/json'}),
+        body: JSON.stringify({expiresIn: secs || 60})});
+      return BASE + '/storage/v1' + b.signedURL;
+    });
   }
 
   /* ------------------------------- realtime ------------------------------ */
-  let ws = null, ref = 0, hb = null, watchers = [], tables = [], back = 0;
+  let ws = null, ref = 0, hb = null, watchers = [], tables = [], back = 0, joinRef = null;
+  let joined = false;                     /* has this page ever had a live channel */
   let rt = 'off';                                  /* off | joining | live | error */
 
   const send = o => { try{ if(ws && ws.readyState === 1) ws.send(JSON.stringify(o)); }catch(e){} };
@@ -6373,7 +6918,8 @@ const SB = (function(){
     }catch(e){ ws = null; rt = 'error'; return; }
 
     ws.onopen = () => {
-      send({topic:TOPIC, event:'phx_join', ref:String(++ref), payload:{config:{
+      joinRef = String(++ref);
+      send({topic:TOPIC, event:'phx_join', ref:joinRef, payload:{config:{
         broadcast:{self:false}, presence:{key:''}, private:false,
         postgres_changes: tables.map(t=>({event:'*', schema:'public', table:t}))}}});
       if(sess) send({topic:TOPIC, event:'access_token', ref:String(++ref),
@@ -6382,7 +6928,35 @@ const SB = (function(){
     };
     ws.onmessage = ev => {
       let m; try{ m = JSON.parse(ev.data); }catch(e){ return; }
-      if(m.event === 'phx_reply' && m.payload && m.payload.status === 'ok'){ rt = 'live'; back = 0; }
+      /* SYNC-02. This used to read: any phx_reply with status ok means the link
+         is live. A heartbeat reply is a phx_reply with status ok — on topic
+         'phoenix', every 25 seconds, for as long as the SOCKET is open. So a
+         channel join that was refused set rt='error' and then the next
+         heartbeat, a few seconds later, set it straight back to 'live'. The
+         badge read live, the socket was open, and no change was ever going to
+         arrive because nothing was subscribed to anything.
+
+         Only the reply to THIS join, on THIS topic, says the channel is
+         joined. A heartbeat says the socket is up, which is a different fact
+         and not the one the badge is reporting. */
+      if(m.event === 'phx_reply' && m.ref === joinRef && m.topic === TOPIC &&
+         m.payload && m.payload.status === 'ok'){
+        rt = 'live'; back = 0;
+        /* SYNC-01, the half that is not about overlapping reads. Reconnecting
+           the socket did not itself fetch anything, so every change made while
+           the connection was down was simply never delivered — the badge went
+           back to live over a screen that had stopped listening minutes ago and
+           had no idea what it had missed.
+
+           Only on a RE-join. The first join follows the read that start() has
+           just done, and catching up on that would read the same rows twice
+           every time the page opens. */
+        if(joined) watchers.forEach(fn => { try{ fn({catchup:'rejoin'}); }
+                                            catch(e){ console.error('SB.watch', e); } });
+        joined = true;
+      }
+      if(m.event === 'phx_reply' && m.ref === joinRef && m.topic === TOPIC &&
+         m.payload && m.payload.status !== 'ok') rt = 'error';
       if(m.event === 'system' && m.payload && m.payload.status === 'error') rt = 'error';
       if(m.event === 'postgres_changes'){
         const d = (m.payload && m.payload.data) || {};
@@ -6391,7 +6965,7 @@ const SB = (function(){
     };
     ws.onerror = () => { rt = 'error'; };
     ws.onclose = () => {
-      clearInterval(hb); ws = null;
+      clearInterval(hb); ws = null; joinRef = null;
       if(rt !== 'off') rt = 'error';
       if(watchers.length){
         back = Math.min(back + 1, 6);
@@ -6405,15 +6979,46 @@ const SB = (function(){
     watchers.push(fn);
     connect();
   }
-  function stopWatching(){ watchers = []; rt = 'off'; try{ if(ws) ws.close(); }catch(e){} }
+  function stopWatching(){ watchers = []; rt = 'off'; joined = false; try{ if(ws) ws.close(); }catch(e){} }
 
-  return {
+  const API = {
     base: BASE, configured: () => !!(BASE && KEY),
     signIn, signOut, refresh, ready, signedIn, isStaff, email, claims,
     setPassword, adoptRecovery,
     sel, ins, ups, upd, del, rpc, upload, signedUrl,
     watch, stopWatching, rtState: () => rt
   };
+  /* SCALE-01. PostgREST answers with at most `db-max-rows` — 1,000 by default —
+     and says nothing about it: a list longer than that comes back truncated and
+     looks exactly like a complete one. Every total computed from it is then
+     quietly wrong, which is the failure mode this project keeps meeting in
+     different clothes.
+
+     A read meant to be COMPLETE therefore asks for pages until a short one
+     arrives. An order is required rather than assumed: paging by offset over an
+     unordered query returns some rows twice and misses others, and the result
+     still looks like a list.
+
+     Defined in terms of the PUBLIC `sel`, deliberately. selAll is sel repeated
+     and nothing else, so anything that wraps or replaces the read — a harness,
+     a future cache, a retry policy — is inherited rather than bypassed. A
+     layer that reaches past its own public surface is how two code paths come
+     to disagree, which is most of what this week has been about. */
+  API.selAll = async (t, q, pageSize) => {
+    if(!/(^|&)order=/.test(q || ''))
+      throw new Error('selAll(' + t + ') needs an order, or the pages overlap');
+    const size = pageSize || 1000;
+    const out = [];
+    for(let from = 0; ; from += size){
+      const page = await API.sel(t, q + '&limit=' + size + '&offset=' + from);
+      if(!Array.isArray(page)) return page;
+      out.push(...page);
+      if(page.length < size) return out;
+      if(out.length >= 100000)
+        throw new Error('refusing to read more than 100000 rows from ' + t);
+    }
+  };
+  return API;
 })();
 
 
@@ -6453,8 +7058,23 @@ const COST_CAT = {
 };
 
 const LIVE = (function(){
-  const WATCH = ['work_orders','announcements','instalments','leases','documents','units'];
-  let state = null, subs = [], leaseOf = {}, lastErr = null, pulling = false, timer = null;
+  /* SYNC-03. Three tables the console DISPLAYS were missing from the list it
+     listens to: `building_costs`, whose rows are the whole maintenance cost
+     side of the dashboard; `residents`, whose names are joined into every lease
+     on screen; and `suppliers`, joined into every cost line. A name corrected
+     at one desk did not reach another until something unrelated happened to
+     fire a read.
+
+     The rule this leaves: what a screen reads, the page listens to. Anything
+     read in `pull()` belongs here, including through a join. */
+  const WATCH = ['work_orders','announcements','instalments','leases','documents','units',
+                 'building_costs','residents','suppliers'];
+  let state = null, subs = [], leaseOf = {}, lastErr = null, pulling = false, again = false, timer = null;
+  /* DATA-02. The last cost register that actually arrived, and whether the most
+     recent attempt to re-read it failed. A failed read keeps the last good
+     figures on screen and says they are stale; it never silently substitutes
+     zero. */
+  let lastCosts = null, costsErr = null;
 
   const N = v => (v === null || v === undefined) ? null : Number(v);
   const eq = (a,b) => JSON.stringify(a) === JSON.stringify(b);
@@ -6464,13 +7084,13 @@ const LIVE = (function(){
   /* --------------------------------- read -------------------------------- */
   async function pull(){
     const [units, leases, inst, wos, anns, docs, costs] = await Promise.all([
-      SB.sel('units', 'select=*&order=id.asc'),
+      SB.selAll('units', 'select=*&order=id.asc'),
       SB.sel('leases', 'select=id,unit_id,starts_on,ends_on,contract_value,status,' +
                        'residents(name_en,name_ar)&status=eq.active&order=unit_id.asc'),
-      SB.sel('instalments', 'select=*&order=lease_id.asc,seq.asc'),
-      SB.sel('work_orders', 'select=*&order=raised_at.desc'),
+      SB.selAll('instalments', 'select=*&order=lease_id.asc,seq.asc'),
+      SB.selAll('work_orders', 'select=*&order=raised_at.desc'),
       SB.sel('announcements', 'select=*&order=published_at.desc'),
-      SB.sel('documents', 'select=*&order=uploaded_at.desc'),
+      SB.selAll('documents', 'select=*&order=uploaded_at.desc'),
       /* The office's own registers. This layer was written a week before
          building_costs existed, so signing in used to EMPTY the maintenance
          page: work_orders has no rows, and nothing here had been told about
@@ -6481,10 +7101,18 @@ const LIVE = (function(){
          or refused, the rent register must still load. A console that shows
          nothing because of the cost table is worse than one that shows the
          register and no costs. */
-      SB.sel('building_costs',
+      /* DATA-02. This used to catch every error and return [], so a refused or
+         failed read arrived as a legitimately empty table: the maintenance
+         total fell to zero, net income improved, and nothing on the screen
+         looked unusual. A failed read and an empty register are different
+         facts and must stay distinguishable. The catch stays — the rent
+         register must still load — but it now says what happened. */
+      SB.selAll('building_costs',
              'select=id,occurred_on,description,amount,unit_id,category,invoice_no,' +
              'suppliers(name_en)&order=occurred_on.asc,id.asc')
-        .catch(e => { console.warn('building_costs unavailable', e); return []; })
+        .then(rows => ({ok:true, rows}))
+        .catch(e => { console.warn('building_costs unavailable', e);
+                      return {ok:false, why:(e && e.message) || String(e)}; })
     ]);
     leaseOf = {};
     leases.forEach(l => { leaseOf[l.unit_id] = l.id; });
@@ -6497,6 +7125,15 @@ const LIVE = (function(){
     const r = l && l.residents;
     return {
       id:u.id, type:u.type, area:N(u.area), floor:u.floor, let:!!u.occupied,
+      /* DATA-03. `units.lettable` and `units.lettable_source` exist in the
+         database and were dropped here, while the console counted occupancy
+         against a hardcoded 37. The register holds 39 rows; 37 are marked
+         lettable, and the source column records HOW that was decided — which
+         for those two is a deduction from the head lease, not a record from
+         the office. A figure that rests on a deduction has to be able to say
+         so, and it cannot if the column never leaves the database. */
+      lettable: u.lettable !== false,
+      lettableSource: u.lettable_source || null,
       tenant:   r ? r.name_en : null,
       tenantAr: r ? (r.name_ar || r.name_en) : null,
       value: l ? N(l.contract_value) : null,
@@ -6582,14 +7219,28 @@ const LIVE = (function(){
 
        The id is built from the Postgres row, not from the position in this
        list, so a line keeps its reference when a work order is logged. */
-    d.costs.forEach(c => {
+    if(d.costs && d.costs.ok){ lastCosts = d.costs.rows; costsErr = null; }
+    else if(d.costs){
+      costsErr = {since: (costsErr && costsErr.since) || new Date(),
+                  why: d.costs.why, everLoaded: !!lastCosts};
+    }
+    (lastCosts || []).forEach(c => {
       const when = new Date(c.occurred_on + 'T12:00:00');
       const u = UNITS.find(x => x.u === c.unit_id);
       logJobAdd({
         id: 'MR-' + String(when.getFullYear()).slice(2) +
             String(when.getMonth() + 1).padStart(2,'0') +
             '-I' + String(c.id).padStart(3,'0'),
-        unit: c.unit_id || '—',
+        /* DATA-06. This was `c.unit_id || '—'`, so every invoice with no flat
+           against it — 94 of the 100 lines, SAR 275,919 — became a job in an
+           apartment literally called "—". The work-order path leaves the field
+           null for the same situation, so the two halves of the same list spoke
+           two different languages, and the repeat-fault report grouped on the
+           dash and reported communal work as a flat with a recurring problem.
+
+           Null, like the other path. What a screen shows for null is a
+           rendering question and is answered in one place. */
+        unit: c.unit_id || null,
         cat: COST_CAT[c.category] || 'gen',
         date: c.occurred_on,
         supplier: (c.suppliers && c.suppliers.name_en) || '',
@@ -6603,15 +7254,78 @@ const LIVE = (function(){
     recompute();
   }
 
+  /* SYNC-01. This used to be `if(pulling) return;` — a change that arrived
+     while a read was in flight was dropped on the floor. The read already
+     running had asked the database before that change existed, so its answer
+     cannot contain it, and nothing was left to ask again. The screen then held
+     stale data until some unrelated event happened to trigger another read.
+     Nobody saw an error; they saw a number that was simply out of date, which
+     is the worst kind of wrong for a rent register.
+
+     Returning early is still right — two concurrent reads would race to paint
+     and the loser would win. What was missing is the note to go round again.
+
+     The loop is bounded. A busy minute should not turn one event into an
+     unbroken chain of reads, so after five passes the remainder is handed to
+     `nudge()`, which debounces. */
+  /* SYNC-03. "Add a visible last-successful-refresh time and a stale-data
+     state." Nothing recorded when a read last worked, so a screen that had
+     stopped refreshing looked exactly like one that had just refreshed — which
+     is the same shape of defect as a heartbeat standing in for a join, one
+     layer up. A read that FAILS does not move this; that is the point of it. */
+  let lastRead = 0;
+  const STALE_AFTER = 2 * 60 * 1000;
+  const freshness = () => ({
+    at: lastRead || null,
+    stale: !lastRead || (Date.now() - lastRead) > STALE_AFTER,
+    secs: lastRead ? Math.round((Date.now() - lastRead) / 1000) : null
+  });
+
+  const MAX_PASSES = 5;
   async function reload(){
-    if(pulling) return;
+    if(pulling){ again = true; return; }
     pulling = true;
-    try{ paint(await pull()); lastErr = null; }
-    catch(e){ lastErr = e; console.error('LIVE.reload', e); }
-    finally{ pulling = false; }
+    try{
+      let n = 0;
+      do {
+        again = false;
+        try{ paint(await pull()); lastErr = null; lastRead = Date.now(); }
+        catch(e){ lastErr = e; console.error('LIVE.reload', e); }
+      } while(again && ++n < MAX_PASSES);
+    } finally { pulling = false; }
+    if(again) nudge();
     subs.forEach(fn => { try{ fn(state, {by:'live'}); }catch(e){} });
   }
-  const nudge = () => { clearTimeout(timer); timer = setTimeout(reload, 400); };
+  /* A debounce with a ceiling. This was a pure trailing debounce, and the audit
+     named what that costs: "prevent continuous events from postponing updates
+     indefinitely through the trailing debounce". A change every 300ms — one
+     busy import, one operator working through a list — reset the timer for ever
+     and the screen never read anything at all.
+
+     So the quiet 400ms still wins when things are quiet, and after two seconds
+     of being pushed back the read happens anyway. */
+  let firstNudge = 0;
+  const MAX_WAIT = 2000;
+  const nudge = () => {
+    const now = Date.now();
+    if(!firstNudge) firstNudge = now;
+    clearTimeout(timer);
+    if(now - firstNudge >= MAX_WAIT){ firstNudge = 0; reload(); return; }
+    timer = setTimeout(() => { firstNudge = 0; reload(); }, 400);
+  };
+  /* Coming back to a tab that has been in the background, or to a device that
+     has just found a network again, is the same situation as a reconnection:
+     whatever happened in between was not delivered here. Both are read as a
+     reason to catch up rather than as a reason to trust the screen. */
+  function watchForeground(){
+    try{
+      document.addEventListener('visibilitychange', () => {
+        if(document.visibilityState === 'visible') nudge();
+      });
+      window.addEventListener('online', nudge);
+      window.addEventListener('pageshow', e => { if(e && e.persisted) nudge(); });
+    }catch(e){}
+  }
 
   /* -------------------------------- write -------------------------------- */
   /* DATA-01. What this code used to do, in both saveLease and saveRegister:
@@ -6793,8 +7507,91 @@ const LIVE = (function(){
     return await commitRegister(batch.plan);
   }
 
+  /* REQ-01. The reference a resident is given must be the reference the office
+     has. It was not.
+
+     `work_orders.id` is minted on the device, from a counter the shared record
+     publishes, so two phones that pulled the same state propose the same
+     number. The loser's insert came back 409 and there WAS a retry: it took the
+     next number and inserted successfully. What it did not do was tell anybody.
+     `body.id` moved; the record on the resident's screen and in their list did
+     not. They kept a receipt reading MR-2609-501 for a job the office holds as
+     MR-2609-502. Nobody involved could tell, because both records exist and
+     both look right, and the one number they would quote to each other is the
+     wrong one.
+
+     Three changes. The reference that counts is the one the INSERT returned,
+     not the one that was sent — the row comes back already, because every write
+     asks for the representation, and the database is the boundary. A collision
+     is retried up to eight times rather than once, because one retry only
+     survives one competitor. And a reference that moved is reported back, which
+     is what lets the screen agree with the office. */
+  const bumpRef = id => {
+    const parts = String(id).split('-');
+    const m = /^([A-Za-z]*)(\d+)$/.exec(parts.pop() || '');
+    if(!m) return String(id) + '-2';
+    return parts.concat(m[1] + String(Number(m[2]) + 1).padStart(m[2].length, '0')).join('-');
+  };
+  const refSeq = id => {
+    const n = parseInt(String(String(id).split('-').pop()).replace(/^[A-Za-z]+/, ''), 10);
+    return Number.isFinite(n) ? n : 0;
+  };
+  /* Is the reference already taken BY THIS SUBMISSION? The distinction decides
+     whether to renumber or to stop.
+
+     REQ-01 again, from its other end. The audit put it exactly: there is no
+     durable idempotency key for an accepted request whose response is lost. If
+     an insert lands and the answer never comes back — a tunnel, a timeout, a
+     killed tab — the next attempt gets 409, and the retry that was written to
+     survive a collision would take the next reference and file the request a
+     SECOND time. The fix for one defect is the cause of the other, which is
+     why they are handled in one place.
+
+     Nothing in `work_orders` is a key for an intended submission, so the row is
+     recognised by what only this submission could have produced: the reference,
+     the flat, the moment it was raised, and the text. Two attempts matching all
+     four are the same attempt by any test anybody could apply.
+
+     This is a recognition rule, not an idempotency key. The durable fix is a
+     column — sql/2026-09-15_request_key.sql, written and not applied. */
+  async function alreadyMine(body){
+    try{
+      const rows = await SB.sel('work_orders',
+        'select=*&id=eq.' + encodeURIComponent(body.id) +
+        '&raised_at=eq.' + encodeURIComponent(body.raised_at));
+      const r = rows && rows[0];
+      if(!r) return null;
+      const same = String(r.unit_id) === String(body.unit_id)
+                && String(r.description == null ? '' : r.description)
+                   === String(body.description == null ? '' : body.description);
+      return same ? r : null;
+    }catch(e){ return null; }        /* cannot tell: fall through and renumber */
+  }
+
+  async function insertWO(body, renamed){
+    const from = body.id;
+    for(let tries = 0; ; tries++){
+      try{
+        const rows = await SB.ins('work_orders', body);
+        const landed = (rows && rows[0] && rows[0].id) || body.id;
+        if(landed !== from) renamed[from] = landed;
+        return rows;
+      }catch(e){
+        if(e.status !== 409 || tries >= 8) throw e;
+        const mine = await alreadyMine(body);
+        if(mine){
+          /* It landed. Adopt the row rather than filing it again. */
+          if(mine.id !== from) renamed[from] = mine.id;
+          return [mine];
+        }
+        body = Object.assign({}, body, {id: bumpRef(body.id)});
+      }
+    }
+  }
+
   async function push(before, after){
     const jobs = [];
+    const renamed = {};                 /* reference sent -> reference that landed */
 
     Object.keys(after.wo || {}).forEach(id => {
       const a = after.wo[id];
@@ -6818,7 +7615,7 @@ const LIVE = (function(){
 
     (after.newWO || []).forEach(w => {
       if((before.newWO || []).some(x => x.id === w.id)) return;
-      jobs.push(SB.ins('work_orders', {
+      jobs.push(insertWO({
         id:w.id, unit_id:w.unit, category:w.cat, description:w.desc,
         /* APP-02. The resident app collects a title and a preferred visit
            window as well as the description; both were being dropped on the
@@ -6826,18 +7623,24 @@ const LIVE = (function(){
            and "stated as empty" stay different things. */
         title: w.title || null,
         visit_window: w.visit ? visitOK(w.visit) : null,
-        priority:priOK(w.pri), channel:'app', status:'submitted', raised_at:w.raised}));
+        priority:priOK(w.pri), channel:'app', status:'submitted', raised_at:w.raised},
+        renamed));
     });
 
     (after.jobs || []).forEach(j => {
       if((before.jobs || []).some(x => x.id === j.id)) return;
       const day = j.date + 'T09:00:00Z';
-      jobs.push(SB.ins('work_orders', {
+      /* REQ-01. This path had no retry at all — the comment where the
+         reference is minted says so in as many words. Two consoles holding the
+         same hundred jobs both propose I101, one inserts, and the other's row
+         dies on the primary key while the job sits on screen looking logged. */
+      jobs.push(insertWO({
         id:j.id, unit_id:j.unit, category:j.cat, description:j.desc,
         priority:'routine', channel:'desk', status:'done', technician:j.supplier || null,
         raised_at:day, closed_at:j.date + 'T12:00:00Z',
         labour_hrs:j.labH || 0, material:j.mat || 0,
-        measurable:false, note:j.inv ? ('Invoice ' + j.inv) : null}));
+        measurable:false, note:j.inv ? ('Invoice ' + j.inv) : null},
+        renamed));
     });
 
     (after.anns || []).forEach(a => {
@@ -6883,6 +7686,18 @@ const LIVE = (function(){
 
     const out = await Promise.allSettled(jobs);
     const bad = out.filter(r => r.status === 'rejected');
+
+    /* REQ-01. A reference that moved is corrected everywhere this console
+       remembers it. `logJobAdd` puts the job on screen before the write leaves,
+       so without this the job list keeps a number the database does not have —
+       the same defect as the resident's receipt, at the other end of it. */
+    Object.keys(renamed).forEach(from => {
+      const to = renamed[from];
+      (after.newWO || []).forEach(w => { if(w.id === from) w.id = to; });
+      (after.jobs  || []).forEach(j => { if(j.id === from) j.id = to; });
+      try{ WOS.forEach(w => { if(w.id === from) w.id = to; }); }catch(e){}
+      after.nextSeq = Math.max(Number(after.nextSeq) || 0, refSeq(to) + 1);
+    });
 
     /* A schedule that disagrees with money already received is not a failure —
        it is a question, and it is the operator's to answer. It gets the
@@ -6950,15 +7765,23 @@ const LIVE = (function(){
     LINK.settled  = () => settled;
     DOCSTORE.mode = 'supabase';
     DOCSTORE.put  = async file => {
-      const stamp = new Date().toISOString().replace(/[-:T.]/g,'').slice(0,14);
-      const safe  = String(file.name || 'file').replace(/[^\w.\-]+/g,'_').slice(-60);
-      return {mode:'supabase', path: await SB.upload(stamp + '-' + safe, file)};
+      /* DOC-01. The key was a timestamp to the SECOND plus the filename, so two
+         uploads of `invoice.pdf` in the same second produced the same key —
+         and the bucket is written with x-upsert:false, so the second one
+         failed. A person attaching a pair of scans does that routinely. The
+         random half makes the key unique whatever the clock says; the
+         timestamp stays because a bucket somebody has to read by hand is worth
+         keeping in order. */
+      return {mode:'supabase', path: await SB.upload(objectKey(file), file)};
     };
     SB.watch(WATCH, nudge);
+    watchForeground();
     return true;
   }
 
   return {start, reload, on: () => !!state && LINK.live(), err: () => lastErr,
+          costsState: () => costsErr ? {ok:false, ...costsErr} : {ok:true},
+          freshness,
           rt: () => SB.rtState(), signedInAs: () => SB.email(),
           applyHeld, applyRegisterHeld};
 })();
@@ -6978,11 +7801,26 @@ function sbStatusLine(){
       'غير متصل. تعرض هذه الشاشة السجل المخزّن في هذا المتصفح فقط، والتغييرات لا تغادر هذا الجهاز.')}</span></div>`;
   const rt = SB.rtState();
   const live = rt === 'live';
-  return `<div class="${live?'okbox':'warnbox'}">${I(live?'check':'clock',16,2.2)}<span>${L(
-    'Connected as ' + SB.email() + (live ? ' — live, changes appear on other machines as they happen.'
+  /* SYNC-03. A live channel says messages can arrive. It does not say anything
+     arrived, and the two were being reported as one thing. The time of the last
+     read that actually SUCCEEDED is a different fact and it is the one that
+     answers "am I looking at the current state", so it is stated beside the
+     channel rather than folded into it. */
+  let f = {stale:true, at:null};
+  try{ f = LIVE.freshness(); }catch(e){}
+  const ok = live && !f.stale;
+  const when = f.at ? new Date(f.at) : null;
+  const hhmm = when ? String(when.getHours()).padStart(2,'0') + ':' +
+                      String(when.getMinutes()).padStart(2,'0') : null;
+  const read = hhmm
+    ? L(' Last read at ' + hhmm + (f.stale ? ' — nothing has arrived since.' : '.'),
+        ' آخر قراءة ' + NUM(hhmm) + (f.stale ? ' — ولم يصل شيء بعدها.' : '.'))
+    : L(' Nothing has been read yet.', ' لم تتم أي قراءة بعد.');
+  return `<div class="${ok?'okbox':'warnbox'}">${I(ok?'check':'clock',16,2.2)}<span>${L(
+    'Connected as ' + esc(SB.email()) + (live ? ' — live, changes appear on other machines as they happen.'
                                          : ' — connected, but the live channel is ' + rt + '.'),
-    'متصل باسم ' + SB.email() + (live ? ' — التحديث فوري على الأجهزة الأخرى.'
-                                      : ' — متصل، لكن قناة التحديث الفوري: ' + rt))}</span></div>`;
+    'متصل باسم ' + esc(SB.email()) + (live ? ' — التحديث فوري على الأجهزة الأخرى.'
+                                      : ' — متصل، لكن قناة التحديث الفوري: ' + rt))}${esc(read)}</span></div>`;
 }
 
 /* ---------------------------- change password ----------------------------
