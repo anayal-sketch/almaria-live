@@ -871,6 +871,8 @@ const D={
   x_notready:'The export log is not installed on the database yet, so nothing was exported.',
   x_failed:'The export could not be recorded, so nothing was written.',
   x_filters:'Filter', x_rows:'Rows',
+  u_headlease:'{n} apartments in the head lease are not lettable and are not shown: {ids}. Confirmed by Ahmed El Nayal, 15 September 2026.',
+  u_headlease_n:'Not shown',
   /* stats */
   st_open:'Open work orders', st_breach:'past target',
   st_sla:'SLA compliance, month', st_close:'Avg time to close', st_cost:'Cost booked, month',
@@ -1145,6 +1147,8 @@ const D={
   x_notready:'سجل التصدير غير مُثبَّت في قاعدة البيانات بعد، فلم يُصدَّر شيء.',
   x_failed:'تعذّر تسجيل عملية التصدير، فلم يُكتب شيء.',
   x_filters:'التصفية', x_rows:'عدد الصفوف',
+  u_headlease:'{n} من الشقق المدرجة في عقد الإيجار الرئيسي غير قابلة للتأجير ولا تظهر هنا: {ids}. بتأكيد أحمد النيال في ١٥ سبتمبر ٢٠٢٦.',
+  u_headlease_n:'غير معروضة',
   st_open:'أوامر عمل مفتوحة', st_breach:'تجاوزت المدة',
   st_sla:'الالتزام بالمدة، الشهر', st_close:'متوسط زمن الإغلاق', st_cost:'التكلفة المسجلة، الشهر',
   st_occ:'الإشغال', st_adopt:'الطلبات عبر التطبيق',
@@ -3994,7 +3998,7 @@ function pgUnits(){
   <div class="tw"><table>
   <thead><tr><th>${T('unit')}</th><th>${T('floor')}</th><th>${T('type')}</th><th class="num">${T('area')}</th>
    <th>${T('status')}</th><th>${T('tenant')}</th><th>${T('leaseend')}</th><th class="num">${T('openjobs')}</th><th>${T('costytd')}</th></tr></thead>
-  <tbody>${UNITS.map(u=>{
+  <tbody>${lettableUnits().map(u=>{
    const cu=costByUnit.find(x=>x.u.u===u.u);
    const op=OPEN.filter(w=>w.unit===u.u).length;
    return `<tr>
@@ -4010,7 +4014,9 @@ function pgUnits(){
       : `<span class="pill p-warn">${I('alert',12,2.1)}${T('u_nolease')}</span>`}</td>
     <td class="num">${op?`<span class="pill p-warn">${NUM(op)}</span>`:'—'}</td>
     <td><div class="ibar"><div class="t"><i style="width:${max?(cu.cost/max*100):0}%"></i></div><div class="n">${money(cu.cost)}</div></div></td>
-   </tr>`;}).join('')}</tbody></table></div></div>`;
+   </tr>`;}).join('')}</tbody></table></div>
+  ${headLeaseNote() ? `<div class="note">${esc(headLeaseNote())}</div>` : ''}
+ </div>`;
 }
 
 /* ---------- residents ---------- */
@@ -5293,6 +5299,31 @@ async function saveFile(name, text, mime){
    screen, with the filters the operator has applied, because an export that
    quietly differs from the list above it is worse than no export. */
 
+/* DATA-09. The register holds 39 rows because the HEAD LEASE holds 39; 37 of
+   them can be let. B-305 and B-306 are in head lease 10174568252/1-0 and not in
+   the rent register, and Ahmed confirmed them as not lettable on 15 September.
+
+   The occupancy stat has divided by `lettable` since the 15th. The units table
+   and its export mapped over the whole register. Same console, two denominators,
+   and a file that said "Rows,39" under a subtitle that said 37 apartments —
+   which is how the 22/39 confusion started in the first place.
+
+   `units.lettable` is the mechanism and one site did not use it. Fifth time.
+
+   Both now read from here, so they cannot drift apart again, and the count that
+   is left out is STATED rather than quietly subtracted — the two flats are real,
+   head-lease rent is paid on them, and a reader who finds 37 where the lease says
+   39 needs the sentence, not silence. */
+const lettableUnits    = () => UNITS.filter(u => u.lettable !== false);
+/* `notLettable` already exists — recompute() sets it to the COUNT. This is the
+   same fact as a list, named so it cannot be mistaken for that variable, and
+   check_unit_count.mjs asserts the two agree. Two names for one fact is how the
+   denominators came apart to begin with. */
+const notLettableUnits = () => UNITS.filter(u => u.lettable === false);
+const headLeaseNote = () => { const out = notLettableUnits();
+  return out.length ? T('u_headlease').replace('{n}', NUM(out.length))
+                                      .replace('{ids}', out.map(u => u.u).join(', ')) : null; };
+
 function exportArrears(){
   const rows = arrearsRows();
   return exportRows({
@@ -5315,7 +5346,8 @@ function exportUnits(){
     /* Numbers go out as numbers. NUM() renders Arabic-Indic digits, which are
        right on screen and are text to a spreadsheet — a column of them will
        not sum. The labels translate; the figures do not. */
-    rows: UNITS.map(u=>{
+    note: headLeaseNote(),
+    rows: lettableUnits().map(u=>{
       const cu = costByUnit.find(x=>x.u.u===u.u);
       return {unit:u.u, floor:u.floor, type:u.type, area:u.area,
         status: u.occupied?T('occupied'):T('vacant'),
