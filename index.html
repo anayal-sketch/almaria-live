@@ -94,7 +94,13 @@ body.ar{font-family:"Noto Sans Arabic","Segoe UI",Tahoma,Arial,sans-serif}
   box-shadow:0 30px 70px rgba(0,41,59,.30), 0 0 0 10px #0A1C26, 0 0 0 11px #17323F;
 }
 .hint{font-size:12px;color:#8A929C;max-width:392px;text-align:center;line-height:1.5}
-@media (max-width:820px){
+/* MOB-02. The full-screen layout used to key on width alone, so a phone turned
+   to landscape — wide (844–932px) but short — fell through to the desktop
+   stage, which frames the app in a fixed 812px-tall "phone" and clipped its
+   top and bottom off the screen. A short viewport is a phone too: the
+   max-height branch catches landscape handsets (and any short window) and
+   gives them the same full-bleed layout. */
+@media (max-width:820px), (max-height:500px){
   body{display:block;background:var(--bg)}
   .stage{padding:0;gap:0;display:block}
   .stage-head,.hint{display:none}
@@ -511,8 +517,11 @@ html.reflowing *, html.reflowing *::before, html.reflowing *::after{
     </div>
 
     <div class="scrim" id="scrim" onclick="closeAll()"></div>
-    <aside class="drawer" id="drawer"></aside>
-    <section class="sheet" id="sheet"></section>
+    <!-- A11Y-02. Closed, both start inert and aria-hidden, so nothing inside
+         them is tabbable or read out until they are opened. openDrawer/openSheet
+         clear it; closeAll restores it. -->
+    <aside class="drawer" id="drawer" inert aria-hidden="true"></aside>
+    <section class="sheet" id="sheet" inert aria-hidden="true"></section>
   </div>
 
   <div class="linkbar" id="linkdot"><i></i><span id="linkLbl"></span><a id="linkOpen" href="admin.html" target="_blank" rel="noopener">Open the console →</a></div>
@@ -636,7 +645,7 @@ const D = {
     community:'Your building', commSub:'Notices & announcements', readMore:'Read more',
     post:'Notice', event:'Event',
     prof_info:'Resident information', prof_email:'Email', prof_phone:'Mobile', prof_unit:'Apartment',
-    prof_lang:'App language', prof_verified:'Your account is verified with building management and has full access to all services.',
+    prof_lang:'App language', prof_verified:'You are signed in, and this profile is linked to Apartment {u}. The details shown here come from the building office system.',
     joinDate:'Resident since', lastLogin:'Last sign-in',
     household:'Household members', documents:'My documents', emergency:'Emergency contacts',
     logout:'Sign out', del:'Delete account',
@@ -655,6 +664,8 @@ const D = {
     toastRateNone:'Your rating was not sent — there was nothing new to send. Reopen the request and try again.',
     days:'days', hrs:'hours', sar:'SAR', of:'of', close:'Close', back:'Back',
     open_:'Open', closed:'Closed', hours:'Hours', included:'Included in your lease',
+    amen_incl:'Included in your lease', amen_charged:'Charged to your account — rates on request',
+    amen_partner:'A resident benefit — show your resident ID',
     bookIt:'Request booking',
     amen_pool:'Rooftop pool', amen_gym:'Gym', amen_terrace:'Roof terrace & BBQ', amen_park:'Parking',
     amen_wifi:'Building WiFi', amen_house:'In-unit housekeeping', amen_hotel:'Four Points by Sheraton',
@@ -713,7 +724,7 @@ const D = {
     community:'مبناك', commSub:'الإشعارات والإعلانات', readMore:'اقرأ المزيد',
     post:'إعلان', event:'فعالية',
     prof_info:'بيانات الساكن', prof_email:'البريد الإلكتروني', prof_phone:'الجوال', prof_unit:'الشقة',
-    prof_lang:'لغة التطبيق', prof_verified:'حسابك موثّق لدى إدارة المبنى ولديك صلاحية كاملة لجميع الخدمات.',
+    prof_lang:'لغة التطبيق', prof_verified:'أنت مسجّل الدخول، وهذا الملف مرتبط بالشقة {u}. التفاصيل المعروضة هنا تأتي من نظام مكتب المبنى.',
     joinDate:'ساكن منذ', lastLogin:'آخر دخول',
     household:'أفراد الأسرة', documents:'مستنداتي', emergency:'أرقام الطوارئ',
     logout:'تسجيل الخروج', del:'حذف الحساب',
@@ -732,6 +743,8 @@ const D = {
     toastRateNone:'لم يُرسل تقييمك — لا يوجد جديد لإرساله. افتح الطلب مرة أخرى وحاول مجدداً.',
     days:'يوم', hrs:'ساعة', sar:'ريال', of:'من', close:'إغلاق', back:'رجوع',
     open_:'مفتوح', closed:'مغلق', hours:'أوقات العمل', included:'مشمول ضمن عقدك',
+    amen_incl:'مشمول ضمن عقدك', amen_charged:'يُضاف إلى حسابك — الأسعار عند الطلب',
+    amen_partner:'ميزة للسكان — أبرز بطاقة الساكن',
     bookIt:'طلب حجز',
     amen_pool:'مسبح السطح', amen_gym:'النادي الرياضي', amen_terrace:'تراس السطح والشواء', amen_park:'المواقف',
     amen_wifi:'واي فاي المبنى', amen_house:'خدمة تنظيف الشقق', amen_hotel:'فور بوينتس باي شيراتون',
@@ -825,15 +838,21 @@ const LEASE = { annual:null, inst:null, term_en:null, term_ar:null, rows:[] };
    else. See RESIDENT above. */
 const POSTS = [];
 
+/* COPY-01. `note` says how each amenity is paid for, because the panel used to
+   append "Included in your lease" to every one of them — including housekeeping,
+   whose own description says "Rates on request; charged to your account", and
+   the two Four Points benefits, which are a partner perk and not part of any
+   lease. A building amenity is included; housekeeping is charged; the hotel and
+   the discounts are a resident benefit. */
 const AMENITIES = [
-  {ico:'pool',   k:'amen_pool',    d:'amen_pool_d',    h_en:'06:00 – 22:00', h_ar:'٦ ص – ١٠ م',  book:true},
-  {ico:'gym',    k:'amen_gym',     d:'amen_gym_d',     h_en:'24 hours',      h_ar:'٢٤ ساعة'},
-  {ico:'flame',  k:'amen_terrace', d:'amen_terrace_d', h_en:'16:00 – 23:00', h_ar:'٤ م – ١١ م',  book:true},
-  {ico:'car',    k:'amen_park',    d:'amen_park_d',    h_en:'24 hours',      h_ar:'٢٤ ساعة'},
-  {ico:'wifi',   k:'amen_wifi',    d:'amen_wifi_d',    h_en:'Always on',     h_ar:'دائم'},
-  {ico:'spark',  k:'amen_house',   d:'amen_house_d',   h_en:'On request',    h_ar:'عند الطلب',   book:true},
-  {ico:'hotel',  k:'amen_hotel',   d:'amen_hotel_d',   h_en:'Resident ID',   h_ar:'ببطاقة الساكن'},
-  {ico:'percent',k:'amen_disc',    d:'amen_disc_d',    h_en:'Resident ID',   h_ar:'ببطاقة الساكن'}
+  {ico:'pool',   k:'amen_pool',    d:'amen_pool_d',    h_en:'06:00 – 22:00', h_ar:'٦ ص – ١٠ م',  book:true, note:'amen_incl'},
+  {ico:'gym',    k:'amen_gym',     d:'amen_gym_d',     h_en:'24 hours',      h_ar:'٢٤ ساعة',      note:'amen_incl'},
+  {ico:'flame',  k:'amen_terrace', d:'amen_terrace_d', h_en:'16:00 – 23:00', h_ar:'٤ م – ١١ م',  book:true, note:'amen_incl'},
+  {ico:'car',    k:'amen_park',    d:'amen_park_d',    h_en:'24 hours',      h_ar:'٢٤ ساعة',      note:'amen_incl'},
+  {ico:'wifi',   k:'amen_wifi',    d:'amen_wifi_d',    h_en:'Always on',     h_ar:'دائم',         note:'amen_incl'},
+  {ico:'spark',  k:'amen_house',   d:'amen_house_d',   h_en:'On request',    h_ar:'عند الطلب',   book:true, note:'amen_charged'},
+  {ico:'hotel',  k:'amen_hotel',   d:'amen_hotel_d',   h_en:'Resident ID',   h_ar:'ببطاقة الساكن', note:'amen_partner'},
+  {ico:'percent',k:'amen_disc',    d:'amen_disc_d',    h_en:'Resident ID',   h_ar:'ببطاقة الساكن', note:'amen_partner'}
 ];
 
 /* ---------------------------- state ---------------------------- */
@@ -891,12 +910,22 @@ function toast(msg){
   el.classList.add('on');
   clearTimeout(el._t); el._t = setTimeout(()=>el.classList.remove('on'), 3400);
 }
+/* A11Y-02. A closed drawer or sheet is only moved off-screen by transform, so
+   without this its buttons, links and fields stayed in the tab order and the
+   screen-reader tree — a keyboard user tabbed into a panel nobody could see.
+   inert takes the whole subtree out of both, and it does it as a state, not an
+   animation, so there is no transition to race. */
+function setPanel(id, open){
+  const el = $(id); if(!el) return;
+  if(open){ el.classList.add('on'); el.removeAttribute('inert'); el.removeAttribute('aria-hidden'); }
+  else    { el.classList.remove('on'); el.setAttribute('inert',''); el.setAttribute('aria-hidden','true'); }
+}
 function closeAll(){
-  $('drawer').classList.remove('on');
-  $('sheet').classList.remove('on');
+  setPanel('drawer', false);
+  setPanel('sheet', false);
   $('scrim').classList.remove('on');
 }
-function openDrawer(){ renderDrawer(); $('drawer').classList.add('on'); $('scrim').classList.add('on'); }
+function openDrawer(){ renderDrawer(); setPanel('drawer', true); $('scrim').classList.add('on'); }
 /* DUAL-07. Enter and Space press a row that says it is a button. Real buttons,
    links and fields already do this themselves and are left alone. */
 document.addEventListener('keydown', e => {
@@ -921,7 +950,7 @@ function openSheet(title, body){
               aria-label="${esc(T('a_close'))}">${I('x',20)}</button>
     </div>
     <div class="sb">${body}</div>`;
-  $('sheet').classList.add('on'); $('scrim').classList.add('on');
+  setPanel('sheet', true); $('scrim').classList.add('on');
   $('sheet').querySelector('.sb').scrollTop = 0;
 }
 /* ==========================================================================
@@ -1013,7 +1042,7 @@ const ENV = {
     + 'box-shadow:0 -1px 0 rgba(0,0,0,.25);pointer-events:none}'
     /* The shell gives up the bar's measured height rather than overlapping it. */
     + 'html.has-envbar body{padding-bottom:var(--envbar-h,32px)}'
-    + '@media (max-width:820px){html.has-envbar .phone{bottom:var(--envbar-h,32px)!important;'
+    + '@media (max-width:820px), (max-height:500px){html.has-envbar .phone{bottom:var(--envbar-h,32px)!important;'
     + 'height:auto!important}}';
   const paint = function(){
     let b = document.getElementById('envbar');
@@ -1184,6 +1213,37 @@ function linkFlash(){
   el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse');
 }
 
+/* The desktop preview bar. Its label used to key on LINK.healthy() alone —
+   whether this browser has localStorage for the cross-tab channel — so it read
+   "Live link on" while signed OUT, before there was any link to anything. It
+   now states what is actually true: signed out, there is nothing to connect to
+   until you sign in; signed in, the office data is loading and, when the
+   realtime channel is up, arriving on its own. The "open the console" link
+   only makes sense once there is a session to share, so it follows sign-in. */
+function updateLinkbar(){
+  const el = $('linkdot'), lbl = $('linkLbl'); if(!el || !lbl) return;
+  const signedIn = (typeof SB === 'object') && SB.signedIn && SB.signedIn();
+  const canLink  = (typeof LINK === 'object') && LINK.healthy && LINK.healthy();
+  const live     = signedIn && (typeof SB === 'object') && SB.rtState && SB.rtState() === 'live';
+  let on, text;
+  if(!signedIn){ on = false;
+    text = L('Sign in to load your apartment from the building office system.',
+             'سجّل الدخول لتحميل بيانات شقتك من نظام مكتب المبنى.'); }
+  else if(live){ on = true;
+    text = L('Live — updates from the office appear here automatically.',
+             'مباشر — تظهر تحديثات المكتب هنا تلقائياً.'); }
+  else if(canLink){ on = true;
+    text = L('Connected to the building office system.',
+             'متصل بنظام مكتب المبنى.'); }
+  else { on = false;
+    text = L('Connected, but live updates are unavailable in this viewer.',
+             'متصل، لكن التحديثات المباشرة غير متاحة في هذا العارض.'); }
+  el.classList.toggle('off', !on);
+  lbl.textContent = text;
+  const a = document.getElementById('linkOpen');
+  if(a) a.style.display = signedIn ? 'inline' : 'none';
+}
+
 /* ------- resident rates a completed job; the console's satisfaction figure
            and the supplier scorecards pick it up ------- */
 const RATING_BUSY = new Set();
@@ -1242,7 +1302,7 @@ function sheetRate(id){
            group says what is being rated. -->
       ${[1,2,3,4,5].map(i=>`<button class="iconbtn" type="button" style="color:var(--gold)"
         aria-label="${esc(T('a_stars').replace('{n}', NUM(i)))}"
-        onclick="rateRequest('${r.id}',${i})">${I('star',34,1.6)}</button>`).join('')}
+        data-id="${esc(String(r.id))}" onclick="rateRequest(this.dataset.id,${i})">${I('star',34,1.6)}</button>`).join('')}
     </div>
     <div class="muted" style="text-align:center">${L('Tap a star to rate','اضغط على نجمة للتقييم')}</div>`);
 }
@@ -1361,6 +1421,9 @@ function renderNoTenancy(){
 }
 
 function render(){
+  /* The desktop preview bar tracks the real connection state, so it is
+     refreshed on every render — signed in or out, tenancy or none. */
+  try{ updateLinkbar(); }catch(e){}
   if(!unlocked()) return renderLocked();
   if(NOTENANCY) return renderNoTenancy();
   renderTop(); renderScreen(); renderTabs();
@@ -1539,7 +1602,7 @@ function viewHome(){
        And p may be undefined: with the demonstration posts cleared on sign-in
        (see LIVE.paint) a building that has published nothing has an empty feed,
        and this read p.id off it and took the whole Home screen down. -->
-  ${!p ? '' : `<div class="post"${pressable(`sheetPost('${esc(String(p.id))}')`)}>
+  ${!p ? '' : `<div class="post" data-id="${esc(String(p.id))}"${pressable('sheetPost(this.dataset.id)')}>
     <div class="img" style="background:linear-gradient(135deg,${cssColour(p.tone[0])},${cssColour(p.tone[1])});color:rgba(255,255,255,.9)">
       ${I(p.ico,46,1.4)}
       <span class="tag">${T(p.tag)}</span>
@@ -1577,7 +1640,7 @@ function amenTile(a,i){
 const pressable = act => act ? ` role="button" tabindex="0" onclick="${act}"` : ' style="cursor:default"';
 function reqRow(r){
   const c = CAT(r.cat);
-  return `<div class="reqrow"${pressable(`sheetRequest('${r.id}')`)}>
+  return `<div class="reqrow" data-id="${esc(String(r.id))}"${pressable('sheetRequest(this.dataset.id)')}>
     <span class="icobox" style="background:#F1F3F5;color:var(--ink-2);width:40px;height:40px;border-radius:12px">${I(c.ico,20)}</span>
     <div class="grow">
       <div class="id">${esc(r.id)}</div>
@@ -1817,7 +1880,7 @@ function sheetRequest(id){
   const stars = r.stars ? `<div class="card"><div class="muted" style="margin-bottom:8px">${T('rated')}</div>
       <div role="img" aria-label="${esc(T('a_rated').replace('{n}', NUM(r.stars)))}"
            style="display:flex;gap:5px;color:var(--gold)">${[1,2,3,4,5].map(i=>`<span aria-hidden="true" style="opacity:${i<=r.stars?1:.22}">${I('star',22,1.6)}</span>`).join('')}</div></div>`
-    : (r.status==='done' ? `<button class="btn ghost" onclick="sheetRate('${esc(String(r.id))}')">${I('star',18)} ${T('rate')}</button>` : '');
+    : (r.status==='done' ? `<button class="btn ghost" data-id="${esc(String(r.id))}" onclick="sheetRate(this.dataset.id)">${I('star',18)} ${T('rate')}</button>` : '');
 
   openSheet(T('reqDetail'), `
     <div class="row" style="gap:13px;margin-bottom:16px">
@@ -1891,7 +1954,7 @@ function sheetAmenity(i){
     <div class="card"><p style="margin:0;font-size:14px;line-height:1.65;font-weight:600;color:var(--ink-2)">${T(a.d)}</p></div>
     <div class="note">
       <span style="color:#A8811A;flex:none">${I('shield',20)}</span>
-      <p>${T('included')}</p>
+      <p>${T(a.note || 'included')}</p>
     </div>
   `);
 }
@@ -1983,8 +2046,21 @@ function viewPayments(){
 
 /* ---------------------------- COMMUNITY ---------------------------- */
 function viewCommunity(){
+  /* APP-12. With the demonstration posts cleared on sign-in, a building that
+     has published nothing has an empty feed — and this mapped an empty array
+     to an empty string, leaving the whole Community tab blank with no word of
+     explanation. An empty feed is a fact about the building, not a broken
+     screen, so it says so. */
+  if(!POSTS.length) return `
+    <div class="card"><div class="bd" style="text-align:center;padding:30px 8px">
+      <div style="color:var(--gold);opacity:.9;display:flex;justify-content:center;margin-bottom:12px">${I('mega',40,1.4)}</div>
+      <div style="font-weight:800;margin-bottom:4px">${L('No notices yet','لا توجد إعلانات بعد')}</div>
+      <div class="muted" style="max-width:26em;margin:0 auto;line-height:1.6">${
+        L('When building management posts a notice, it will appear here.',
+          'عند نشر إدارة المبنى لأي إعلان سيظهر هنا.')}</div>
+    </div></div>`;
   return POSTS.map(p=>`
-    <div class="post"${pressable(`sheetPost('${esc(String(p.id))}')`)}>
+    <div class="post" data-id="${esc(String(p.id))}"${pressable('sheetPost(this.dataset.id)')}>
       <div class="img" style="background:linear-gradient(135deg,${cssColour(p.tone[0])},${cssColour(p.tone[1])});color:rgba(255,255,255,.9)">
         ${I(p.ico,46,1.4)}<span class="tag">${T(p.tag)}</span>
       </div>
@@ -2037,7 +2113,7 @@ function viewProfile(){
       RESIDENT.floor === null ? '' : ` · ${L('Floor','الدور')} ${floorName(RESIDENT.floor)}`}</div></div>
     <div class="note">
       <span style="color:#A8811A;flex:none">${I('check',20)}</span>
-      <p>${T('prof_verified')}</p>
+      <p>${T('prof_verified').replace('{u}', esc(shown(RESIDENT.unit)))}</p>
     </div>
   </div>
 
@@ -2096,7 +2172,7 @@ function renderDrawer(){
 }
 
 /* ---------------------------- iOS / mobile behaviour ---------------------------- */
-const MQ = window.matchMedia('(max-width:820px)');
+const MQ = window.matchMedia('(max-width:820px), (max-height:500px)');
 function applyMode(){
   const m = MQ.matches;
   document.body.classList.toggle('mobile', m);
@@ -2157,18 +2233,7 @@ try {
   applyMode();
   LINK_boot();
   setLang('en');
-  (function(){
-    const el=$('linkdot'), lbl=$('linkLbl');
-    if(el){
-      const on=LINK.healthy();
-      el.classList.toggle('off',!on);
-      lbl.textContent = on
-        ? 'Live link on — this app and the management console update each other'
-        : 'Live link unavailable in this viewer';
-      const a=document.getElementById('linkOpen');
-      if(a) a.style.display = on ? 'inline' : 'none';
-    }
-  })();
+  updateLinkbar();
   tick(); setInterval(tick, 20000);
 } catch (err) {
   /* never leave a blank screen — say what broke */
@@ -2888,11 +2953,18 @@ const LIVE = (function(){
        interleaved with invented ones, in the same feed, in the same style,
        with nothing to tell them apart. Everything goes; only what the office
        published comes back. */
+    /* APP-08. The read is ordered published_at.desc — newest first — so the
+       feed is built by PUSH, keeping that order. It used to unshift each row,
+       which reversed the read: Community listed the building's notices oldest
+       first and Home's "Latest" card showed the OLDEST announcement. A live
+       arrival while the app is open is prepended (LINK_apply), so the newest
+       is POSTS[0] whether it came from this read or landed a moment ago. */
     POSTS.length = 0;
     d.anns.forEach(a => {
       const at = a.published_at ? new Date(a.published_at) : new Date();
-      POSTS.unshift({
+      POSTS.push({
         id:'L' + a.id, linkId:a.id, tone:['#004860','#00303F'], ico:'mega', tag:'post',
+        publishedAt: a.published_at || null,
         t_en:a.title_en || '', t_ar:a.title_ar || a.title_en || '',
         d_en:dEN(at), d_ar:dAR(at),
         b_en:a.body_en || a.title_en || '', b_ar:a.body_ar || a.title_ar || a.body_en || ''});

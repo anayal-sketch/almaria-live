@@ -422,7 +422,9 @@ tr.fromapp td:first-child::after{content:'';display:inline-block;width:6px;heigh
 </div>
 
 <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
-<aside class="drawer" id="drawer"></aside>
+<!-- A11Y-02. Closed, the drawer starts inert and aria-hidden — its controls
+     are out of the tab order and the accessibility tree until it opens. -->
+<aside class="drawer" id="drawer" inert aria-hidden="true"></aside>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -525,7 +527,7 @@ const D={
   crm_id_note:'Digits only — spaces and dashes are removed. A national ID begins with 1 and an Iqama with 2; the wrong one is refused rather than stored under the wrong heading.',
   crm_id_exp_note:'Optional, and worth having: a tenancy running past an Iqama expiry is the thing this lets somebody notice in advance.',
   crm_id_need_type:'Say which document the number is from before saving it.',
-  crm_id_handling:'Identity numbers are held in the office database only. They are staff-only, never shown in a list, never sent to the resident app, and never included in an export or in the published prototype.',
+  crm_id_handling:'Identity numbers are held in the office database only. They are staff-only, never shown in a list, never sent to the resident app, and never included in an export or in the published build.',
   dir_out_s:'Outgoing', dir_in_s:'Incoming', todo_cancelled:'Cancelled',
   src_renewal:'Renewal of an existing lease',
   crm_add:'Add a contact', crm_name:'Name', crm_kind:'Relationship', crm_phone:'Phone',
@@ -669,6 +671,8 @@ const D={
   rp_norows:'Nothing to report',
   rp_norows_d:'No apartment meets this report’s criteria at the moment. That is a result, not a failure.',
   rp_fills:'This report works. It has nothing to show because no maintenance has been recorded yet.',
+  rp_sla_none_t:'Recorded, but nothing to measure yet',
+  rp_sla_none_d:'{n} maintenance jobs have been recorded, but none of them carries a report time — each was entered from an invoice rather than logged when it happened. Response against target fills as jobs are logged at the time they are raised.',
   rp_cantyet:'This report cannot be produced yet',
   rp_needs_asset:'It depends on an asset register that does not exist. The lifts, tanks, pumps, fire systems, generator and the air-conditioning units in each apartment have to be walked, listed and given their statutory intervals and warranty dates. That is a module of the back office, not a spreadsheet.',
   rp_needs_app:'It depends on the resident app being in service. No apartment has an account yet, so there is no adoption to measure. This becomes the year-one metric the day residents are invited.',
@@ -938,7 +942,7 @@ const D={
   cond_good:'Good', cond_fair:'Fair', cond_poor:'Poor',
   /* units */
   floor:'Floor', type:'Type', area:'Area', tenant:'Tenant', leaseend:'Lease ends',
-  openjobs:'Open', costytd:'Cost, 6 months', occupied:'Occupied', vacant:'Vacant',
+  openjobs:'Open', costytd:'Cost', occupied:'Occupied', vacant:'Vacant',
   /* residents */
   account:'Account', verified:'Verified', pending:'Invited', inactive:'Deactivated',
   lastseen:'Last sign-in', channel:'Prefers',
@@ -953,8 +957,8 @@ const D={
   newann:'New announcement', allres:'All residents',
   t_annblock:'Cannot publish — the Arabic version is empty. Both languages are required.',
   /* suppliers */
-  supplier:'Supplier', trades:'Trades', jobs6:'Jobs, 6 months', avgresp:'Avg response',
-  rework:'Rework', rating:'Rating', spend:'Spend, 6 months', contract:'Contract to',
+  supplier:'Supplier', trades:'Trades', jobs6:'Jobs', avgresp:'Avg response',
+  rework:'Rework', rating:'Rating', spend:'Spend', contract:'Contract to',
   /* misc */
   m_fin:'Unit performance',
   t_fin:'Unit performance', s_fin:'Rent, arrears and maintenance cost by apartment — R8 + R14',
@@ -1223,7 +1227,7 @@ const D={
   installed:'سنة التركيب', warranty:'الضمان حتى', condition:'الحالة',
   cond_good:'جيدة', cond_fair:'مقبولة', cond_poor:'ضعيفة',
   floor:'الدور', type:'النوع', area:'المساحة', tenant:'الساكن', leaseend:'نهاية العقد',
-  openjobs:'مفتوحة', costytd:'التكلفة، ٦ أشهر', occupied:'مشغولة', vacant:'شاغرة',
+  openjobs:'مفتوحة', costytd:'التكلفة', occupied:'مشغولة', vacant:'شاغرة',
   account:'الحساب', verified:'موثّق', pending:'مدعو', inactive:'موقوف',
   lastseen:'آخر دخول', channel:'يفضّل',
   adopt_t:'استخدام التطبيق', adopt_d:'المؤشر الذي يحدد مدى موثوقية سجل الصيانة',
@@ -1304,6 +1308,8 @@ const D={
   rp_norows:'لا يوجد ما يُعرض',
   rp_norows_d:'لا تنطبق شروط هذا التقرير على أي شقة حالياً. هذه نتيجة وليست خللاً.',
   rp_fills:'التقرير يعمل، ولا يوجد ما يعرضه لعدم تسجيل أي صيانة بعد.',
+  rp_sla_none_t:'مُسجَّلة، لكن لا يوجد ما يُقاس بعد',
+  rp_sla_none_d:'سُجِّل {n} من أعمال الصيانة، لكن لا يحمل أيٌّ منها وقت إبلاغ — فقد أُدخلت جميعها من فواتير بدلاً من تسجيلها وقت حدوثها. يمتلئ مؤشر الاستجابة مقابل المستهدف مع تسجيل الأعمال وقت رفعها.',
   rp_cantyet:'لا يمكن إنتاج هذا التقرير بعد',
   rp_needs_asset:'يعتمد على سجل أصول غير موجود. يجب حصر المصاعد والخزانات والمضخات وأنظمة الحريق والمولد ووحدات التكييف في كل شقة وتوثيق دورياتها النظامية وتواريخ ضماناتها. وهذه وحدة ضمن النظام الخلفي لا مجرد جدول.',
   rp_needs_app:'يعتمد على تشغيل تطبيق السكان. لا يوجد حساب لأي شقة بعد، فلا يوجد تبنٍّ يمكن قياسه. ويصبح هذا مؤشر السنة الأولى يوم دعوة السكان.',
@@ -1509,8 +1515,8 @@ const D={
   draft:'مسودة', scheduled:'مجدول', complete:'اللغتان', incomplete:'العربية ناقصة',
   newann:'إعلان جديد', allres:'جميع السكان',
   t_annblock:'لا يمكن النشر — النص العربي فارغ. اللغتان مطلوبتان.',
-  supplier:'المورد', trades:'التخصصات', jobs6:'الأوامر، ٦ أشهر', avgresp:'متوسط الاستجابة',
-  rework:'إعادة العمل', rating:'التقييم', spend:'الإنفاق، ٦ أشهر', contract:'العقد حتى',
+  supplier:'المورد', trades:'التخصصات', jobs6:'الأوامر', avgresp:'متوسط الاستجابة',
+  rework:'إعادة العمل', rating:'التقييم', spend:'الإنفاق', contract:'العقد حتى',
   m_fin:'أداء الوحدات',
   t_fin:'أداء الوحدات', s_fin:'الإيجار والمتأخرات وتكلفة الصيانة لكل شقة — تقرير ٨ و١٤',
   f_billed:'المفوتر حتى تاريخه', f_collected:'المحصّل', f_outstanding:'المستحق',
@@ -3045,6 +3051,10 @@ let DRAWER_SEQ = 0;
 function closeDrawer(){
   const d = $('drawer');
   d.classList.remove('on');$('scrim').classList.remove('on');
+  /* A11Y-02. Take the closed drawer's controls out of the tab order and the
+     screen-reader tree. inert is a state, not an animation, so it cannot race
+     the slide-out the way a visibility transition did. */
+  d.setAttribute('inert',''); d.setAttribute('aria-hidden','true');
   d.removeAttribute('aria-modal');
   DRAWER_SEQ++;
   try{ if(typeof ID_SHOWN !== 'undefined') ID_SHOWN = null; }catch(e){}
@@ -3074,7 +3084,7 @@ function rcVal(v){
   if(v === null || v === undefined || v === '') return '—';
   if(typeof v === 'number') return money(v);
   /* PostgREST returns numeric as a JSON string, so an amount arrives as
-     "12917.00" and must not be printed raw beside formatted ones. */
+     "12345.67" and must not be printed raw beside formatted ones. */
   if(typeof v === 'string' && /^-?\d+(\.\d+)?$/.test(v)) return money(Number(v));
   return esc(String(v));
 }
@@ -3225,6 +3235,8 @@ function openDrawer(title,body){
      aria-label="${esc(T('a_close'))}">${I('x',20,2)}</button></div><div class="db">${body}</div>`;
  d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true');
  d.setAttribute('aria-labelledby', 'drawerTitle');
+ /* A11Y-02. Open: back into the tab order and the accessibility tree. */
+ d.removeAttribute('inert'); d.removeAttribute('aria-hidden');
  labelControls(d);
  d.classList.add('on');$('scrim').classList.add('on');
  /* Focus goes to the first control if there is one, else to the heading —
@@ -3454,6 +3466,12 @@ function renderLocked(){
   $('brandSub').textContent = T('console');
   $('sideFoot').textContent = '';
   { const e=$('impBtn'); if(e) e.style.display='none'; }
+  /* The language toggle is shown signed out too, and its label is the language
+     it switches TO. render() updates it — but returns to here before reaching
+     that line, so signed out the label stayed frozen at its markup default and
+     read العربية even after the console had switched to Arabic. Update it on
+     this path as well. */
+  { const l = $('langLbl'); if(l) l.textContent = LANG==='en' ? 'العربية' : 'English'; }
   $('page').innerHTML = `
     <div class="card" style="max-width:640px;margin:6vh auto 0">
       <div class="bd" style="text-align:center;padding:34px 26px">
@@ -3648,7 +3666,7 @@ function pgOver(){
    <div class="hd"><div style="flex:1"><h2>${T('p_breach')}</h2><div class="d">${T('p_breach_d')}</div></div></div>
    <div class="bd" style="padding-top:8px">
     ${breached.length?breached.slice(0,5).map(w=>`
-     <div style="display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--grid);cursor:pointer" onclick="woDetail('${w.id}')">
+     <div style="display:flex;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--grid);cursor:pointer" data-id="${esc(w.id)}" onclick="woDetail(this.dataset.id)">
        <span class="pill p-crit">${I('alert',13,2.1)}${NUM(Math.round(ageH(w)-w.target))}${L('h over','س تجاوز')}</span>
        <div style="flex:1;min-width:0">
          <div style="font-size:12.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(w.desc)}</div>
@@ -3665,7 +3683,7 @@ function pgOver(){
    <div class="hd"><div style="flex:1"><h2>${T('p_today')}</h2><div class="d">${T('p_today_d')}</div></div></div>
    <div class="bd tw" style="padding:0">
     <table><thead><tr><th>${T('unit')}</th><th>${T('category')}</th><th>${T('assignee')}</th><th>${T('status')}</th></tr></thead>
-    <tbody>${today.map(w=>`<tr class="click" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" onclick="woDetail('${w.id}')">
+    <tbody>${today.map(w=>`<tr class="click" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" data-id="${esc(w.id)}" onclick="woDetail(this.dataset.id)">
       <td class="strong">${NUM(w.unit)}</td><td>${catName(CAT(w.cat))}</td>
       <td class="sub2">${esc(techName(w))}</td><td>${stPill(w.status)}</td></tr>`).join('')}</tbody></table>
    </div>
@@ -3733,7 +3751,7 @@ function logJobOpen(){
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
      <div><label class="f" for="jUnit">${T('log_unit')} <span class="req">*</span></label>
        <select class="inp" id="jUnit"><option value="">${L('Choose…','اختر…')}</option>
-       ${let_.map(u=>`<option value="${u.u}">${esc(u.u)} — ${esc(L(u.tenant||'',u.tenant_ar||''))}</option>`).join('')}
+       ${let_.map(u=>`<option value="${esc(u.u)}">${esc(u.u)} — ${esc(L(u.tenant||'',u.tenant_ar||''))}</option>`).join('')}
        </select></div>
      <div><label class="f" for="jCat">${T('log_cat')} <span class="req">*</span></label>
        <select class="inp" id="jCat"><option value="">${L('Choose…','اختر…')}</option>
@@ -3890,7 +3908,7 @@ function pgWO(){
    <option value="all">${T('f_all')} — ${T('category')}</option>
    ${CATS.map(c=>`<option value="${c.id}" ${WF.cat===c.id?'selected':''}>${catName(c)}</option>`).join('')}
   </select>
-  <input aria-label="${T('search')}" placeholder="${T('search')}" value="${WF.q}" oninput="WF.q=this.value;clearTimeout(window._t);window._t=setTimeout(render,220)" style="min-width:250px">
+  <input aria-label="${T('search')}" placeholder="${T('search')}" value="${esc(WF.q)}" oninput="WF.q=this.value;clearTimeout(window._t);window._t=setTimeout(render,220)" style="min-width:250px">
   <div style="flex:1"></div>
   <button class="tbtn" onclick="exportWO()">${I('down',15)}<span>${T('export')}</span></button>
   <button class="tbtn pri" onclick="logJobOpen()">${I('plus',15)}<span>${T('log_open')}</span></button>
@@ -3904,8 +3922,8 @@ function pgWO(){
    ${rows.slice(WF.page * WO_PAGE, WF.page * WO_PAGE + WO_PAGE).map(w=>{
      const open=['submitted','assigned','progress','hold'].includes(w.status);
      const a=ageH(w), over=open&&isBreached(w);
-     return `<tr class="click" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" onclick="woDetail('${w.id}')">
-      <td class="mono strong">${w.id}</td>
+     return `<tr class="click" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" data-id="${esc(w.id)}" onclick="woDetail(this.dataset.id)">
+      <td class="mono strong">${esc(w.id)}</td>
       <td class="strong">${NUM(w.unit)}</td>
       <td>${catName(CAT(w.cat))}</td>
       <td style="max-width:250px"><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(w.desc)}</div>
@@ -3996,7 +4014,7 @@ function woDetail(id){
     <div style="flex:1">${(()=>{const n=docsFor({type:'wo',wo:w.id}).length;
       return n?`<span class="pill p-good">${I('check',12,2.1)}${T('doc_backed')}</span>`
               :`<span class="pill p-warn">${I('alert',12,2.1)}${T('doc_unbacked')}</span>`;})()}</div>
-    <button class="tbtn" onclick="docOpen({type:'wo',wo:'${w.id}'},'invoice')">${I('up',15)}<span>${T('doc_attachbtn')}</span></button></div>
+    <button class="tbtn" data-id="${esc(w.id)}" onclick="docOpen({type:'wo',wo:this.dataset.id},'invoice')">${I('up',15)}<span>${T('doc_attachbtn')}</span></button></div>
    <div class="bd"><div class="note" style="padding:0">${T('doc_cov_n')}</div></div></div>
 
   <div class="sect" style="margin-top:0">${T('wo_timeline')}</div>
@@ -4011,8 +4029,8 @@ function woDetail(id){
        placeholder="${L('Name of the technician or supplier','اسم الفني أو المورّد')}"
        value="${esc(w.status!=='submitted'&&w.tech!=='—'?w.tech:'')}">
      <datalist id="techList">${knownTechs().map(n=>`<option value="${esc(n)}">`).join('')}</datalist></div>
-    <button class="btn" onclick="assignWO('${w.id}')">${L('Assign','إسناد')}</button>
-    <button class="btn" onclick="startWO('${w.id}')">${L('Start work','بدء التنفيذ')}</button>
+    <button class="btn" data-id="${esc(w.id)}" onclick="assignWO(this.dataset.id)">${L('Assign','إسناد')}</button>
+    <button class="btn" data-id="${esc(w.id)}" onclick="startWO(this.dataset.id)">${L('Start work','بدء التنفيذ')}</button>
    </div>
   </div></div>
 
@@ -4024,7 +4042,7 @@ function woDetail(id){
     <div><label class="f" for="cMat">${T('mat_cost')} <span class="req">*</span></label><input class="inp" id="cMat" type="number" step="10" min="0" placeholder="0"></div>
    </div>
    <div style="margin-bottom:14px"><label class="f" for="cNote">${T('notes')}</label><input class="inp" id="cNote" placeholder="${L('What was done, and any part replaced','ما تم تنفيذه وأي قطعة تم استبدالها')}"></div>
-   <button class="btn pri" onclick="closeWO('${w.id}')">${I('check',16,2.2)} ${T('markdone')}</button>
+   <button class="btn pri" data-id="${esc(w.id)}" onclick="closeWO(this.dataset.id)">${I('check',16,2.2)} ${T('markdone')}</button>
   </div></div>`
   :`<div class="sect">${T('wo_close')}</div>
     <div class="card"><div class="bd"><dl class="kv">
@@ -4623,8 +4641,17 @@ function repSla(){
   }).filter(Boolean).sort((a,b)=>a.pct-b.pct);
   const all = jobs.length, met = jobs.filter(w=>!isBreached(w)).length;
   const excluded = rpJobsIn().filter(w=>w.noSla).length;
+  /* APP-12. When there is nothing to show, WHY there is nothing matters. The
+     generic "no maintenance has been recorded yet" is false when maintenance
+     HAS been recorded and simply carries no report time — every job so far
+     entered from an invoice. Saying "recorded nothing" under a stat panel that
+     reads "Not measurable: 100" is a contradiction the operator has to resolve
+     for themselves. So the report states its own empty case. */
+  const emptyT = (all===0 && excluded>0) ? T('rp_sla_none_t') : T('nolog_t');
+  const emptyD = (all===0 && excluded>0)
+    ? T('rp_sla_none_d').replace('{n}', NUM(excluded)) : T('rp_fills');
   return {
-    period:true, filling:true,
+    period:true, filling:true, emptyT, emptyD,
     stats:[[T('st_sla'), all?NUM(Math.round(met/all*100))+'%':'—', NUM(all)+' '+T('rp_measurable')],
            [T('rp_missed'), NUM(all-met), T('rp_missed_d')],
            [T('rp_excluded'), NUM(excluded), T('rp_excluded_d')]],
@@ -4962,7 +4989,7 @@ function docOpen(ref, kind){
   const list = docsFor(ref);
   const label = ref.type==='unit' ? `${L('Apartment','شقة')} ${ref.unit}`
               : ref.type==='inst' ? `${L('Apartment','شقة')} ${ref.unit} · ${T('f_instal')} ${NUM(ref.inst)}`
-              : ref.wo;
+              : esc(ref.wo);
   openDrawer(T('doc_t') + `<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${label}</div>`, `
     <div class="card mb"><div class="bd">
       <div class="warnbox" style="margin-bottom:14px">${I('alert',16,2.2)}<span>${T('doc_store_'+DOCSTORE.mode)}</span></div>
@@ -4986,7 +5013,7 @@ function docOpen(ref, kind){
         <td class="num mono">${NUM(Math.round(d.size/1024))} KB</td>
         <td class="mono">${fmtISO(d.at.slice(0,10))}</td>
         <td class="mono sub2" title="${d.algo}">${d.hash.slice(0,10)}…</td>
-        <td class="num"><button class="tbtn" onclick="docRemove('${d.id}','${d.key}')">${T('doc_remove')}</button></td>
+        <td class="num"><button class="tbtn" data-id="${esc(d.id)}" data-key="${esc(d.key)}" onclick="docRemove(this.dataset.id,this.dataset.key)">${T('doc_remove')}</button></td>
       </tr>`).join('')}</tbody>
      </table></div></div>`:''}`);
 }
@@ -5317,8 +5344,9 @@ function pgRep(){
         <div style="font-size:11.5px;color:var(--muted);font-weight:600">${c}</div>
       </div>`).join('')}
     </div></div>`:''}
-    ${empty?`<div class="bd">${emptyState(meta.s==='filling'?T('nolog_t'):T('rp_norows'),
-        meta.s==='filling'?T('rp_fills'):T('rp_norows_d'),
+    ${empty?`<div class="bd">${emptyState(
+        out.emptyT ? out.emptyT : (meta.s==='filling'?T('nolog_t'):T('rp_norows')),
+        out.emptyD ? out.emptyD : (meta.s==='filling'?T('rp_fills'):T('rp_norows_d')),
         meta.s==='filling'?`<button class="btn pri" style="margin-top:14px" onclick="logJobOpen()">${I('plus',15)} ${T('log_open')}</button>`:'')}</div>`
       :rpTable(out.cols, out.rows, out.foot)}
     ${out.note?`<div class="note">${esc(out.note)}</div>`:''}
@@ -5755,7 +5783,7 @@ function pgFin(){
   ${arrearsRows().length?`<div class="tw"><table>
    <thead><tr><th>${T('unit')}</th><th>${T('tenant')}</th><th class="num">${T('f_amount')}</th>
     <th>${T('f_arr_due')}</th><th class="num">${T('f_arr_age')}</th></tr></thead>
-   <tbody>${arrearsRows().map(a=>`<tr onclick="finDetail('${a.u.u}')" style="cursor:pointer">
+   <tbody>${arrearsRows().map(a=>`<tr data-unit="${esc(a.u.u)}" onclick="finDetail(this.dataset.unit)" style="cursor:pointer">
      <td class="strong">${a.u.u}</td>
      <td>${esc(L(a.u.tenant,a.u.tenant_ar))}</td>
      <td class="num mono strong">${money(a.amt)}</td>
@@ -5805,7 +5833,7 @@ function pgFin(){
      <tbody>
      ${rows.map(r=>{
        const u=r.u;
-       return `<tr class="click" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" onclick="finDetail('${u.u}')">
+       return `<tr class="click" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" data-unit="${esc(u.u)}" onclick="finDetail(this.dataset.unit)">
         <td class="strong">${NUM(u.u)}</td>
         <td>${esc(u.type)}</td>
         <td>${u.occupied?`<span class="pill p-good">${I('check',12,2.1)}${T('occupied')}</span>`:`<span class="pill p-neut">${T('vacant')}</span>`}</td>
@@ -5859,9 +5887,9 @@ function finDetail(uid){
    <td><span class="pill ${st[0]}">${st[2]?I(st[2],12,2.1):''}${T(st[1])}</span></td>
    <td class="num">${(()=>{
      const has = docsFor({type:'inst',unit:u.u,inst:x.q}).length;
-     const attach = `<button class="tbtn" onclick="docOpen({type:'inst',unit:'${u.u}',inst:${x.q}},'receipt')">${has?I('check',13,2.2):I('up',13)}<span>${has?T('doc_backed'):T('doc_attachbtn')}</span></button>`;
+     const attach = `<button class="tbtn" data-unit="${esc(u.u)}" data-q="${x.q}" onclick="docOpen({type:'inst',unit:this.dataset.unit,inst:Number(this.dataset.q)},'receipt')">${has?I('check',13,2.2):I('up',13)}<span>${has?T('doc_backed'):T('doc_attachbtn')}</span></button>`;
      if(x.paid) return (x.ref?`<span class="mono sub2" style="margin-inline-end:8px">${esc(x.ref)}</span>`:'') + attach;
-     return `<button class="tbtn" onclick="recordPayment('${u.u}',${x.q})">${x.billed?L('Record','تسجيل'):L('Record early','تسجيل مقدّم')}</button> ` + attach;
+     return `<button class="tbtn" data-unit="${esc(u.u)}" data-q="${x.q}" onclick="recordPayment(this.dataset.unit,Number(this.dataset.q))">${x.billed?L('Record','تسجيل'):L('Record early','تسجيل مقدّم')}</button> ` + attach;
    })()}</td></tr>`;
  };
  /* CON-04. The Units table escaped this field; this heading did not. Sixth
@@ -5898,7 +5926,7 @@ function finDetail(uid){
    <div class="hd"><div style="flex:1">${(()=>{const n=docsFor({type:'unit',unit:u.u}).filter(d=>d.kind==='contract').length;
      return n?`<span class="pill p-good">${I('check',12,2.1)}${T('doc_backed')}</span>`
              :`<span class="pill p-warn">${I('alert',12,2.1)}${T('doc_unbacked')}</span>`;})()}</div>
-    <button class="tbtn" onclick="docOpen({type:'unit',unit:'${u.u}'},'contract')">${I('up',15)}<span>${T('doc_attachbtn')}</span></button></div>
+    <button class="tbtn" data-unit="${esc(u.u)}" onclick="docOpen({type:'unit',unit:this.dataset.unit},'contract')">${I('up',15)}<span>${T('doc_attachbtn')}</span></button></div>
    <div class="bd"><dl class="kv">
     <dt>${T('tenant')}</dt><dd>${esc(L(u.tenant,u.tenant_ar))}</dd>
     <dt>${T('f_term')}</dt><dd>${fmtD(u.leaseStart)} — ${fmtD(u.leaseEnd)}</dd>
@@ -5917,9 +5945,9 @@ function finDetail(uid){
   <div class="card"><div class="tw"><table>
     <thead><tr><th>${T('ref')}</th><th>${T('category')}</th><th>${T('raised_c')}</th><th class="num">${T('cost')}</th><th>${T('status')}</th></tr></thead>
     <tbody>
-    ${openJobs.map(w=>`<tr><td class="mono">${w.id}</td><td>${catName(CAT(w.cat))}</td>
+    ${openJobs.map(w=>`<tr><td class="mono">${esc(w.id)}</td><td>${catName(CAT(w.cat))}</td>
       <td class="mono">${fmtD(w.raised)}</td><td class="num mono">—</td><td>${stPill(w.status)}</td></tr>`).join('')}
-    ${jobs.slice(0,12).map(w=>`<tr><td class="mono">${w.id}</td><td>${catName(CAT(w.cat))}</td>
+    ${jobs.slice(0,12).map(w=>`<tr><td class="mono">${esc(w.id)}</td><td>${catName(CAT(w.cat))}</td>
       <td class="mono">${fmtD(w.raised)}</td><td class="num mono">${money(woCost(w))}</td><td>${stPill(w.status)}</td></tr>`).join('')}
     ${(jobs.length+openJobs.length)===0?`<tr><td colspan="5" class="sub2" style="text-align:center;padding:18px">${L('No maintenance recorded','لا توجد صيانة مسجلة')}</td></tr>`:''}
     </tbody>
@@ -6308,7 +6336,7 @@ function pgCRM(){
   <div class="filters">
    <button class="chipf ${CF.kind==='all'?'on':''}" onclick="setCF('kind','all')">${T('f_all')}</button>
    ${KINDS.map(([v,k])=>`<button class="chipf ${CF.kind===v?'on':''}" onclick="setCF('kind','${v}')">${T(k)}</button>`).join('')}
-   <input placeholder="${T('crm_search')}" value="${CF.q}"
+   <input placeholder="${T('crm_search')}" value="${esc(CF.q)}"
      oninput="CF.q=this.value;clearTimeout(window._ct);window._ct=setTimeout(render,220)" style="min-width:240px">
    <div style="flex:1"></div>
    ${/* Hidden from a viewer because the server will refuse it anyway, and a
@@ -6417,7 +6445,7 @@ function idDocBlock(c){
         <td>${esc(d.filename)}</td>
         <td class="mono sub2">${d.bytes ? NUM(Math.round(d.bytes/1024)) + ' KB' : ''}</td>
         <td class="mono sub2">${fmtISO(d.uploaded_at)}</td>
-        <td><button class="tbtn" onclick="idDocOpen('${esc(d.storage_path)}')">${T('idoc_open')}</button></td>
+        <td><button class="tbtn" data-path="${esc(d.storage_path)}" onclick="idDocOpen(this.dataset.path)">${T('idoc_open')}</button></td>
       </tr>`).join('')}</tbody></table></div>`
       : `<div class="note">${T('idoc_none')}</div>`}
     ${rolesViewer() ? '' : `
@@ -6736,7 +6764,7 @@ function pgPipe(){
               : `<span class="pill p-good">${T(({enquiry:'sg_enq',viewing:'sg_view',offer:'sg_offer',
                     contract:'sg_con',won:'sg_won',lost:'sg_lost'})[r.deal_stage] || 'sg_enq')}</span>`}</td>
         <td>${r.no_renewal_opened
-              ? `<button class="tbtn" onclick="dealOpen(${r.lease_id},'${esc(r.unit_id)}')">${T('ren_open')}</button>`
+              ? `<button class="tbtn" data-unit="${esc(r.unit_id)}" onclick="dealOpen(${r.lease_id},this.dataset.unit)">${T('ren_open')}</button>`
               : ''}</td>
       </tr>`).join('')}</tbody></table></div>`}
    <div class="bd"><div class="note">${T('ren_note')}</div></div>
@@ -7075,7 +7103,7 @@ function pgRoles(){
   <div class="card mb"><div class="tw"><table>
     <thead><tr><th>${T('rl_name')}</th><th>${T('rl_mail')}</th><th>${T('rl_role')}</th>
       <th>${T('rl_status')}</th><th>${T('rl_account')}</th><th>${T('rl_last')}</th></tr></thead>
-    <tbody>${rows.map(m=>`<tr style="cursor:pointer" onclick="roleDrawer('${esc(m.id)}')">
+    <tbody>${rows.map(m=>`<tr style="cursor:pointer" data-id="${esc(m.id)}" onclick="roleDrawer(this.dataset.id)">
       <td class="strong">${esc((LANG==='ar' ? (m.name_ar||m.name_en) : m.name_en) || '—')}${
         m.email === me ? ` <span class="sub2">· ${T('rl_self')}</span>` : ''}</td>
       <td class="mono sub2">${esc(m.email)}</td>
@@ -7128,9 +7156,9 @@ function roleDrawer(id){
     <div class="note">${T(desc)}</div>
     ${m.note ? `<div class="note" style="margin-top:10px">${esc(m.note)}</div>` : ''}
     <div style="margin-top:18px">
-      <button class="btn pri" onclick="roleOpen('${esc(m.id)}')">${T('rl_edit')}</button>
+      <button class="btn pri" data-id="${esc(m.id)}" onclick="roleOpen(this.dataset.id)">${T('rl_edit')}</button>
       ${mine ? '' : `<button class="btn" style="margin-${LANG==='ar'?'right':'left'}:8px"
-          onclick="roleToggle('${esc(m.id)}',${m.active ? 'false' : 'true'})">${
+          data-id="${esc(m.id)}" onclick="roleToggle(this.dataset.id,${m.active ? 'false' : 'true'})">${
           m.active ? T('rl_off_btn') : T('rl_on_btn')}</button>`}
     </div>
     ${mine ? `<div class="note" style="margin-top:14px">${T('rl_self_note')}</div>` : ''}
@@ -8629,9 +8657,14 @@ const LIVE = (function(){
 
 function sbStatusLine(){
   if(!SB.signedIn())
+    /* This used to say the console was "showing the seeded register held in
+       this browser". There is no seeded register any more — signed out, the
+       console shows the sign-in gate and nothing else. Nothing is held here to
+       misdescribe; the honest line is that there is no data until a session
+       loads it from the office system. */
     return `<div class="warnbox">${I('alert',16,2.2)}<span>${L(
-      'Not connected. This console is showing the seeded register held in this browser, and changes stay on this machine.',
-      'غير متصل. تعرض هذه الشاشة السجل المخزّن في هذا المتصفح فقط، والتغييرات لا تغادر هذا الجهاز.')}</span></div>`;
+      'Not connected. Sign in with your work email to load the register from the office system — nothing is held on this machine.',
+      'غير متصل. سجّل الدخول ببريدك المهني لتحميل السجل من نظام المكتب — لا يُحفظ شيء على هذا الجهاز.')}</span></div>`;
   const rt = SB.rtState();
   const live = rt === 'live';
   /* SYNC-03. A live channel says messages can arrive. It does not say anything
