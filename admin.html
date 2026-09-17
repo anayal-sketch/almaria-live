@@ -850,7 +850,6 @@ const D={
   doc_need:'Choose at least one value to confirm.',
   doc_applied:'{u} updated from the contract.',
   doc_receipted:'Instalment settled against receipt {r}.',
-  doc_amtdiff:'The receipt reads {a} against an instalment of {b}. Settled anyway — check which is right.',
   doc_confirm_n:'Nothing above reaches the register until you press confirm. Identity numbers are deliberately not captured.',
   doc_store_fingerprint:'The file itself is not kept — only its name, size, type and fingerprint. Attach it again after the backend is built and it will be stored properly.',
   doc_store_supabase:'The file is stored in the Almaria document store, and this record is its fingerprint.',
@@ -883,6 +882,15 @@ const D={
   pay_not_recorded:'The payment was NOT recorded — the database did not accept it. Nothing has changed on the resident\'s schedule.',
   log_not_done:'The job was NOT logged — the database did not accept it.',
   wo_not_saved:'That change was NOT saved — the database did not accept it. The job is as it was.',
+  save_nothing:'Nothing was sent — the record already holds exactly this, so there was nothing to save.',
+  save_held:'NOT saved yet — the change is waiting for your decision in the reconciliation panel.',
+  lease_not_applied:'The lease was NOT applied — the database did not accept it. The flat is as it was.',
+  receipt_not_applied:'The receipt was NOT applied — the database did not accept it. The instalment is as it was.',
+  ann_not_published:'NOT published — the database did not accept it. Your draft is still here.',
+  ann_dup:'This notice is already published today. It was not sent again.',
+  doc_amt_need:'Choose the amount shown on the receipt before applying it. Nothing was recorded.',
+  doc_amt_mismatch:'The receipt reads {a}; instalment {n} is {b}. Nothing was recorded — a receipt settles an instalment only when it covers it, and a part payment cannot be recorded against an instalment here.',
+  doc_receipted_nodate:'Instalment settled against receipt {r}. The receipt shows no date, so the payment date is recorded as unknown.',
   saving_now:'Saving…',
   rp_broken:'This report did not build. Nothing is shown rather than an empty table that would read as a real answer.',
   u_headlease:'{n} apartments in the head lease are not lettable and are not shown: {ids}. Confirmed by Ahmed El Nayal, 15 September 2026.',
@@ -922,7 +930,6 @@ const D={
   t_needcost:'Enter labour hours and material cost before closing. Zero is a valid entry.',
   intake:'Raised via', ch_app:'Resident app', ch_phone:'Telephone', ch_wa:'WhatsApp', ch_desk:'Front desk',
   logfor:'Log a request for a resident',
-  t_logged:'Prototype — this is the intake path for requests that do not come through the app.',
   /* ppm */
   asset:'Asset', location:'Location', freq:'Frequency', lastdone:'Last done', nextdue:'Next due',
   overdue:'Overdue', statutory:'Statutory', cert:'Certificate', held:'Held', missing:'Missing',
@@ -1166,6 +1173,15 @@ const D={
   pay_not_recorded:'لم تُسجَّل الدفعة — لم تقبلها قاعدة البيانات. لم يتغير شيء في جدول الساكن.',
   log_not_done:'لم يُسجَّل العمل — لم تقبله قاعدة البيانات.',
   wo_not_saved:'لم يُحفظ التغيير — لم تقبله قاعدة البيانات. الطلب كما كان.',
+  save_nothing:'لم يُرسل شيء — السجل يحمل هذا بالضبط أصلاً، فلا يوجد ما يُحفظ.',
+  save_held:'لم يُحفظ بعد — التغيير بانتظار قرارك في لوحة المطابقة.',
+  lease_not_applied:'لم يُعتمد العقد — لم تقبله قاعدة البيانات. الشقة كما كانت.',
+  receipt_not_applied:'لم يُعتمد الإيصال — لم تقبله قاعدة البيانات. الدفعة كما كانت.',
+  ann_not_published:'لم يُنشر — لم تقبله قاعدة البيانات. مسودتك ما زالت هنا.',
+  ann_dup:'هذا الإعلان منشور اليوم بالفعل. لم يُرسل مرة أخرى.',
+  doc_amt_need:'اختر المبلغ المذكور في الإيصال قبل اعتماده. لم يُسجَّل شيء.',
+  doc_amt_mismatch:'الإيصال يذكر {a}؛ والدفعة {n} قيمتها {b}. لم يُسجَّل شيء — يُسدِّد الإيصال الدفعة فقط عندما يغطيها كاملة، ولا يمكن تسجيل دفعة جزئية مقابل قسط هنا.',
+  doc_receipted_nodate:'تم تسديد الدفعة مقابل الإيصال {r}. لا يظهر تاريخ في الإيصال، فسُجِّل تاريخ الدفع كغير معروف.',
   saving_now:'جارٍ الحفظ…',
   rp_broken:'تعذّر بناء هذا التقرير. لا يُعرض شيء بدلاً من جدول فارغ قد يُقرأ كإجابة حقيقية.',
   u_headlease:'{n} من الشقق المدرجة في عقد الإيجار الرئيسي غير قابلة للتأجير ولا تظهر هنا: {ids}. بتأكيد أحمد النيال في ١٥ سبتمبر ٢٠٢٦.',
@@ -1201,7 +1217,6 @@ const D={
   t_needcost:'أدخل ساعات العمل وتكلفة المواد قبل الإغلاق. الصفر قيمة مقبولة.',
   intake:'مصدر الطلب', ch_app:'تطبيق الساكن', ch_phone:'هاتف', ch_wa:'واتساب', ch_desk:'الاستقبال',
   logfor:'تسجيل طلب نيابة عن ساكن',
-  t_logged:'نموذج تجريبي — هذا مسار الطلبات التي لا تصل عبر التطبيق.',
   asset:'الأصل', location:'الموقع', freq:'التكرار', lastdone:'آخر تنفيذ', nextdue:'الاستحقاق القادم',
   overdue:'متأخرة', statutory:'نظامي', cert:'الشهادة', held:'متوفرة', missing:'غير متوفرة',
   a_register:'سجل الأصول', a_register_d:'المعدات التي تعتمد عليها الصيانة الوقائية',
@@ -1470,7 +1485,6 @@ const D={
   doc_need:'اختر قيمة واحدة على الأقل للاعتماد.',
   doc_applied:'تم تحديث {u} من العقد.',
   doc_receipted:'تم تسديد الدفعة مقابل الإيصال {r}.',
-  doc_amtdiff:'الإيصال يذكر {a} مقابل دفعة {b}. تم التسديد على أي حال — تحقق أيهما الصحيح.',
   doc_confirm_n:'لا شيء مما سبق يصل إلى السجل قبل الضغط على الاعتماد. ولا تُلتقط أرقام الهوية إطلاقاً.',
   doc_store_fingerprint:'لا يُحفظ الملف نفسه — بل اسمه وحجمه ونوعه وبصمته فقط. أرفقه مجدداً بعد بناء النظام الخلفي ليُحفظ كاملاً.',
   doc_store_supabase:'الملف محفوظ في مستودع مستندات المارية، وهذا السجل هو بصمته.',
@@ -2026,12 +2040,18 @@ function LINK_apply(s){
     if(c.end)   u.leaseEnd   = new Date(c.end);
     if(c.value) u.rent = c.value;
     if(c.value && c.n && c.start){
+      /* DUAL-02. Paid lines are carried across by instalment number, as
+         docApplyLease carries them; this rebuilt every line unpaid. */
+      const had = {};
+      (u.inst || []).forEach(x => { if(x.paid) had[x.q] = x; });
       const rows=[]; let left=c.value;
       for(let i=0;i<c.n;i++){
         const d=addMonthsClamped(c.start, i);
         const amt = i===c.n-1 ? left : Math.round(c.value/c.n);
         left -= amt;
-        rows.push({q:i+1, amt, due:d, billed:d<=TODAY, paid:false, paidOn:null});
+        const k = had[i+1];
+        rows.push({q:i+1, amt, due:d, billed:d<=TODAY,
+                   paid: !!k, paidOn: k ? (k.paidOn || null) : null, ref: k ? (k.ref || null) : null});
       }
       u.inst = rows;
     }
@@ -2045,7 +2065,9 @@ function LINK_apply(s){
     Object.keys(paid).forEach(n=>{
       const row = u.inst.find(x=>String(x.q)===String(n)); if(!row) return;
       row.paid = true;
-      row.paidOn = paid[n].on ? new Date(paid[n].on) : (row.due || TODAY);
+      /* DUAL-02. This substituted the due date, then today, for a payment date
+         nobody had. A blank is the truthful value. */
+      row.paidOn = paid[n].on ? new Date(paid[n].on) : null;
       row.ref = paid[n].ref;
     });
   });
@@ -3146,6 +3168,53 @@ async function rcApplyImport(){
    read it as more page; without the focus move a keyboard user was left on a
    control behind the scrim. */
 let DRAWER_RETURN_FOCUS = null;
+/* DUAL-07. A <label> that names nothing is text: CON-09 gave the twelve
+   contact fields their `for`, and the completed-job form, the work-order
+   drawer, the document drawer and the announcement form were left as they
+   were — 24 controls a screen reader announced as "edit text". Every one of
+   them is written label-then-control, so the markup now says so, and this
+   pairs any label a future form forgets, then reports what it could not
+   pair, so the omission is visible in the console rather than silent. */
+let LABEL_SEQ = 0;
+function labelControls(root){
+  const missed = [];
+  try{
+    (root || document).querySelectorAll('label.f').forEach(lb => {
+      const f = lb.getAttribute('for');
+      if(f && document.getElementById(f)) return;
+      if(lb.querySelector('input,select,textarea')) return;      /* wraps its control */
+      let el = lb.nextElementSibling;
+      while(el && !/^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName)){
+        const inner = el.querySelector ? el.querySelector('input,select,textarea') : null;
+        if(inner){ el = inner; break; }
+        if(el.getAttribute && el.getAttribute('role') === 'group'){
+          /* a group of chips or radios: the label names the group */
+          if(!lb.id) lb.id = 'lbl' + (++LABEL_SEQ);
+          el.setAttribute('aria-labelledby', lb.id); return;
+        }
+        el = el.nextElementSibling;
+      }
+      if(!el){ missed.push((lb.textContent || '').trim()); return; }
+      if(!el.id) el.id = 'f' + (++LABEL_SEQ);
+      lb.setAttribute('for', el.id);
+    });
+  }catch(e){}
+  if(missed.length) console.warn('labels naming no control: ' + missed.join(' | '));
+  return missed;
+}
+/* DUAL-07. Tab and Shift+Tab stay inside the open dialog. aria-modal tells a
+   screen reader the page behind is inert; it tells the keyboard nothing, and
+   Shift+Tab from the first control walked out under the scrim. */
+function trapTab(e, d){
+  const sel = 'a[href], button:not([disabled]), input:not([disabled]):not([type=hidden]), ' +
+              'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  const list = [...d.querySelectorAll(sel)].filter(el => el.offsetWidth || el.offsetHeight || el.getClientRects().length);
+  if(!list.length){ e.preventDefault(); return; }
+  const first = list[0], last = list[list.length - 1], cur = document.activeElement;
+  if(!d.contains(cur)){ e.preventDefault(); (e.shiftKey ? last : first).focus(); return; }
+  if(e.shiftKey && (cur === first || cur === d.querySelector('#drawerTitle'))){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && cur === last){ e.preventDefault(); first.focus(); }
+}
 function openDrawer(title,body){
  const d = $('drawer');
  if(!d.classList.contains('on')){
@@ -3156,6 +3225,7 @@ function openDrawer(title,body){
      aria-label="${esc(T('a_close'))}">${I('x',20,2)}</button></div><div class="db">${body}</div>`;
  d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true');
  d.setAttribute('aria-labelledby', 'drawerTitle');
+ labelControls(d);
  d.classList.add('on');$('scrim').classList.add('on');
  /* Focus goes to the first control if there is one, else to the heading —
     after the slide-in, so a screen reader announces the dialog it landed in. */
@@ -3348,6 +3418,8 @@ document.addEventListener('keydown', e => {
  if(e.key==='Escape' && document.body.classList.contains('navopen')) navClose();
  /* CON-09. Escape closes the dialog. */
  else if(e.key==='Escape' && $('drawer') && $('drawer').classList.contains('on')) closeDrawer();
+ /* DUAL-07. Tab stays in it. */
+ else if(e.key==='Tab' && $('drawer') && $('drawer').classList.contains('on')) trapTab(e, $('drawer'));
 });
 
 /* Choosing a destination closes the sheet. Leaving it open over the page the
@@ -3492,6 +3564,7 @@ function render(){
     because a viewer needs to know why the buttons are missing wherever they
     happen to be standing. */
  $('page').innerHTML=roBanner()+f();
+ labelControls($('page'));
  if(PAGE==='over'||PAGE==='rep'){
   const a=document.querySelector('#cFlow'); if(a)wireFlow(a);
   const b=document.querySelector('#cSla'); if(b)wireSla(b);
@@ -3658,25 +3731,25 @@ function logJobOpen(){
      <p style="font-size:13px;color:var(--ink-2);line-height:1.65;margin:0 0 4px">${T('log_d')}</p>
    </div></div>
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-     <div><label class="f">${T('log_unit')} <span class="req">*</span></label>
+     <div><label class="f" for="jUnit">${T('log_unit')} <span class="req">*</span></label>
        <select class="inp" id="jUnit"><option value="">${L('Choose…','اختر…')}</option>
        ${let_.map(u=>`<option value="${u.u}">${esc(u.u)} — ${esc(L(u.tenant||'',u.tenant_ar||''))}</option>`).join('')}
        </select></div>
-     <div><label class="f">${T('log_cat')} <span class="req">*</span></label>
+     <div><label class="f" for="jCat">${T('log_cat')} <span class="req">*</span></label>
        <select class="inp" id="jCat"><option value="">${L('Choose…','اختر…')}</option>
        ${CATS.map(c=>`<option value="${c.id}">${catName(c)}</option>`).join('')}
        </select></div>
    </div>
-   <div style="margin-bottom:14px"><label class="f">${T('log_desc')}</label>
+   <div style="margin-bottom:14px"><label class="f" for="jDesc">${T('log_desc')}</label>
      <input class="inp" id="jDesc" placeholder="${L('What was done, and any part replaced','ما تم تنفيذه وأي قطعة تم استبدالها')}"></div>
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-     <div><label class="f">${T('log_sup')}</label><input class="inp" id="jSup" placeholder="${L('Name on the invoice','الاسم في الفاتورة')}"></div>
-     <div><label class="f">${T('log_date')} <span class="req">*</span></label><input class="inp" id="jDate" type="date" value="${iso(TODAY)}"></div>
+     <div><label class="f" for="jSup">${T('log_sup')}</label><input class="inp" id="jSup" placeholder="${L('Name on the invoice','الاسم في الفاتورة')}"></div>
+     <div><label class="f" for="jDate">${T('log_date')} <span class="req">*</span></label><input class="inp" id="jDate" type="date" value="${iso(TODAY)}"></div>
    </div>
    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
-     <div><label class="f">${T('log_mat')} <span class="req">*</span></label><input class="inp" id="jMat" type="number" min="0" step="10" placeholder="0"></div>
-     <div><label class="f">${T('log_lab')}</label><input class="inp" id="jLab" type="number" min="0" step="0.5" placeholder="0.0"></div>
-     <div><label class="f">${T('log_inv')}</label><input class="inp" id="jInv" placeholder="—"></div>
+     <div><label class="f" for="jMat">${T('log_mat')} <span class="req">*</span></label><input class="inp" id="jMat" type="number" min="0" step="10" placeholder="0"></div>
+     <div><label class="f" for="jLab">${T('log_lab')}</label><input class="inp" id="jLab" type="number" min="0" step="0.5" placeholder="0.0"></div>
+     <div><label class="f" for="jInv">${T('log_inv')}</label><input class="inp" id="jInv" placeholder="—"></div>
    </div>
    <div class="warnbox" style="margin-bottom:16px">${I('alert',16,2.2)}<span>${T('log_nosla')}</span></div>
    <button class="btn pri" onclick="logJobSave()">${I('check',16,2.2)} ${T('log_save')}</button>`);
@@ -3721,8 +3794,20 @@ async function logJobSave(){
   }, 'console');
   const ok = await settledOK();
   saving(key, false);
-  if(!ok){ toast(T('log_not_done')); return; }
+  if(!ok){ toast(notSaved('log_not_done')); return; }
   JOB_KEY = null;                              /* this submission is done with */
+  /* DUAL-06. The record that joins the list is the one the database returned,
+     not the one this form sent. A reference that collided was renumbered on
+     the way in (REQ-01), and the list was being handed the original — a
+     number the database does not hold, on the screen the office quotes from. */
+  const row = LAST_SAVE && LAST_SAVE.landed && LAST_SAVE.landed['job:' + rec.id];
+  if(row){
+    if(row.id) rec.id = row.id;
+    if(row.description != null) rec.desc = row.description;
+    rec.supplier = row.technician || '';
+    rec.mat  = Number(row.material)   || 0;
+    rec.labH = Number(row.labour_hrs) || 0;
+  }
   logJobAdd(rec, u, d);
   recompute(); closeDrawer(); render();
   toast(T('log_done'));
@@ -3921,7 +4006,7 @@ function woDetail(id){
   <div class="sect">${L('Assignment','الإسناد')}</div>
   <div class="card mb"><div class="bd">
    <div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:end">
-    <div><label class="f">${T('assignee')}</label>
+    <div><label class="f" for="aTech">${T('assignee')}</label>
      <input class="inp" id="aTech" list="techList" autocomplete="off"
        placeholder="${L('Name of the technician or supplier','اسم الفني أو المورّد')}"
        value="${esc(w.status!=='submitted'&&w.tech!=='—'?w.tech:'')}">
@@ -3935,10 +4020,10 @@ function woDetail(id){
   <div class="card"><div class="bd">
    <div class="warnbox" style="margin-bottom:14px">${I('alert',16,2.2)}<span>${T('wo_close_d')}</span></div>
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-    <div><label class="f">${T('lab_hours')} <span class="req">*</span></label><input class="inp" id="cLab" type="number" step="0.5" min="0" placeholder="0.0"></div>
-    <div><label class="f">${T('mat_cost')} <span class="req">*</span></label><input class="inp" id="cMat" type="number" step="10" min="0" placeholder="0"></div>
+    <div><label class="f" for="cLab">${T('lab_hours')} <span class="req">*</span></label><input class="inp" id="cLab" type="number" step="0.5" min="0" placeholder="0.0"></div>
+    <div><label class="f" for="cMat">${T('mat_cost')} <span class="req">*</span></label><input class="inp" id="cMat" type="number" step="10" min="0" placeholder="0"></div>
    </div>
-   <div style="margin-bottom:14px"><label class="f">${T('notes')}</label><input class="inp" id="cNote" placeholder="${L('What was done, and any part replaced','ما تم تنفيذه وأي قطعة تم استبدالها')}"></div>
+   <div style="margin-bottom:14px"><label class="f" for="cNote">${T('notes')}</label><input class="inp" id="cNote" placeholder="${L('What was done, and any part replaced','ما تم تنفيذه وأي قطعة تم استبدالها')}"></div>
    <button class="btn pri" onclick="closeWO('${w.id}')">${I('check',16,2.2)} ${T('markdone')}</button>
   </div></div>`
   :`<div class="sect">${T('wo_close')}</div>
@@ -3971,7 +4056,7 @@ async function closeWO(id){
              closedAt: at.toISOString()});
  const ok = await settledOK();
  saving(key, false);
- if(!ok){ toast(T('wo_not_saved')); return; }
+ if(!ok){ toast(notSaved('wo_not_saved')); return; }
  markClosed(w, at);
  w.status='done'; w.labH=labH; w.mat=matN;
  w.note=note;
@@ -3997,7 +4082,7 @@ async function recordPayment(unit, q){
  }, 'console');
  const ok = await settledOK();
  saving(key, false);
- if(!ok){ render(); toast(T('pay_not_recorded')); return; }
+ if(!ok){ render(); toast(notSaved('pay_not_recorded')); return; }
  row.paid = true; row.paidOn = d; row.ref = ref;
  recompute(); closeDrawer(); render();
  const early = row.due && row.due > TODAY;
@@ -4028,7 +4113,7 @@ async function assignWO(id){
  LINK_wo(id,{status:'assigned', tech:t.n, tech_ar:t.ar});
  const ok = await settledOK();
  saving(key, false);
- if(!ok){ toast(T('wo_not_saved')); return; }
+ if(!ok){ toast(notSaved('wo_not_saved')); return; }
  w.status='assigned'; w.tech=t.n; w.tech_ar=t.ar; w.supplier=t.type==='sup';
  recompute();
  closeDrawer(); render(); toast(L('Assigned. The resident can see it.','تم الإسناد، ويظهر ذلك للساكن.'));
@@ -4042,7 +4127,7 @@ async function startWO(id){
  LINK_wo(id,{status:'progress'});
  const ok = await settledOK();
  saving(key, false);
- if(!ok){ toast(T('wo_not_saved')); return; }
+ if(!ok){ toast(notSaved('wo_not_saved')); return; }
  w.status='progress'; recompute();
  closeDrawer(); render(); toast(L('Marked in progress.','تم وضعه قيد التنفيذ.'));
 }
@@ -4881,11 +4966,11 @@ function docOpen(ref, kind){
   openDrawer(T('doc_t') + `<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${label}</div>`, `
     <div class="card mb"><div class="bd">
       <div class="warnbox" style="margin-bottom:14px">${I('alert',16,2.2)}<span>${T('doc_store_'+DOCSTORE.mode)}</span></div>
-      <label class="f">${T('doc_kind')}</label>
+      <label class="f" for="dKind">${T('doc_kind')}</label>
       <select class="inp" id="dKind" style="margin-bottom:12px">
         ${DOCKINDS.map(k=>`<option value="${k}" ${kind===k?'selected':''}>${T('doc_k_'+k)}</option>`).join('')}
       </select>
-      <label class="f">${T('doc_file')}</label>
+      <label class="f" for="dFile">${T('doc_file')}</label>
       <input type="file" class="inp" id="dFile" onchange="docRun(this)"
         accept=".pdf,.jpg,.jpeg,.png,.heic,.webp">
       <div id="dBusy" style="display:none;margin-top:12px;font-size:13px;color:var(--muted);font-weight:700">${T('doc_reading')}</div>
@@ -4928,6 +5013,7 @@ async function docRun(input){
     const {rec, read, dup} = out;
     $('dBusy').style.display='none';
     $('dOut').innerHTML = docResultHtml(rec, read, dup);
+    labelControls($('dOut'));
     recompute();
   }catch(e){
     $('dBusy').style.display='none';
@@ -4960,26 +5046,26 @@ function docResultHtml(rec, read, dup){
     <p style="font-size:13px;color:var(--ink-2);line-height:1.65;margin:0 0 14px">${T('doc_found_d')}</p>
     ${DOCCTX.ref.type==='unit'?`
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
-      <div><label class="f">${T('f_term')} — ${T('rp_from')}</label>
+      <div><label class="f" for="dStart">${T('f_term')} — ${T('rp_from')}</label>
         <select class="inp" id="dStart"><option value="">—</option>
         ${cand.dates.map((d,i)=>`<option value="${d}" ${i===0?'selected':''}>${d}</option>`).join('')}</select></div>
-      <div><label class="f">${T('f_term')} — ${T('leaseend')}</label>
+      <div><label class="f" for="dEnd">${T('f_term')} — ${T('leaseend')}</label>
         <select class="inp" id="dEnd"><option value="">—</option>
         ${cand.dates.map((d,i)=>`<option value="${d}" ${i===cand.dates.length-1&&cand.dates.length>1?'selected':''}>${d}</option>`).join('')}</select></div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-      <div><label class="f">${T('h_annual')}</label>
+      <div><label class="f" for="dValue">${T('h_annual')}</label>
         <select class="inp" id="dValue"><option value="">—</option>
         ${cand.amounts.map((a,i)=>`<option value="${a}" ${i===0?'selected':''}>${money(a)}</option>`).join('')}</select></div>
-      <div><label class="f">${T('doc_instn')}</label>
+      <div><label class="f" for="dInst">${T('doc_instn')}</label>
         <input class="inp" id="dInst" type="number" min="1" max="12" placeholder="—"></div>
     </div>
     <button class="btn pri" onclick="docApplyLease()">${I('check',16,2.2)} ${T('doc_apply')}</button>`
     :`
-    <div style="margin-bottom:12px"><label class="f">${T('f_amount')}</label>
+    <div style="margin-bottom:12px"><label class="f" for="dAmt">${T('f_amount')}</label>
       <select class="inp" id="dAmt"><option value="">—</option>
       ${cand.amounts.map((a,i)=>`<option value="${a}" ${i===0?'selected':''}>${money(a)}</option>`).join('')}</select></div>
-    <div style="margin-bottom:14px"><label class="f">${T('log_date')}</label>
+    <div style="margin-bottom:14px"><label class="f" for="dPaidOn">${T('log_date')}</label>
       <select class="inp" id="dPaidOn"><option value="">—</option>
       ${cand.dates.map((d,i)=>`<option value="${d}" ${i===0?'selected':''}>${d}</option>`).join('')}</select></div>
     <button class="btn pri" onclick="docApplyReceipt()">${I('check',16,2.2)} ${T('doc_apply_r')}</button>`}
@@ -4988,15 +5074,19 @@ function docResultHtml(rec, read, dup){
 }
 
 /* a confirmed contract writes the lease terms, and says what it changed */
-function docApplyLease(){
+/* DUAL-03. This changed the flat on screen, closed the drawer and announced
+   "{u} updated from the contract" before the database had answered — the
+   same defect CON-02 removed from the five action buttons, left standing on
+   the two document buttons. It waits now, like they do. */
+async function docApplyLease(){
+  if(!writeGate()) return;
   const u = UNITS.find(x=>x.u===DOCCTX.ref.unit); if(!u) return;
   const start = $('dStart').value, end = $('dEnd').value;
   const value = Number($('dValue').value)||0, n = Number($('dInst').value)||0;
   if(!start && !end && !value){ toast(T('doc_need')); return; }
+  const key = 'lease:' + u.u; if(PENDING.has(key)) return;
   const was = {start:u.leaseStart, end:u.leaseEnd, rent:u.rent, inst:u.inst.length};
-  if(start) u.leaseStart = new Date(start);
-  if(end)   u.leaseEnd   = new Date(end);
-  if(value) u.rent = value;
+  let rows = null;
   if(value && n && start){
     /* Money already received is not the contract's to rewrite. This rebuilt the
        schedule with paid:false on every line, so applying a lease document to a
@@ -5007,7 +5097,7 @@ function docApplyLease(){
        panel matches them. */
     const had = {};
     (u.inst || []).forEach(x => { if(x.paid) had[x.q] = x; });
-    const rows=[]; let left=value;
+    rows=[]; let left=value;
     for(let i=0;i<n;i++){
       const d=addMonthsClamped(start, i);
       const amt = i===n-1 ? left : Math.round(value/n);
@@ -5020,42 +5110,78 @@ function docApplyLease(){
     /* A receipt with no line to sit on is the reconciliation case, and the
        operator has to see it before the database answers. */
     const orphan = Object.keys(had).map(Number).filter(q => q > n);
-    if(orphan.length)
+    /* DUAL-03. This used to warn — under a sentence that said nothing had been
+       sent — and then send anyway. It stops here. The database would refuse
+       the schedule in any case (a paid row cannot be dropped); the point is
+       that the operator hears it from the figures, not from a refusal. */
+    if(orphan.length){
       toast(L('Instalment ' + orphan.join(', ') + ' has been paid and the new schedule has no '
-              + 'line for it. Nothing has been sent yet — check the figures.',
+              + 'line for it. Nothing has been sent — check the figures.',
               'الدفعة ' + orphan.join('، ') + ' مسددة ولا يوجد لها سطر في الجدول الجديد. '
-              + 'لم يُرسل شيء بعد — راجع الأرقام.'));
-    u.inst = rows;
+              + 'لم يُرسل شيء — راجع الأرقام.'));
+      return;
+    }
   }
-  if(!u.occupied && (value||start)) u.occupied = true;
+  saving(key, true);
   LINK.commit(s=>{
     s.leases = s.leases || {};
     s.leases[u.u] = {start: start||null, end: end||null, value: value||null, n: n||null,
                      doc: DOCCTX.rec.id, at: new Date().toISOString()};
   }, 'console');
+  const ok = await settledOK();
+  saving(key, false);
+  if(!ok){ toast(notSaved('lease_not_applied')); return; }
+  /* Only now, with the lease in the database, does the flat on screen change. */
+  if(start) u.leaseStart = new Date(start);
+  if(end)   u.leaseEnd   = new Date(end);
+  if(value) u.rent = value;
+  if(rows)  u.inst = rows;
+  if(!u.occupied && (value||start)) u.occupied = true;
   recompute(); closeDrawer(); render();
   toast(T('doc_applied').replace('{u}', u.u)
     + (was.rent!==u.rent ? ' ' + money(was.rent) + ' → ' + money(u.rent) : ''));
 }
 
 /* a confirmed receipt settles the instalment it is attached to */
-function docApplyReceipt(){
+/* DUAL-02. Two things this did that a ledger must not.
+
+   It settled the instalment whatever the receipt said: a SAR 1 receipt
+   marked a SAR 100 instalment paid, with a toast that noted the difference
+   and settled it anyway. The instalments table records whether a line is
+   paid — there is no partial allocation in it — so a receipt that does not
+   cover the line cannot be applied to the line, and is refused here with
+   both figures in the sentence. And a receipt whose date could not be read
+   was recorded as paid TODAY, which is a date nobody knew dressed as one
+   somebody did. The date stays unknown.
+
+   DUAL-03. And it announced before the database answered. It waits now. */
+async function docApplyReceipt(){
+  if(!writeGate()) return;
   const r = DOCCTX.ref;
   const u = UNITS.find(x=>x.u===r.unit); if(!u) return;
   const row = u.inst.find(x=>x.q===r.inst); if(!row) return;
   const amt = Number($('dAmt').value)||0;
   const on  = $('dPaidOn').value;
-  if(Math.abs(amt - row.amt) > 1 && amt)
-    toast(T('doc_amtdiff').replace('{a}',money(amt)).replace('{b}',money(row.amt)));
+  if(!amt){ toast(T('doc_amt_need')); return; }
+  if(Math.abs(amt - row.amt) > 1){
+    toast(T('doc_amt_mismatch').replace('{a}',money(amt)).replace('{n}',NUM(row.q)).replace('{b}',money(row.amt)));
+    return;
+  }
+  const key = 'pay:' + r.unit + ':' + r.inst; if(PENDING.has(key)) return;
   const ref = 'RCT-' + DOCCTX.rec.hash.slice(0,6).toUpperCase();
-  row.paid = true; row.paidOn = on ? new Date(on) : TODAY; row.ref = ref;
+  saving(key, true);
   LINK.commit(s=>{
     s.pay = s.pay || {};
     s.pay[r.unit] = s.pay[r.unit] || {paid:{}};
-    s.pay[r.unit].paid[r.inst] = {ref, on:(on?new Date(on):TODAY).toISOString(), doc:DOCCTX.rec.id};
+    s.pay[r.unit].paid[r.inst] = {ref, on: on ? new Date(on + 'T12:00:00').toISOString() : null, doc:DOCCTX.rec.id};
   }, 'console');
+  const ok = await settledOK();
+  saving(key, false);
+  if(!ok){ toast(notSaved('receipt_not_applied')); return; }
+  row.paid = true; row.paidOn = on ? new Date(on + 'T12:00:00') : null; row.ref = ref;
   recompute(); closeDrawer(); render();
-  toast(T('doc_receipted').replace('{r}', ref));
+  toast(on ? T('doc_receipted').replace('{r}', ref)
+           : T('doc_receipted_nodate').replace('{r}', ref));
 }
 
 /* ------------------------------ coverage ------------------------------ */
@@ -5822,10 +5948,10 @@ function pgAnn(){
 }
 function newAnn(){
  openDrawer(T('newann'),`
-  <div style="margin-bottom:14px"><label class="f">${T('title_en')} <span class="req">*</span></label><input class="inp" id="aEn"></div>
-  <div style="margin-bottom:14px"><label class="f">${T('title_ar')} <span class="req">*</span></label><input class="inp" id="aAr" dir="rtl"></div>
-  <div style="margin-bottom:14px"><label class="f">${L('Body — English','النص — إنجليزي')}</label><textarea class="inp" id="aBodyEn" rows="3"></textarea></div>
-  <div style="margin-bottom:14px"><label class="f">${L('Body — Arabic','النص — عربي')}</label><textarea class="inp" id="aBodyAr" rows="3" dir="rtl"></textarea></div>
+  <div style="margin-bottom:14px"><label class="f" for="aEn">${T('title_en')} <span class="req">*</span></label><input class="inp" id="aEn"></div>
+  <div style="margin-bottom:14px"><label class="f" for="aAr">${T('title_ar')} <span class="req">*</span></label><input class="inp" id="aAr" dir="rtl"></div>
+  <div style="margin-bottom:14px"><label class="f" for="aBodyEn">${L('Body — English','النص — إنجليزي')}</label><textarea class="inp" id="aBodyEn" rows="3"></textarea></div>
+  <div style="margin-bottom:14px"><label class="f" for="aBodyAr">${L('Body — Arabic','النص — عربي')}</label><textarea class="inp" id="aBodyAr" rows="3" dir="rtl"></textarea></div>
   <!-- There was a selector here offering "All residents" or "Floor 3 only". It
        had no id, pubAnn never read it, and it wrote aud:'all' every time — so
        choosing a floor published to all 37 apartments while the screen said the
@@ -5844,7 +5970,14 @@ function newAnn(){
   <div class="warnbox" style="margin-bottom:16px">${I('alert',16,2.2)}<span>${L('Both languages are required before an announcement can be published.','اللغتان مطلوبتان قبل نشر أي إعلان.')}</span></div>
   <button class="btn pri" onclick="pubAnn()">${I('mega',16,2.2)} ${L('Publish','نشر')}</button>`);
 }
-function pubAnn(){
+/* DUAL-04. This put the notice in the list, closed the drawer and said
+   "Published and pushed to residents" while the insert was still in flight —
+   a refused insert left a notice on the office's screen that no resident
+   would ever see, and the draft was gone with the drawer. It waits now; the
+   draft stays in the form until the database has the row; the row that joins
+   the list is the database's, under the id the database gave it; and a second
+   press while the first is in flight does nothing. */
+async function pubAnn(){
  if(!writeGate()) return;
  if(!$('aEn').value.trim()||!$('aAr').value.trim()){toast(T('t_annblock'));return;}
  const d=new Date();
@@ -5854,8 +5987,27 @@ function pubAnn(){
    aud:'all', st:'published',
    date:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),
    ok:true};
- ANNS.unshift(rec);
+ /* The same notice, already published today, is a second press that found
+    its way round the guard — after a lost answer, or from a second tab. */
+ if(ANNS.some(a => a.st==='published' && a.en===rec.en && a.ar===rec.ar && a.date===rec.date)){
+   toast(T('ann_dup')); return;
+ }
+ const key = 'ann'; if(PENDING.has(key)) return;
+ saving(key, true);
  LINK.commit(s=>{ s.anns.unshift(rec); }, 'console');
+ const ok = await settledOK();
+ saving(key, false);
+ if(!ok){ toast(notSaved('ann_not_published')); return; }
+ const row = LAST_SAVE && LAST_SAVE.landed && LAST_SAVE.landed['ann:' + rec.id];
+ if(row){
+   if(row.id != null) rec.id = row.id;
+   if(row.published_at) rec.date = String(row.published_at).slice(0,10);
+   if(row.status) rec.st = row.status;
+   /* The shared record's copy carries the database's id too, so the next
+      reload and the next diff both recognise it as the same notice. */
+   try{ (LINK.get().anns || []).forEach(a => { if(a === rec || a.id === 'AN-' + d.getTime()) a.id = rec.id; }); }catch(e){}
+ }
+ if(!ANNS.some(a => a.id === rec.id)) ANNS.unshift(rec);
  closeDrawer();render();toast(L('Published and pushed to residents.','تم النشر وإرسال إشعار للسكان.'));
 }
 
@@ -6086,17 +6238,34 @@ function saving(key, on){
   if(on) PENDING.add(key); else PENDING.delete(key);
   try{ document.body.classList.toggle('saving', PENDING.size > 0); }catch(e){}
 }
+let LAST_SAVE = null;
 async function settledOK(){
+  LAST_SAVE = null;
   try{
     /* Not signed in: LINK is the localStorage record, commit is synchronous,
        and the only failure it knows is a full store, which healthy() reports. */
     if(typeof LINK.settled !== 'function')
       return typeof LINK.healthy === 'function' ? LINK.healthy() !== false : true;
     const r = await LINK.settled();
+    LAST_SAVE = r || null;
     /* Held is not failed, but it is not recorded either: the write is sitting
        in the reconciliation panel waiting for a decision. Nothing was saved. */
-    return !(r && (r.failed || r.held));
+    if(r && (r.failed || r.held)) return false;
+    /* DUAL-01. A push that sent nothing confirms nothing. The shared record
+       already matched what was asked, so there was no write to acknowledge —
+       and "the database did not object" is not the sentence "the database
+       did this". A caller that is about to speak treats it as not done. */
+    if(r && r.wrote === 0) return false;
+    return true;
   }catch(e){ return false; }
+}
+/* The sentence for a save that did not happen. The caller's own words unless
+   the write is held for a decision, or nothing was sent at all — each of
+   those is its own fact and gets its own sentence. */
+function notSaved(key){
+  if(LAST_SAVE && !LAST_SAVE.failed && LAST_SAVE.held) return T('save_held');
+  if(LAST_SAVE && !LAST_SAVE.failed && !LAST_SAVE.held && LAST_SAVE.wrote === 0) return T('save_nothing');
+  return T(key);
 }
 
 /* Shown instead of a CRM screen when nobody has signed in. It explains the
@@ -8167,13 +8336,48 @@ const LIVE = (function(){
     return rows;
   });
 
+  /* DUAL-01. The shared record is a list of intents laid over what the
+     database last said. Until 16 September a refused intent STAYED in it: the
+     write failed, the operator was told, and the record went on holding the
+     change as if it had landed. The next press of the same button then found
+     nothing to send — the record already matched — and settled() reported a
+     clean pass with zero writes, which every caller read as success. One
+     refusal, one retry, one green toast, no write. LINK_apply made it worse:
+     a reload that could not reach the database re-applied the record over
+     the screen, refused change and all.
+
+     Every write now carries its own undo. A write that is rejected — or
+     held for a decision — is taken back out of the record before push()
+     resolves, so the record holds confirmed changes and in-flight ones and
+     nothing else, and the retry has something to send. What the database
+     returned is kept beside each key for callers that must show the row the
+     database holds rather than the one they asked for. */
   async function push(before, after){
-    const jobs = [];
+    const jobs = [], undos = [];
     const renamed = {};                 /* reference sent -> reference that landed */
+    const landed  = {};                 /* what the database returned, by the key it was sent under */
+    const snap = v => v === undefined ? undefined : JSON.parse(JSON.stringify(v));
+    /* The calendar day of a timestamp where the operator sat, not the UTC
+       day: a payment recorded at one in the morning in Riyadh is that day's
+       payment, and slicing the ISO string made it yesterday's. */
+    const localDay = v => {
+      const dt = new Date(v);
+      if(isNaN(dt)) return String(v).slice(0,10);
+      return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+    };
+    const attempt = (key, p, undo) => {
+      jobs.push(Promise.resolve(p).then(r => {
+        landed[key] = Array.isArray(r) ? (r[0] === undefined ? null : r[0]) : (r === undefined ? null : r);
+        return r;
+      }));
+      undos.push(undo || null);
+    };
 
     Object.keys(after.wo || {}).forEach(id => {
       const a = after.wo[id];
-      if(eq(a, (before.wo || {})[id])) return;
+      const was = (before.wo || {})[id];
+      if(eq(a, was)) return;
+      const sent = snap(a);
       const p = {};
       if(a.status !== undefined){
         p.status = a.status;
@@ -8188,12 +8392,13 @@ const LIVE = (function(){
       if(a.mat    !== undefined) p.material    = a.mat;
       if(a.note   !== undefined) p.note        = a.note;
       if(a.rating !== undefined) p.rating      = a.rating;
-      jobs.push(touched(SB.upd('work_orders', 'id=eq.' + encodeURIComponent(id), p), 'job ' + id));
+      attempt('wo:' + id, touched(SB.upd('work_orders', 'id=eq.' + encodeURIComponent(id), p), 'job ' + id),
+              () => { if(after.wo && eq(after.wo[id], sent)){ if(was === undefined) delete after.wo[id]; else after.wo[id] = was; } });
     });
 
     (after.newWO || []).forEach(w => {
       if((before.newWO || []).some(x => x.id === w.id)) return;
-      jobs.push(insertWO({
+      attempt('wo:' + w.id, insertWO({
         id:w.id, unit_id:w.unit, category:w.cat, description:w.desc,
         request_key: w.request_key || null,
         /* APP-02. The resident app collects a title and a preferred visit
@@ -8203,7 +8408,8 @@ const LIVE = (function(){
         title: w.title || null,
         visit_window: w.visit ? visitOK(w.visit) : null,
         priority:priOK(w.pri), channel:'app', status:'submitted', raised_at:w.raised},
-        renamed));
+        renamed),
+        () => { const i = (after.newWO || []).indexOf(w); if(i > -1) after.newWO.splice(i, 1); });
     });
 
     (after.jobs || []).forEach(j => {
@@ -8213,21 +8419,29 @@ const LIVE = (function(){
          reference is minted says so in as many words. Two consoles holding the
          same hundred jobs both propose I101, one inserts, and the other's row
          dies on the primary key while the job sits on screen looking logged. */
-      jobs.push(insertWO({
+      attempt('job:' + j.id, insertWO({
         id:j.id, unit_id:j.unit, category:j.cat, description:j.desc,
         request_key: j.request_key || null,
         priority:'routine', channel:'desk', status:'done', technician:j.supplier || null,
         raised_at:day, closed_at:j.date + 'T12:00:00Z',
         labour_hrs:j.labH || 0, material:j.mat || 0,
         measurable:false, note:j.inv ? ('Invoice ' + j.inv) : null},
-        renamed));
+        renamed),
+        () => {
+          const i = (after.jobs || []).indexOf(j); if(i > -1) after.jobs.splice(i, 1);
+          /* The reference this job took is released with it, if nothing else
+             has moved the counter since: a refused insert left no row, so the
+             retry may carry the same number — and the same key. */
+          if(Number(after.nextSeq) === refSeq(j.id) + 1 && before.nextSeq !== undefined) after.nextSeq = before.nextSeq;
+        });
     });
 
     (after.anns || []).forEach(a => {
       if((before.anns || []).some(x => x.id === a.id)) return;
-      jobs.push(SB.ins('announcements', {
+      attempt('ann:' + a.id, SB.ins('announcements', {
         title_en:a.en, title_ar:a.ar, body_en:a.body_en, body_ar:a.body_ar,
-        audience:a.aud || 'all', status:'published', published_at:new Date().toISOString()}));
+        audience:a.aud || 'all', status:'published', published_at:new Date().toISOString()}),
+        () => { const i = (after.anns || []).indexOf(a); if(i > -1) after.anns.splice(i, 1); });
     });
 
     Object.keys(after.pay || {}).forEach(unit => {
@@ -8235,44 +8449,68 @@ const LIVE = (function(){
       const B = ((before.pay || {})[unit] || {}).paid || {};
       Object.keys(A).forEach(q => {
         if(eq(A[q], B[q])) return;
+        const sent = snap(A[q]), was = B[q];
+        const undo = () => {
+          const cur = after.pay && after.pay[unit] && after.pay[unit].paid;
+          if(cur && eq(cur[q], sent)){ if(was === undefined) delete cur[q]; else cur[q] = was; }
+        };
         const lid = leaseOf[unit];
         /* CON-02. This used to `return` — and a payment recorded against a
            flat with no active lease was dropped on the floor with nothing
            pushed, nothing failed, and settled() reporting a clean success. It
            is a failure, and it is one the operator has to hear about. */
         if(!lid){
-          jobs.push(Promise.reject(new Error('no active lease on ' + unit + ' to record a payment against')));
+          attempt('pay:' + unit + ':' + q,
+                  Promise.reject(new Error('no active lease on ' + unit + ' to record a payment against')), undo);
           return;
         }
-        jobs.push(touched(SB.upd('instalments', 'lease_id=eq.' + lid + '&seq=eq.' + q, {
+        attempt('pay:' + unit + ':' + q, touched(SB.upd('instalments', 'lease_id=eq.' + lid + '&seq=eq.' + q, {
           paid:true,
-          paid_on:(A[q].on || new Date().toISOString()).slice(0,10),
-          receipt_ref:A[q].ref || null}), 'instalment ' + q + ' on ' + unit));
+          /* DUAL-02. A receipt whose date could not be read is recorded with
+             no date, not with today's. This used to substitute the moment of
+             the sync for a date nobody knew. */
+          paid_on: A[q].on ? localDay(A[q].on) : null,
+          receipt_ref:A[q].ref || null}), 'instalment ' + q + ' on ' + unit), undo);
       });
     });
 
     Object.keys(after.leases || {}).forEach(unit => {
-      if(eq(after.leases[unit], (before.leases || {})[unit])) return;
-      jobs.push(saveLease(unit, after.leases[unit]));
+      const was = (before.leases || {})[unit];
+      if(eq(after.leases[unit], was)) return;
+      const sent = snap(after.leases[unit]);
+      attempt('lease:' + unit, saveLease(unit, after.leases[unit]),
+              () => { if(after.leases && eq(after.leases[unit], sent)){ if(was === undefined) delete after.leases[unit]; else after.leases[unit] = was; } });
     });
 
     (after.docs || []).forEach(d => {
       if((before.docs || []).some(x => x.id === d.id && x.key === d.key)) return;
-      jobs.push(SB.ins('documents', {
+      attempt('doc:' + d.id, SB.ins('documents', {
         kind:d.kind, storage_path:d.path || ('unstored/' + d.id), filename:d.name,
         mime:d.mime, bytes:d.size, sha256:d.hash, readable:!!d.readable, ref_key:d.key
-      }).then(r => { if(r && r[0]) d.row = r[0].id; }));
+      }).then(r => { if(r && r[0]) d.row = r[0].id; return r; }),
+        () => { const i = (after.docs || []).indexOf(d); if(i > -1) after.docs.splice(i, 1); });
     });
     (before.docs || []).forEach(d => {
       if((after.docs || []).some(x => x.id === d.id && x.key === d.key)) return;
-      if(d.row) jobs.push(SB.del('documents', 'id=eq.' + d.row));
+      if(d.row) attempt('undoc:' + d.id, SB.del('documents', 'id=eq.' + d.row),
+        () => { if(after.docs && !after.docs.some(x => x.id === d.id && x.key === d.key)) after.docs.push(d); });
     });
 
-    if(after.register && !eq(after.register, before.register))
-      jobs.push(saveRegister(after.register));
+    if(after.register && !eq(after.register, before.register)){
+      const sent = snap(after.register), was = before.register;
+      attempt('register', saveRegister(after.register),
+              () => { if(eq(after.register, sent)){ if(was === undefined) delete after.register; else after.register = was; } });
+    }
 
     const out = await Promise.allSettled(jobs);
     const bad = out.filter(r => r.status === 'rejected');
+    /* DUAL-01. Every write that did not land is taken back out of the shared
+       record, so the record holds what the database has confirmed or is still
+       being asked, and nothing else. Held counts as not landed: the change is
+       sitting in the reconciliation panel, and the panel carries its own copy. */
+    out.forEach((r, i) => {
+      if(r.status === 'rejected' && undos[i]){ try{ undos[i](); }catch(e){ console.error('LIVE.undo', e); } }
+    });
 
     /* REQ-01. A reference that moved is corrected everywhere this console
        remembers it. `logJobAdd` puts the job on screen before the write leaves,
@@ -8321,8 +8559,16 @@ const LIVE = (function(){
     nudge();
     /* What actually happened, for a caller that needs to know before it speaks.
        importApply used to announce "Register replaced" while this was still in
-       flight, so the sentence appeared over a database that had refused it. */
-    return {held: conflicted.length, failed: failed.length, batch: !!batch};
+       flight, so the sentence appeared over a database that had refused it.
+
+       DUAL-01: `wrote` is how many writes were attempted. Zero means the
+       record already matched and nothing was sent — which acknowledges
+       nothing, and no caller may read it as if it did. `landed` carries the
+       rows the database returned, by the key each was sent under, for a
+       caller that must show what the database holds rather than what it
+       asked for. */
+    return {held: conflicted.length, failed: failed.length, batch: !!batch,
+            wrote: jobs.length, landed, renamed};
   }
 
   /* The most recent push, so a caller can wait for its outcome. Writes stay
