@@ -966,6 +966,21 @@ const D={
   f_rate:'Collection rate', f_over30:'Overdue beyond 30 days',
   f_over30_d:'needs collection action',
   u_nolease:'Occupied, no lease on file',
+  u_expired:'Expired',
+  f_expired_lead:'This lease ended on {d} and the flat is still shown as occupied. Record what happened: the tenant renewed, or they did not.',
+  f_renewed:'Renewed',
+  f_notrenewed:'Not renewed',
+  f_renew_t:'Record a renewal',
+  f_renew_lead:'The tenancy continues. Set the new end date; the rent and schedule are unchanged. To change the rent or the instalments, use the lease document on the flat instead.',
+  f_renew_confirm:'Save the new end date',
+  f_renew_note:'This extends the current lease. It does not touch any instalment already recorded.',
+  f_renew_need:'A new end date is needed.',
+  f_renewed_ok:'{u} renewed — lease now ends {d}.',
+  f_notrenewed_t:'Not renewed',
+  f_notrenewed_confirm:'Mark {u} as not renewed? The tenancy is ended and the flat becomes vacant. Payments and history already recorded are kept.',
+  f_notrenewed_do:'Yes — end the tenancy',
+  f_notrenewed_fail:'The flat was NOT changed — the database did not accept it. It is as it was.',
+  f_notrenewed_ok:'{u} is now vacant — the tenancy has ended.',
   rc_title:'This schedule disagrees with money already received',
   rc_lead:'Nothing has been written. Every paid instalment below is kept exactly as it is — the database will not let it be changed. Read what the change does, then apply it or leave it.',
   rc_unit:'Flat', rc_seq:'Instalment', rc_what:'What it means',
@@ -1523,6 +1538,21 @@ const D={
   f_rate:'نسبة التحصيل', f_over30:'متأخر أكثر من ٣٠ يوماً',
   f_over30_d:'تحتاج إجراء تحصيل',
   u_nolease:'مشغولة بلا عقد في الملف',
+  u_expired:'منتهٍ',
+  f_expired_lead:'انتهى هذا العقد في {d} ولا تزال الشقة معروضة كمشغولة. سجّل ما حدث: هل جدّد المستأجر أم لا.',
+  f_renewed:'تم التجديد',
+  f_notrenewed:'لم يُجدَّد',
+  f_renew_t:'تسجيل تجديد',
+  f_renew_lead:'التعاقد مستمر. حدّد تاريخ الانتهاء الجديد؛ الإيجار والجدول دون تغيير. لتغيير الإيجار أو الدفعات، استخدم مستند العقد على الشقة.',
+  f_renew_confirm:'حفظ تاريخ الانتهاء الجديد',
+  f_renew_note:'يمدّد هذا العقد الحالي، ولا يمسّ أي دفعة سبق تسجيلها.',
+  f_renew_need:'يلزم تحديد تاريخ انتهاء جديد.',
+  f_renewed_ok:'تم تجديد {u} — ينتهي العقد الآن في {d}.',
+  f_notrenewed_t:'لم يُجدَّد',
+  f_notrenewed_confirm:'وضع {u} كغير مُجدَّد؟ يُنهى التعاقد وتصبح الشقة شاغرة. تبقى الدفعات والسجلّات المُسجَّلة كما هي.',
+  f_notrenewed_do:'نعم — إنهاء التعاقد',
+  f_notrenewed_fail:'لم تتغيّر الشقة — لم تقبله قاعدة البيانات. هي كما كانت.',
+  f_notrenewed_ok:'{u} أصبحت شاغرة — انتهى التعاقد.',
   rc_title:'هذا الجدول يخالف مبالغ مقبوضة فعلاً',
   rc_lead:'لم يُكتب شيء بعد. كل قسط مسدَّد أدناه يبقى كما هو تماماً — قاعدة البيانات لا تسمح بتغييره. اطّلع على أثر التغيير ثم طبّقه أو اتركه.',
   rc_unit:'الشقة', rc_seq:'القسط', rc_what:'المعنى',
@@ -4195,12 +4225,17 @@ function pgUnits(){
   <tbody>${lettableUnits().map(u=>{
    const cu=costByUnit.find(x=>x.u.u===u.u);
    const op=OPEN.filter(w=>w.unit===u.u).length;
-   return `<tr>
+   return `<tr class="click" tabindex="0" data-unit="${esc(u.u)}" onclick="finDetail(this.dataset.unit)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">
     <td class="strong">${NUM(u.u)}</td><td class="mono">${floorName(u.floor)}</td><td>${esc(u.type)}</td>
     <td class="num mono">${NUM(u.area)} m²</td>
     <td>${u.occupied?`<span class="pill p-good">${I('check',12,2.1)}${T('occupied')}</span>`:`<span class="pill p-neut">${T('vacant')}</span>`}</td>
     <td>${u.occupied?esc(L(u.tenant,u.tenant_ar)):'—'}</td>
     <td class="mono">${!u.occupied ? '—'
+      /* A lease past its end date with the flat still occupied is flagged here
+         — the date and an Expired badge together — so the register shows the
+         contradiction rather than a bare past date. The row opens the flat,
+         where the renewal decision is recorded. */
+      : isExpired(u) ? `${fmtD(u.leaseEnd)} <span class="pill p-crit">${I('alert',12,2.1)}${T('u_expired')}</span>`
       : u.leaseEnd ? fmtD(u.leaseEnd)
       /* Occupied with no lease end is not the same as no data. Five flats are
          in exactly this state and the register should say so rather than print
@@ -5866,6 +5901,13 @@ function pgFin(){
  <div class="note">${T('f_netnote')}</div>`;
 }
 
+/* A lease is expired when the flat is still occupied and its end date is in the
+   past. Computed live against TODAY (which rolls at midnight, APP-04), never a
+   stored flag — so the badge is always current without anything being written.
+   An occupied flat with no end date on file is a different state (u_nolease),
+   not an expiry. */
+function isExpired(u){ return !!(u && u.occupied && u.leaseEnd && u.leaseEnd < TODAY); }
+
 function finDetail(uid){
  const u=UNITS.find(x=>x.u===uid);if(!u)return;
  const maint=unitCost(u);
@@ -5921,6 +5963,15 @@ function finDetail(uid){
       cls:'flat'})}
   </div>
 
+  ${isExpired(u) ? `
+  <div class="card mb"><div class="bd">
+    <div class="warnbox">${I('alert',16,2.2)}<span>${esc(T('f_expired_lead').replace('{d}', fmtD(u.leaseEnd)))}</span></div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button class="btn pri" data-unit="${esc(u.u)}" onclick="openRenewal(this.dataset.unit)">${I('check',16,2.2)} ${T('f_renewed')}</button>
+      <button class="btn" data-unit="${esc(u.u)}" onclick="notRenewed(this.dataset.unit)">${T('f_notrenewed')}</button>
+    </div>
+  </div></div>` : ''}
+
   <div class="sect" style="margin-top:0">${T('f_lease')}</div>
   <div class="card mb">
    <div class="hd"><div style="flex:1">${(()=>{const n=docsFor({type:'unit',unit:u.u}).filter(d=>d.kind==='contract').length;
@@ -5956,6 +6007,80 @@ function finDetail(uid){
   </table></div></div>
   <div class="note">${T('f_netnote')}</div>`);
 }
+
+/* ---------- the renewal decision on an expired lease ----------
+   Two outcomes, both real writes. "Renewed" extends the lease end date through
+   the existing atomic save_lease_schedule path (ends_on only — the rent and the
+   instalment schedule are left exactly as they are, so no paid row is touched
+   and nothing is reconciled); a future end date clears the Expired badge on the
+   next paint. "Not renewed" ends the tenancy and vacates the flat through
+   set_lease_outcome, which does both in one transaction behind can_write().
+   Neither guesses: a renewal's new date is typed by the operator, and a vacancy
+   is confirmed before it is written. */
+let RENEW_UNIT = null;
+function openRenewal(unit){
+  if(!writeGate()) return;
+  const u = UNITS.find(x=>x.u===unit); if(!u) return;
+  RENEW_UNIT = unit;
+  const base = u.leaseEnd ? new Date(u.leaseEnd) : new Date(TODAY);
+  const nd = new Date(base.getTime()); nd.setFullYear(nd.getFullYear() + 1);
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  openDrawer(`${T('f_renew_t')}<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${L('Apartment','شقة')} ${esc(u.u)}</div>`, `
+    <p class="muted" style="margin:0 0 16px">${T('f_renew_lead')}</p>
+    <div class="fgroup"><label class="f" for="rnEnd">${T('leaseend')}</label>
+      <input class="inp" id="rnEnd" type="date" value="${iso(nd)}"></div>
+    <button class="btn pri" onclick="applyRenewal()">${I('check',16,2.2)} ${T('f_renew_confirm')}</button>
+    <div class="note" style="margin-top:12px">${T('f_renew_note')}</div>`);
+}
+async function applyRenewal(){
+  if(!writeGate()) return;
+  const u = UNITS.find(x=>x.u===RENEW_UNIT); if(!u) return;
+  const end = $('rnEnd') && $('rnEnd').value;
+  if(!end){ toast(T('f_renew_need')); return; }
+  const key = 'lease:' + u.u; if(PENDING.has(key)) return;
+  saving(key, true);
+  /* end only: scheduleArgs sends p_ends_on and nothing else, so
+     save_lease_schedule updates the date and leaves every instalment alone. */
+  LINK.commit(s => { s.leases = s.leases || {}; s.leases[u.u] = {end: end, at: new Date().toISOString()}; }, 'console');
+  const ok = await settledOK();
+  saving(key, false);
+  if(!ok){ toast(notSaved('lease_not_applied')); return; }
+  u.leaseEnd = new Date(end);
+  recompute(); closeDrawer(); render();
+  toast(T('f_renewed_ok').replace('{u}', u.u).replace('{d}', fmtD(u.leaseEnd)));
+}
+function notRenewed(unit){
+  if(!writeGate()) return;
+  const u = UNITS.find(x=>x.u===unit); if(!u) return;
+  /* Vacating a flat ends a tenancy, so it is confirmed before it is written —
+     Cancel returns to the flat unchanged. */
+  openDrawer(`${T('f_notrenewed_t')}<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${L('Apartment','شقة')} ${esc(u.u)}</div>`, `
+    <div class="warnbox">${I('alert',16,2.2)}<span>${esc(T('f_notrenewed_confirm').replace('{u}', u.u))}</span></div>
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+      <button class="btn danger" data-unit="${esc(u.u)}" onclick="notRenewedConfirm(this.dataset.unit)">${T('f_notrenewed_do')}</button>
+      <button class="btn" data-unit="${esc(u.u)}" onclick="finDetail(this.dataset.unit)">${T('rc_cancel')}</button>
+    </div>`);
+}
+async function notRenewedConfirm(unit){
+  if(!writeGate()) return;
+  const u = UNITS.find(x=>x.u===unit); if(!u) return;
+  const key = 'outcome:' + u.u; if(PENDING.has(key)) return;
+  saving(key, true);
+  let ok = false;
+  /* A direct named write, awaited: the screen changes only once the database
+     has ended the tenancy and vacated the flat. A refusal leaves the flat as it
+     was and says so — the same rule as every other write in this console. */
+  try{ const r = await SB.rpc('set_lease_outcome', {p_unit_id: u.u, p_outcome: 'not_renewed'});
+       ok = !!(r && r.occupied === false); }
+  catch(e){ ok = false; lastWriteErr = e; }
+  saving(key, false);
+  if(!ok){ toast(T('f_notrenewed_fail')); return; }
+  u.occupied = false; u.tenant = null; u.tenant_ar = null;
+  u.leaseEnd = null; u.leaseStart = null;
+  recompute(); closeDrawer(); render();
+  toast(T('f_notrenewed_ok').replace('{u}', u.u));
+}
+let lastWriteErr = null;
 
 /* ---------- announcements ---------- */
 function pgAnn(){
