@@ -903,6 +903,7 @@ const D={
   st_open:'Open work orders', st_breach:'past target',
   st_sla:'SLA compliance, month', st_close:'Avg time to close', st_cost:'Cost booked, month',
   st_occ:'Occupancy', st_adopt:'Requests raised in app',
+  st_occ_leased:'leased', st_occ_expired:'expired', st_occ_nolease:'no lease',
   hrs:'hrs', days:'days', of:'of', units:'units', sar:'SAR',
   vs:'vs last month', target:'target',
   /* charts */
@@ -1235,6 +1236,7 @@ const D={
   st_open:'أوامر عمل مفتوحة', st_breach:'تجاوزت المدة',
   st_sla:'الالتزام بالمدة، الشهر', st_close:'متوسط زمن الإغلاق', st_cost:'التكلفة المسجلة، الشهر',
   st_occ:'الإشغال', st_adopt:'الطلبات عبر التطبيق',
+  st_occ_leased:'مؤجَّرة', st_occ_expired:'منتهية', st_occ_nolease:'بلا عقد',
   hrs:'ساعة', days:'يوم', of:'من', units:'وحدة', sar:'ريال',
   vs:'مقارنة بالشهر الماضي', target:'المستهدف',
   c_flow:'الطلبات المستلمة والمغلقة', c_flow_d:'شهرياً، آخر ستة أشهر',
@@ -3682,10 +3684,26 @@ function render(){
 function occPct(){ return lettable ? Math.round(occupied / lettable * 100) : null; }
 function occStat(){
   const pct = occPct();
+  /* The tile counts physical occupancy \u2014 the register's occupied flag \u2014 so an
+     expired lease, or a flat with no lease on file, is still in the numerator.
+     This line reads the true composition from the same UNITS the number is
+     divided from: leased (a current lease), expired (past its end, still let),
+     and no lease on file. Shown only when the split is not all-current, so a
+     clean building carries no caveat. */
+  const exp     = UNITS.filter(u => isExpired(u)).length;
+  const noLease = UNITS.filter(u => u.occupied && !u.leaseEnd).length;
+  const leased  = Math.max(0, occupied - exp - noLease);
+  let split = '';
+  if(occupied && (exp || noLease)){
+    const parts = [NUM(leased) + ' ' + T('st_occ_leased')];
+    if(exp)     parts.push(NUM(exp) + ' ' + T('st_occ_expired'));
+    if(noLease) parts.push(NUM(noLease) + ' ' + T('st_occ_nolease'));
+    split = `<div class="sub2" style="margin-top:6px;font-size:11px;line-height:1.5">${parts.join(' \u00b7 ')}</div>`;
+  }
   return stat(T('st_occ'),
               lettable ? NUM(occupied) + '/' + NUM(lettable) : '\u2014',
               {t: pct === null ? T('st_occ_none') : NUM(pct) + '%', cls:'flat'},
-              `<div class="meter"><i style="width:${pct === null ? 0 : pct}%"></i></div>`);
+              `<div class="meter"><i style="width:${pct === null ? 0 : pct}%"></i></div>${split}`);
 }
 
 /* One pill, five states, so a state added to the function cannot quietly fall
