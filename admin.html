@@ -990,6 +990,19 @@ const D={
   f_renew_need:'Enter the start and end dates, the annual rent, and the number of instalments.',
   f_renewed_ok:'{u} renewed — new term to {d} at {r}.',
   f_renew_fail:'The renewal was NOT saved — the flat is unchanged.',
+  f_editlease:'Edit',
+  fe_t:'Edit the lease',
+  fe_lead:'Change the term, the rent or the payment plan on this lease. Paid instalments are never overwritten — if a change would touch one, you are asked to confirm it first.',
+  fe_start:'Term starts',
+  fe_end:'Term ends',
+  fe_rent:'Annual rent (SAR)',
+  fe_count:'Number of instalments',
+  fe_freq:'Paid',
+  fe_preview:'Payment plan',
+  fe_confirm:'Save changes',
+  fe_need:'Enter the term dates, the annual rent, and the number of instalments.',
+  fe_ok:'{u} updated — {r}, term to {d}.',
+  fe_fail:'The changes were NOT saved — the lease is unchanged.',
   f_notrenewed_t:'Not renewed',
   f_notrenewed_confirm:'Mark {u} as not renewed? The tenancy is ended and the flat becomes vacant. Payments and history already recorded are kept.',
   f_notrenewed_do:'Yes — end the tenancy',
@@ -1576,6 +1589,19 @@ const D={
   f_renew_need:'أدخل تاريخي البداية والنهاية، والإيجار السنوي، وعدد الدفعات.',
   f_renewed_ok:'تم تجديد {u} — مدة جديدة حتى {d} بقيمة {r}.',
   f_renew_fail:'لم يُحفظ التجديد — الشقة دون تغيير.',
+  f_editlease:'تعديل',
+  fe_t:'تعديل العقد',
+  fe_lead:'غيّر المدة أو الإيجار أو خطة الدفع لهذا العقد. لا يُستبدل أي قسط مسدَّد أبداً — وإذا كان التغيير سيمسّ قسطاً مسدَّداً، يُطلب تأكيدك أولاً.',
+  fe_start:'بداية المدة',
+  fe_end:'نهاية المدة',
+  fe_rent:'الإيجار السنوي (ر.س)',
+  fe_count:'عدد الدفعات',
+  fe_freq:'الدفع',
+  fe_preview:'خطة الدفع',
+  fe_confirm:'حفظ التغييرات',
+  fe_need:'أدخل تاريخي المدة، والإيجار السنوي، وعدد الدفعات.',
+  fe_ok:'تم تحديث {u} — {r}، وتنتهي المدة في {d}.',
+  fe_fail:'لم تُحفظ التغييرات — العقد دون تغيير.',
   f_notrenewed_t:'لم يُجدَّد',
   f_notrenewed_confirm:'وضع {u} كغير مُجدَّد؟ يُنهى التعاقد وتصبح الشقة شاغرة. تبقى الدفعات والسجلّات المُسجَّلة كما هي.',
   f_notrenewed_do:'نعم — إنهاء التعاقد',
@@ -1667,7 +1693,8 @@ const IC={
  plus:'<path d="M12 5v14M5 12h14"/>',
  chev:'<path d="m9 18 6-6-6-6"/>',
  up:'<path d="M12 19V5M6 11l6-6 6 6"/>',
- down:'<path d="M12 5v14M6 13l6 6 6-6"/>'
+ down:'<path d="M12 5v14M6 13l6 6 6-6"/>',
+ edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>'
 };
 const I=(n,s=16,w=1.9)=>`<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${IC[n]||IC.grid}</svg>`;
 
@@ -6005,6 +6032,7 @@ function finDetail(uid){
    <div class="hd"><div style="flex:1">${(()=>{const n=docsFor({type:'unit',unit:u.u}).filter(d=>d.kind==='contract').length;
      return n?`<span class="pill p-good">${I('check',12,2.1)}${T('doc_backed')}</span>`
              :`<span class="pill p-warn">${I('alert',12,2.1)}${T('doc_unbacked')}</span>`;})()}</div>
+    ${u.leaseEnd?`<button class="tbtn" data-unit="${esc(u.u)}" onclick="openLeaseEdit(this.dataset.unit)">${I('edit',15)}<span>${T('f_editlease')}</span></button>`:''}
     <button class="tbtn" data-unit="${esc(u.u)}" onclick="docOpen({type:'unit',unit:this.dataset.unit},'contract')">${I('up',15)}<span>${T('doc_attachbtn')}</span></button></div>
    <div class="bd"><dl class="kv">
     <dt>${T('tenant')}</dt><dd>${esc(L(u.tenant,u.tenant_ar))}</dd>
@@ -6157,6 +6185,105 @@ async function applyRenewal(){
             paid: false, paidOn: null, ref: null}));
   recompute(); closeDrawer(); render();
   toast(T('f_renewed_ok').replace('{u}', u.u).replace('{d}', fmtD(u.leaseEnd)).replace('{r}', money(v.rent)));
+}
+
+/* ---------- editing a lease in place (no document required) ----------
+   The "document-proof" path (Attach a contract, confirm what it reads) is the
+   default and unchanged. This is the direct correction: change the term, the
+   rent or the plan without a document. It rides the SAME atomic write as the
+   register import and the lease-document editor — save_lease_schedule, which
+   reconciles by instalment number and cannot overwrite a paid row: a change
+   that would touch one is held for the reconciliation panel, not applied. A
+   lease edited this way carries no contract, so it shows as not backed until a
+   contract is attached — the evidence badge stays honest. */
+let EDIT_UNIT = null;
+function editVals(){
+  return {
+    start: $('leStart') ? $('leStart').value : '',
+    end:   $('leEnd')   ? $('leEnd').value   : '',
+    rent:  $('leRent')  ? Number($('leRent').value) : NaN,
+    n:     $('leCount') ? parseInt($('leCount').value, 10) : NaN,
+    freq:  $('leFreq')  ? $('leFreq').value : 'quarterly'
+  };
+}
+function editValid(v){ return !!(v.start && v.end && v.rent > 0 && v.n >= 1 && v.end > v.start); }
+function previewLeaseEdit(){
+  const el = $('lePrev'); if(!el) return;
+  const u = UNITS.find(x => x.u === EDIT_UNIT); if(!u) return;
+  const v = editVals();
+  if(!editValid(v)){ el.innerHTML = `<div class="note">${T('fe_need')}</div>`; return; }
+  const rows = renewRows(v.start, v.rent, v.n, v.freq);
+  const paidSeq = {}; (u.inst || []).forEach(x => { if(x.paid) paidSeq[x.q] = true; });
+  const total = rows.reduce((a, r) => a + r.amount, 0);
+  const th = 'text-align:left;padding:6px 8px;border-bottom:1px solid rgba(128,128,128,.25);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.03em';
+  const td = 'padding:6px 8px;border-bottom:1px solid rgba(128,128,128,.15)';
+  el.innerHTML =
+    `<div class="f" style="margin-bottom:6px">${T('fe_preview')}</div>`
+    + `<table style="width:100%;border-collapse:collapse;font-size:13px">`
+    + `<thead><tr><th style="${th}">#</th><th style="${th}">${T('f_renew_due')}</th>`
+    + `<th style="${th};text-align:right">${T('f_renew_amount')}</th><th style="${th}"></th></tr></thead><tbody>`
+    + rows.map(r => `<tr><td style="${td}">${r.seq}</td><td style="${td}">${fmtD(r.due)}</td>`
+        + `<td style="${td};text-align:right" class="mono">${money(r.amount)}</td>`
+        + `<td style="${td}">${paidSeq[r.seq] ? `<span class="pill p-good">${L('Paid','مسدَّد')}</span>` : ''}</td></tr>`).join('')
+    + `</tbody><tfoot><tr><td style="${td}"></td><td style="${td};text-align:right" class="strong">${T('f_renew_total')}</td>`
+    + `<td style="${td};text-align:right" class="mono strong">${money(total)}</td><td style="${td}"></td></tr></tfoot></table>`;
+}
+function openLeaseEdit(unit){
+  if(!writeGate()) return;
+  const u = UNITS.find(x => x.u === unit); if(!u) return;
+  EDIT_UNIT = unit;
+  const iso = d => d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : '';
+  const n0 = (u.inst && u.inst.length) ? u.inst.length : 4;
+  const guess = n0 === 12 ? 'monthly' : n0 === 2 ? 'semiannual' : n0 === 1 ? 'annual' : 'quarterly';
+  openDrawer(`${T('fe_t')}<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${L('Apartment','شقة')} ${esc(u.u)}</div>`, `
+    <p class="muted" style="margin:0 0 16px">${T('fe_lead')}</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+      <div class="fgroup"><label class="f" for="leStart">${T('fe_start')}</label>
+        <input class="inp" id="leStart" type="date" value="${iso(u.leaseStart ? new Date(u.leaseStart) : null)}" oninput="previewLeaseEdit()"></div>
+      <div class="fgroup"><label class="f" for="leEnd">${T('fe_end')}</label>
+        <input class="inp" id="leEnd" type="date" value="${iso(u.leaseEnd ? new Date(u.leaseEnd) : null)}" oninput="previewLeaseEdit()"></div>
+      <div class="fgroup"><label class="f" for="leRent">${T('fe_rent')}</label>
+        <input class="inp" id="leRent" type="number" min="1" step="1" value="${u.rent || 0}" oninput="previewLeaseEdit()"></div>
+      <div class="fgroup"><label class="f" for="leCount">${T('fe_count')}</label>
+        <input class="inp" id="leCount" type="number" min="1" step="1" value="${n0}" oninput="previewLeaseEdit()"></div>
+      <div class="fgroup"><label class="f" for="leFreq">${T('fe_freq')}</label>
+        <select class="inp" id="leFreq" onchange="previewLeaseEdit()">
+          <option value="monthly">${T('freq_monthly')}</option>
+          <option value="quarterly">${T('freq_quarterly')}</option>
+          <option value="semiannual">${T('freq_semiannual')}</option>
+          <option value="annual">${T('freq_annual')}</option>
+        </select></div>
+    </div>
+    <div id="lePrev" style="margin:16px 0"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn pri" onclick="applyLeaseEdit()">${I('check',16,2.2)} ${T('fe_confirm')}</button>
+      <button class="btn" data-unit="${esc(u.u)}" onclick="finDetail(this.dataset.unit)">${T('rc_cancel')}</button>
+    </div>`);
+  if($('leFreq')) $('leFreq').value = guess;
+  previewLeaseEdit();
+}
+async function applyLeaseEdit(){
+  if(!writeGate()) return;
+  const u = UNITS.find(x => x.u === EDIT_UNIT); if(!u) return;
+  const v = editVals();
+  if(!editValid(v)){ toast(T('fe_need')); return; }
+  const key = 'lease:' + u.u; if(PENDING.has(key)) return;
+  saving(key, true);
+  LINK.commit(s => { s.leases = s.leases || {};
+    s.leases[u.u] = {start: v.start, end: v.end, value: v.rent, n: v.n, freq: v.freq, at: new Date().toISOString()}; }, 'console');
+  const ok = await settledOK();
+  saving(key, false);
+  if(!ok){ toast(notSaved('fe_fail')); return; }
+  const gen = renewRows(v.start, v.rent, v.n, v.freq);
+  const had = {}; (u.inst || []).forEach(x => { if(x.paid) had[x.q] = x; });
+  u.leaseStart = new Date(v.start);
+  u.leaseEnd   = new Date(v.end);
+  u.rent       = v.rent;
+  u.inst = gen.map(r => { const k = had[r.seq];
+    return k ? {q:r.seq, amt:k.amt, due:k.due || r.due, billed:true, paid:true, paidOn:k.paidOn || null, ref:k.ref || null}
+             : {q:r.seq, amt:r.amount, due:r.due, billed:r.due <= TODAY, paid:false, paidOn:null, ref:null}; });
+  recompute(); closeDrawer(); render();
+  toast(T('fe_ok').replace('{u}', u.u).replace('{r}', money(v.rent)).replace('{d}', fmtD(u.leaseEnd)));
 }
 function notRenewed(unit){
   if(!writeGate()) return;
