@@ -970,12 +970,26 @@ const D={
   f_expired_lead:'This lease ended on {d} and the flat is still shown as occupied. Record what happened: the tenant renewed, or they did not.',
   f_renewed:'Renewed',
   f_notrenewed:'Not renewed',
-  f_renew_t:'Record a renewal',
-  f_renew_lead:'The tenancy continues. Set the new end date; the rent and schedule are unchanged. To change the rent or the instalments, use the lease document on the flat instead.',
-  f_renew_confirm:'Save the new end date',
-  f_renew_note:'This extends the current lease. It does not touch any instalment already recorded.',
-  f_renew_need:'A new end date is needed.',
-  f_renewed_ok:'{u} renewed — lease now ends {d}.',
+  f_renew_t:'Renew the lease',
+  f_renew_lead:'Renewing opens a new term. The current term and any payments already recorded against it are kept as history — the new term gets its own schedule.',
+  f_renew_super:'Supersedes the current term, which ended {d}.',
+  f_renew_start:'New term starts',
+  f_renew_end:'New term ends',
+  f_renew_rent:'Annual rent (SAR)',
+  f_renew_count:'Number of instalments',
+  f_renew_freq:'Paid',
+  freq_monthly:'Monthly',
+  freq_quarterly:'Quarterly',
+  freq_semiannual:'Every 6 months',
+  freq_annual:'Once a year',
+  f_renew_preview:'The new term’s schedule',
+  f_renew_due:'Due',
+  f_renew_amount:'Amount',
+  f_renew_total:'Total',
+  f_renew_confirm:'Renew — open the new term',
+  f_renew_need:'Enter the start and end dates, the annual rent, and the number of instalments.',
+  f_renewed_ok:'{u} renewed — new term to {d} at {r}.',
+  f_renew_fail:'The renewal was NOT saved — the flat is unchanged.',
   f_notrenewed_t:'Not renewed',
   f_notrenewed_confirm:'Mark {u} as not renewed? The tenancy is ended and the flat becomes vacant. Payments and history already recorded are kept.',
   f_notrenewed_do:'Yes — end the tenancy',
@@ -1542,12 +1556,26 @@ const D={
   f_expired_lead:'انتهى هذا العقد في {d} ولا تزال الشقة معروضة كمشغولة. سجّل ما حدث: هل جدّد المستأجر أم لا.',
   f_renewed:'تم التجديد',
   f_notrenewed:'لم يُجدَّد',
-  f_renew_t:'تسجيل تجديد',
-  f_renew_lead:'التعاقد مستمر. حدّد تاريخ الانتهاء الجديد؛ الإيجار والجدول دون تغيير. لتغيير الإيجار أو الدفعات، استخدم مستند العقد على الشقة.',
-  f_renew_confirm:'حفظ تاريخ الانتهاء الجديد',
-  f_renew_note:'يمدّد هذا العقد الحالي، ولا يمسّ أي دفعة سبق تسجيلها.',
-  f_renew_need:'يلزم تحديد تاريخ انتهاء جديد.',
-  f_renewed_ok:'تم تجديد {u} — ينتهي العقد الآن في {d}.',
+  f_renew_t:'تجديد العقد',
+  f_renew_lead:'التجديد يفتح مدة جديدة. تبقى المدة الحالية وأي دفعات سُجِّلت عليها كسجلّ تاريخي — وللمدة الجديدة جدولها الخاص.',
+  f_renew_super:'يَحلّ محلّ المدة الحالية المنتهية في {d}.',
+  f_renew_start:'بداية المدة الجديدة',
+  f_renew_end:'نهاية المدة الجديدة',
+  f_renew_rent:'الإيجار السنوي (ر.س)',
+  f_renew_count:'عدد الدفعات',
+  f_renew_freq:'الدفع',
+  freq_monthly:'شهري',
+  freq_quarterly:'ربع سنوي',
+  freq_semiannual:'كل ٦ أشهر',
+  freq_annual:'مرة سنوياً',
+  f_renew_preview:'جدول المدة الجديدة',
+  f_renew_due:'الاستحقاق',
+  f_renew_amount:'المبلغ',
+  f_renew_total:'الإجمالي',
+  f_renew_confirm:'تجديد — فتح المدة الجديدة',
+  f_renew_need:'أدخل تاريخي البداية والنهاية، والإيجار السنوي، وعدد الدفعات.',
+  f_renewed_ok:'تم تجديد {u} — مدة جديدة حتى {d} بقيمة {r}.',
+  f_renew_fail:'لم يُحفظ التجديد — الشقة دون تغيير.',
   f_notrenewed_t:'لم يُجدَّد',
   f_notrenewed_confirm:'وضع {u} كغير مُجدَّد؟ يُنهى التعاقد وتصبح الشقة شاغرة. تبقى الدفعات والسجلّات المُسجَّلة كما هي.',
   f_notrenewed_do:'نعم — إنهاء التعاقد',
@@ -6009,45 +6037,126 @@ function finDetail(uid){
 }
 
 /* ---------- the renewal decision on an expired lease ----------
-   Two outcomes, both real writes. "Renewed" extends the lease end date through
-   the existing atomic save_lease_schedule path (ends_on only — the rent and the
-   instalment schedule are left exactly as they are, so no paid row is touched
-   and nothing is reconciled); a future end date clears the Expired badge on the
-   next paint. "Not renewed" ends the tenancy and vacates the flat through
-   set_lease_outcome, which does both in one transaction behind can_write().
-   Neither guesses: a renewal's new date is typed by the operator, and a vacancy
-   is confirmed before it is written. */
+   Two outcomes, both real writes, both behind can_write(). "Renewed" is a NEW
+   term: renew_lease supersedes the current lease and opens a fresh one at the
+   new dates and rent, with its own schedule — seq 1..N on a new lease row, so
+   the closed term's paid instalments are never touched or misfiled. "Not
+   renewed" ends the tenancy and vacates the flat through set_lease_outcome.
+   Neither guesses: the renewal's figures are typed and previewed, and a vacancy
+   is confirmed, before the database is asked. A pure date correction on the SAME
+   term stays in the lease-document editor; this button is for a real renewal. */
 let RENEW_UNIT = null;
+function renewStep(f){ return f==='monthly'?1 : f==='quarterly'?3 : f==='semiannual'?6 : f==='annual'?12 : 3; }
+/* The new term's rows, computed exactly as renew_lease does server-side — an
+   even base with the rounding remainder on the last instalment, dates stepped by
+   frequency — so the preview is the schedule that will be written, not a guess. */
+function renewRows(start, rent, n, freq){
+  const rows = [];
+  if(!start || !(rent > 0) || !(n >= 1)) return rows;
+  const step = renewStep(freq);
+  const totalHal = Math.round(rent * 100);
+  const baseHal  = Math.floor(totalHal / n);
+  const restHal  = totalHal - baseHal * n;
+  for(let i = 1; i <= n; i++){
+    const amt = (i === n ? baseHal + restHal : baseHal) / 100;
+    rows.push({seq:i, amount:amt, due:addMonthsClamped(start, (i - 1) * step)});
+  }
+  return rows;
+}
+function renewVals(){
+  return {
+    start: $('rnStart') ? $('rnStart').value : '',
+    end:   $('rnEnd')   ? $('rnEnd').value   : '',
+    rent:  $('rnRent')  ? Number($('rnRent').value) : NaN,
+    n:     $('rnCount') ? parseInt($('rnCount').value, 10) : NaN,
+    freq:  $('rnFreq')  ? $('rnFreq').value : 'quarterly'
+  };
+}
+function renewValid(v){ return !!(v.start && v.end && v.rent > 0 && v.n >= 1 && v.end > v.start); }
+function previewRenewal(){
+  const el = $('rnPrev'); if(!el) return;
+  const v = renewVals();
+  if(!renewValid(v)){ el.innerHTML = `<div class="note">${T('f_renew_need')}</div>`; return; }
+  const rows = renewRows(v.start, v.rent, v.n, v.freq);
+  const total = rows.reduce((a, r) => a + r.amount, 0);
+  const th = 'text-align:left;padding:6px 8px;border-bottom:1px solid rgba(128,128,128,.25);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.03em';
+  const td = 'padding:6px 8px;border-bottom:1px solid rgba(128,128,128,.15)';
+  el.innerHTML =
+    `<div class="f" style="margin-bottom:6px">${T('f_renew_preview')}</div>`
+    + `<table style="width:100%;border-collapse:collapse;font-size:13px">`
+    + `<thead><tr><th style="${th}">#</th><th style="${th}">${T('f_renew_due')}</th>`
+    + `<th style="${th};text-align:right">${T('f_renew_amount')}</th></tr></thead><tbody>`
+    + rows.map(r => `<tr><td style="${td}">${r.seq}</td><td style="${td}">${fmtD(r.due)}</td>`
+        + `<td style="${td};text-align:right" class="mono">${money(r.amount)}</td></tr>`).join('')
+    + `</tbody><tfoot><tr><td style="${td}"></td>`
+    + `<td style="${td};text-align:right" class="strong">${T('f_renew_total')}</td>`
+    + `<td style="${td};text-align:right" class="mono strong">${money(total)}</td></tr></tfoot></table>`;
+}
 function openRenewal(unit){
   if(!writeGate()) return;
-  const u = UNITS.find(x=>x.u===unit); if(!u) return;
+  const u = UNITS.find(x => x.u === unit); if(!u) return;
   RENEW_UNIT = unit;
-  const base = u.leaseEnd ? new Date(u.leaseEnd) : new Date(TODAY);
-  const nd = new Date(base.getTime()); nd.setFullYear(nd.getFullYear() + 1);
   const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const oldEnd = u.leaseEnd ? new Date(u.leaseEnd) : new Date(TODAY);
+  const st = new Date(oldEnd.getTime()); st.setDate(st.getDate() + 1);          // the day after the closed term
+  const en = new Date(st.getTime()); en.setFullYear(en.getFullYear() + 1); en.setDate(en.getDate() - 1);
+  const n0 = (u.inst && u.inst.length) ? u.inst.length : 4;
+  const rent0 = u.rent || 0;
   openDrawer(`${T('f_renew_t')}<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${L('Apartment','شقة')} ${esc(u.u)}</div>`, `
-    <p class="muted" style="margin:0 0 16px">${T('f_renew_lead')}</p>
-    <div class="fgroup"><label class="f" for="rnEnd">${T('leaseend')}</label>
-      <input class="inp" id="rnEnd" type="date" value="${iso(nd)}"></div>
-    <button class="btn pri" onclick="applyRenewal()">${I('check',16,2.2)} ${T('f_renew_confirm')}</button>
-    <div class="note" style="margin-top:12px">${T('f_renew_note')}</div>`);
+    <p class="muted" style="margin:0 0 12px">${T('f_renew_lead')}</p>
+    <div class="note" style="margin:0 0 16px">${esc(T('f_renew_super').replace('{d}', u.leaseEnd ? fmtD(u.leaseEnd) : '—'))}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
+      <div class="fgroup"><label class="f" for="rnStart">${T('f_renew_start')}</label>
+        <input class="inp" id="rnStart" type="date" value="${iso(st)}" oninput="previewRenewal()"></div>
+      <div class="fgroup"><label class="f" for="rnEnd">${T('f_renew_end')}</label>
+        <input class="inp" id="rnEnd" type="date" value="${iso(en)}" oninput="previewRenewal()"></div>
+      <div class="fgroup"><label class="f" for="rnRent">${T('f_renew_rent')}</label>
+        <input class="inp" id="rnRent" type="number" min="1" step="1" value="${rent0}" oninput="previewRenewal()"></div>
+      <div class="fgroup"><label class="f" for="rnCount">${T('f_renew_count')}</label>
+        <input class="inp" id="rnCount" type="number" min="1" step="1" value="${n0}" oninput="previewRenewal()"></div>
+      <div class="fgroup"><label class="f" for="rnFreq">${T('f_renew_freq')}</label>
+        <select class="inp" id="rnFreq" onchange="previewRenewal()">
+          <option value="monthly">${T('freq_monthly')}</option>
+          <option value="quarterly" selected>${T('freq_quarterly')}</option>
+          <option value="semiannual">${T('freq_semiannual')}</option>
+          <option value="annual">${T('freq_annual')}</option>
+        </select></div>
+    </div>
+    <div id="rnPrev" style="margin:16px 0"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn pri" onclick="applyRenewal()">${I('check',16,2.2)} ${T('f_renew_confirm')}</button>
+      <button class="btn" data-unit="${esc(u.u)}" onclick="finDetail(this.dataset.unit)">${T('rc_cancel')}</button>
+    </div>`);
+  previewRenewal();
 }
 async function applyRenewal(){
   if(!writeGate()) return;
-  const u = UNITS.find(x=>x.u===RENEW_UNIT); if(!u) return;
-  const end = $('rnEnd') && $('rnEnd').value;
-  if(!end){ toast(T('f_renew_need')); return; }
-  const key = 'lease:' + u.u; if(PENDING.has(key)) return;
+  const u = UNITS.find(x => x.u === RENEW_UNIT); if(!u) return;
+  const v = renewVals();
+  if(!renewValid(v)){ toast(T('f_renew_need')); return; }
+  const key = 'renew:' + u.u; if(PENDING.has(key)) return;
   saving(key, true);
-  /* end only: scheduleArgs sends p_ends_on and nothing else, so
-     save_lease_schedule updates the date and leaves every instalment alone. */
-  LINK.commit(s => { s.leases = s.leases || {}; s.leases[u.u] = {end: end, at: new Date().toISOString()}; }, 'console');
-  const ok = await settledOK();
+  let ok = false, rec = null;
+  /* A renewal is a new term: renew_lease supersedes the current lease and opens
+     a new one at the new rent with its own schedule, in one transaction behind
+     can_write(). The screen changes only after the database has done it, and
+     only from the receipt it returns — never from the typed figures alone. */
+  try{
+    rec = await SB.rpc('renew_lease', {p_unit_id: u.u, p_starts_on: v.start, p_ends_on: v.end,
+            p_contract_value: v.rent, p_count: v.n, p_frequency: v.freq, p_dry_run: false});
+    ok = !!(rec && rec.new_lease && rec.occupied === true);
+  }catch(e){ ok = false; }
   saving(key, false);
-  if(!ok){ toast(notSaved('lease_not_applied')); return; }
-  u.leaseEnd = new Date(end);
+  if(!ok){ toast(T('f_renew_fail')); return; }
+  u.leaseStart = new Date(v.start);
+  u.leaseEnd   = new Date(v.end);
+  u.rent       = v.rent;
+  u.occupied   = true;
+  u.inst = (rec.instalments || []).map(x => ({q: Number(x.seq), amt: Number(x.amount),
+            due: new Date(x.due_on), billed: new Date(x.due_on) <= TODAY,
+            paid: false, paidOn: null, ref: null}));
   recompute(); closeDrawer(); render();
-  toast(T('f_renewed_ok').replace('{u}', u.u).replace('{d}', fmtD(u.leaseEnd)));
+  toast(T('f_renewed_ok').replace('{u}', u.u).replace('{d}', fmtD(u.leaseEnd)).replace('{r}', money(v.rent)));
 }
 function notRenewed(unit){
   if(!writeGate()) return;
