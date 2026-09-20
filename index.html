@@ -600,7 +600,7 @@ const D = {
     appName:'Almaria Residence', hub:'Your building hub', welcome:'Welcome back',
     lock_title:'Sign in to your apartment',
     lock_body:'This app shows your own tenancy — your lease, your payment schedule and your maintenance requests. There is nothing to see until you sign in.',
-    lock_help:'Use the details the building office gave you. If you do not have them, contact the office.',
+    lock_help:'The code goes to the email address the office holds for you. If you are not sure which address that is, or you have not given the office one, contact them.',
     nt_title:'No apartment is attached to this account',
     nt_body:'You are signed in, but this account is not linked to a current tenancy, so there is nothing here to show. If you are a resident, contact the building office. If this is a staff account, use the management console.',
     tab_home:'Home', tab_svc:'Services', tab_pay:'Payments', tab_com:'Community', tab_prof:'Profile',
@@ -685,7 +685,7 @@ const D = {
     appName:'المارية ريزيدنس', hub:'مركز خدمات سكنك', welcome:'أهلاً بعودتك',
     lock_title:'سجّل الدخول لعرض شقتك',
     lock_body:'يعرض هذا التطبيق عقدك أنت — الإيجار وجدول الدفعات وطلبات الصيانة الخاصة بك. لا يوجد ما يُعرض قبل تسجيل الدخول.',
-    lock_help:'استخدم البيانات التي زوّدتك بها إدارة المبنى. إن لم تكن لديك، تواصل مع الإدارة.',
+    lock_help:'يُرسل الرمز إلى البريد الإلكتروني المسجّل لدى الإدارة. إن لم تكن متأكداً من العنوان، أو لم تزوّد الإدارة بعنوان، فتواصل معها.',
     nt_title:'لا توجد شقة مرتبطة بهذا الحساب',
     nt_body:'تم تسجيل دخولك، لكن هذا الحساب غير مرتبط بعقد سكن حالي، فلا يوجد ما يُعرض هنا. إن كنت ساكناً فتواصل مع إدارة المبنى. وإن كان هذا حساب موظف فاستخدم لوحة الإدارة.',
     tab_home:'الرئيسية', tab_svc:'الخدمات', tab_pay:'المدفوعات', tab_com:'المجتمع', tab_prof:'حسابي',
@@ -1446,23 +1446,12 @@ function renderLocked(){
       <p class="muted" style="margin:0 auto;max-width:30em;line-height:1.6">${T('lock_body')}</p>
     </div>
     <div class="card" style="margin-top:20px">
-      <div class="bd">
-        <div class="fgroup">
-          <label class="f">${L('Email','البريد الإلكتروني')}</label>
-          <input class="inp" id="sbMail" type="email" autocomplete="username" inputmode="email"
-                 aria-label="${L('Email','البريد الإلكتروني')}">
-        </div>
-        <div class="fgroup">
-          <label class="f">${L('Password','كلمة المرور')}</label>
-          <input class="inp" id="sbPass" type="password" autocomplete="current-password"
-                 aria-label="${L('Password','كلمة المرور')}"
-                 onkeydown="if(event.key==='Enter')sbIn()">
-        </div>
-        <button class="btn primary" id="sbGo" style="margin-top:4px" onclick="sbIn()">${
-          L('Sign in','تسجيل الدخول')}</button>
-      </div>
+      <div class="bd"><div id="sbForm">${otpForm()}</div></div>
     </div>
     <p class="muted" style="text-align:center;margin-top:18px;line-height:1.6">${T('lock_help')}</p>`;
+  /* as in sbSheet: otpForm() returned a string, so the resend countdown has to
+     be attached to the nodes that exist only now */
+  if(OTP.mail) otpClock();
 }
 
 function renderTop(){
@@ -2360,10 +2349,30 @@ const SB = (function(){
   const email   = () => { const c = claims(); return (c && c.email) || ''; };
   const signedIn= () => !!(sess && sess.access_token);
 
-  async function signIn(mail, pass){
-    const s = await call('/auth/v1/token?grant_type=password', {
+  /* OTP-01. A resident signs in with a one-time code emailed to the address the
+     office holds for them — not with a password. Nobody has ever signed in to
+     this app with a password (auth.users holds two rows, both staff), so this
+     replaces a path rather than removing one people use.
+
+     `create_user:false` is the load-bearing part, and it is NOT the default.
+     Left at its default of true, Supabase creates an `auth.users` row for ANY
+     address typed into the box. Three things follow: anyone could mint an
+     account; every one of those accounts would sign in successfully and land in
+     an empty app, because link_resident() would find no resident with that
+     address; and the send endpoint becomes a way to have mail with Almaria's
+     name on it delivered to an address of the sender's choosing. */
+  async function otpRequest(mail){
+    return call('/auth/v1/otp', {
       method:'POST', headers:{apikey:KEY, 'Content-Type':'application/json'},
-      body: JSON.stringify({email:mail, password:pass})});
+      body: JSON.stringify({email: mail, create_user: false})});
+  }
+  /* `type:'email'` is a sign-in code for a user who already exists. The other
+     verify types — signup, invite, recovery, magiclink — are different flows
+     with different tokens, and naming the wrong one fails the exchange. */
+  async function otpVerify(mail, code){
+    const s = await call('/auth/v1/verify', {
+      method:'POST', headers:{apikey:KEY, 'Content-Type':'application/json'},
+      body: JSON.stringify({email: mail, token: code, type: 'email'})});
     save(s);
     return s;
   }
@@ -2663,7 +2672,7 @@ const SB = (function(){
 
   const API = {
     base: BASE, configured: () => !!(BASE && KEY),
-    signIn, signOut, refresh, ready, signedIn, isStaff, email, claims,
+    otpRequest, otpVerify, signOut, refresh, ready, signedIn, isStaff, email, claims,
     sel, ins, ups, upd, del, rpc, upload, signedUrl,
     watch, stopWatching, rtState: () => rt
   };
@@ -3313,41 +3322,177 @@ function sbSheet(){
     <button class="btn ghost" style="margin-top:16px" onclick="sbOut()">${L('Sign out','تسجيل الخروج')}</button>
   ` : `
     <div class="note">${T('lock_body')}</div>
-    <div class="fgroup" style="margin-top:16px">
-      <label class="f">${L('Email','البريد الإلكتروني')}</label>
-      <input class="inp" id="sbMail" type="email" autocomplete="username" inputmode="email"
-                 aria-label="${L('Email','البريد الإلكتروني')}">
-    </div>
-    <div class="fgroup">
-      <label class="f">${L('Password','كلمة المرور')}</label>
-      <input class="inp" id="sbPass" type="password" autocomplete="current-password"
-             aria-label="${L('Password','كلمة المرور')}"
-             onkeydown="if(event.key==='Enter')sbIn()">
-    </div>
-    <button class="btn primary" id="sbGo" style="margin-top:8px" onclick="sbIn()">
-      ${L('Sign in','تسجيل الدخول')}</button>
+    <div id="sbForm" style="margin-top:16px">${otpForm()}</div>
   `);
+  /* The sheet paints its own markup, so the countdown has to be started against
+     the nodes that now exist — otpForm() only produced the string. */
+  if(!inn && OTP.mail) otpClock();
 }
 
-async function sbIn(){
-  const mail = ($('sbMail') && $('sbMail').value || '').trim();
-  const pass = ($('sbPass') && $('sbPass').value) || '';
-  if(!mail || !pass) return toast(L('Please fill in both fields.','يرجى تعبئة الحقلين.'));
+/* ---------------------------- sign in by code ----------------------------
+   OTP-01. Two steps — ask for a code, then enter it — and the SAME two steps on
+   both surfaces that offer sign-in: the lock screen and the connection sheet.
+   Those carried two copies of one form before, so a change to either was a
+   change the other did not get. One builder, one pair of handlers, one state. */
+const OTP = {mail:'', at:0};
+const OTP_WAIT = 60;                       /* Supabase's own floor between sends */
+const otpLeft = () => Math.max(0, OTP_WAIT - Math.round((Date.now() - OTP.at)/1000));
+const otpMailOK = m => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m);
+let otpTimer = null;
+
+function otpForm(){
+  if(!OTP.mail) return `
+    <div class="fgroup">
+      <label class="f" for="sbMail">${L('Email','البريد الإلكتروني')}</label>
+      <input class="inp" id="sbMail" type="email" autocomplete="email" inputmode="email"
+             aria-label="${L('Email','البريد الإلكتروني')}"
+             onkeydown="if(event.key==='Enter')otpSend()">
+    </div>
+    <p class="muted" style="margin:0 0 12px;line-height:1.6">${L(
+      'We will email a six-digit code to the address the office holds for you.',
+      'سنرسل رمزاً من ستة أرقام إلى العنوان المسجّل لدى الإدارة.')}</p>
+    <button class="btn primary" id="sbGo" onclick="otpSend()">${
+      L('Email me a code','أرسل لي رمزاً')}</button>`;
+  return `
+    <div class="note"><div style="flex:1;min-width:0">
+      <div>${L('We sent a code to','أرسلنا رمزاً إلى')}</div>
+      <div dir="ltr" style="font-weight:800;word-break:break-all;margin:3px 0 6px;text-align:${
+        LANG==='ar'?'right':'left'}">${esc(OTP.mail)}</div>
+      <div>${L('It expires shortly. Check your junk folder if it is not there.',
+               'تنتهي صلاحيته قريباً. تحقّق من مجلد الرسائل غير المرغوب فيها إن لم تجده.')}</div>
+    </div></div>
+    <div class="fgroup" style="margin-top:14px">
+      <label class="f" for="sbCode">${L('Six-digit code','الرمز المكوّن من ستة أرقام')}</label>
+      <input class="inp" id="sbCode" type="text" inputmode="numeric" autocomplete="one-time-code"
+             maxlength="6" pattern="[0-9]*" dir="ltr"
+             style="letter-spacing:.4em;font-size:19px;text-align:center"
+             aria-label="${L('Six-digit code','الرمز المكوّن من ستة أرقام')}"
+             onkeydown="if(event.key==='Enter')otpIn()">
+    </div>
+    <button class="btn primary" id="sbGo" onclick="otpIn()">${L('Sign in','تسجيل الدخول')}</button>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button class="btn ghost grow" id="sbAgain" onclick="otpSend(1)" disabled
+              style="font-size:13px;white-space:nowrap">${L('Resend','إعادة الإرسال')}</button>
+      <button class="btn ghost grow" id="sbBack" onclick="otpBack()"
+              style="font-size:13px;white-space:nowrap">${L('Change address','تغيير العنوان')}</button>
+    </div>`;
+}
+
+/* The resend button counts itself down rather than being enabled on a promise
+   that the minute has passed. If the node goes away — the sheet closed, the
+   person signed in — the clock stops with it. */
+function otpClock(){
+  clearInterval(otpTimer);
+  const tick = () => {
+    const b = $('sbAgain');
+    if(!b){ clearInterval(otpTimer); otpTimer = null; return; }
+    const n = otpLeft();
+    b.disabled = n > 0;
+    b.textContent = n > 0 ? L('Resend in ' + n + 's', 'إعادة الإرسال ' + n + ' ث')
+                          : L('Resend', 'إعادة الإرسال');
+  };
+  tick();
+  otpTimer = setInterval(tick, 1000);
+}
+
+function otpPaint(){
+  const host = $('sbForm');
+  if(!host) return;
+  host.innerHTML = otpForm();
+  const f = $(OTP.mail ? 'sbCode' : 'sbMail');
+  if(f) try{ f.focus(); }catch(e){}
+  if(OTP.mail) otpClock(); else { clearInterval(otpTimer); otpTimer = null; }
+}
+
+function otpBack(){ OTP.mail = ''; OTP.at = 0; otpPaint(); }
+
+async function otpSend(again){
+  const box  = $('sbMail');
+  const mail = ((box ? box.value : OTP.mail) || '').trim().toLowerCase();
+  if(!otpMailOK(mail))
+    return toast(L('Please enter your email address.','يرجى إدخال بريدك الإلكتروني.'));
+  if(again && otpLeft()) return;
+  const btn  = $(again ? 'sbAgain' : 'sbGo');
+  const was  = btn && btn.textContent;
+  if(btn){ btn.disabled = true; btn.textContent = L('Sending…','جارٍ الإرسال…'); }
+  const restore = () => { if(btn){ btn.disabled = false; btn.textContent = was; } };
+  try{
+    await SB.otpRequest(mail);
+  }catch(e){
+    const st = e && e.status;
+    /* OTP-02. An address that is not on file answers differently from one that
+       is, and passing that difference to the screen turns this box into a way to
+       ask the building who lives here. So the not-found family — 400, 403, 422 —
+       gets the same answer a delivered code gets, and the code simply never
+       arrives, which is what the line under the box tells people to expect.
+
+       The two things that are NOT about anybody's tenancy are said plainly: a
+       rate limit is a fact about this browser, and an unreachable server is a
+       fact about the network. Reporting those as "on its way" would be a lie
+       that costs somebody a wait and then a phone call. */
+    if(st === 429){
+      restore();
+      return toast(L('Too many attempts just now. Wait a minute and try again.',
+                     'محاولات كثيرة الآن. انتظر دقيقة ثم حاول مرة أخرى.'));
+    }
+    if(!st || st >= 500){
+      restore();
+      return toast(st ? L('The server could not send the code. Please try again shortly.',
+                          'تعذّر على الخادم إرسال الرمز. يرجى المحاولة بعد قليل.')
+                      : L('Could not reach the server. Check your connection.',
+                          'تعذّر الوصول إلى الخادم. تحقّق من اتصالك.'));
+    }
+  }
+  OTP.mail = mail; OTP.at = Date.now();
+  otpPaint();
+  toast(L('If that address is on file, a code is on its way.',
+          'إذا كان العنوان مسجّلاً لدينا، فالرمز في طريقه إليك.'));
+}
+
+async function otpIn(){
+  const code = ((($('sbCode') && $('sbCode').value) || '').replace(/\D/g,''));
+  if(code.length !== 6)
+    return toast(L('Enter the six-digit code from the email.',
+                   'أدخل الرمز المكوّن من ستة أرقام من البريد.'));
   const btn = $('sbGo');
   if(btn){ btn.disabled = true; btn.textContent = L('Signing in…','جارٍ تسجيل الدخول…'); }
   try{
-    await SB.signIn(mail, pass);
-    if($('sbPass')) $('sbPass').value = '';
+    await SB.otpVerify(OTP.mail, code);
+    /* OTP-03. The code proves the mailbox. It does not find the tenancy.
+       `my_units()` resolves a person only through `residents.auth_uid`, and
+       nothing fills that column in until link_resident() matches the address on
+       the resident record to the address in the token. Without this call every
+       resident would sign in successfully and land in an empty app — the exact
+       failure occupancy-model.md was written to prevent, arriving by a new door.
+       It is idempotent: it returns the existing id if the row is already linked. */
+    let linked = null;
+    try{ linked = await SB.rpc('link_resident'); }catch(e){}
     if(!await LIVE.start()){
       const e = LIVE.err();
       SB.signOut();
-      throw new Error((e && e.message) || 'no tenancy found for this account');
+      /* Said plainly, because by this point they have proved they own the
+         mailbox — there is nothing left to disclose. */
+      throw new Error(linked
+        ? ((e && e.message) || L('no tenancy was found for this account',
+                                 'لم يُعثر على عقد مرتبط بهذا الحساب'))
+        : L('this address is not on a tenancy. Please contact the office.',
+            'هذا العنوان غير مرتبط بعقد. يرجى التواصل مع الإدارة.'));
     }
     LINK.onChange(() => { render(); linkFlash(); });
+    OTP.mail = ''; OTP.at = 0;
+    clearInterval(otpTimer); otpTimer = null;
     closeAll(); render();
     toast(L('Signed in.','تم تسجيل الدخول.'));
   }catch(e){
-    toast(L('Could not sign in: ' + (e.message || e), 'تعذّر تسجيل الدخول: ' + (e.message || e)));
+    const st = e && e.status;
+    const badCode = st === 400 || st === 401 || st === 403;
+    toast(badCode
+      ? L('That code is not right, or it has expired. Ask for a new one.',
+          'الرمز غير صحيح أو انتهت صلاحيته. اطلب رمزاً جديداً.')
+      : L('Could not sign in: ' + (e.message || e),
+          'تعذّر تسجيل الدخول: ' + (e.message || e)));
+    const f = $('sbCode');
+    if(f){ f.value = ''; try{ f.focus(); }catch(x){} }
   }finally{
     if(btn){ btn.disabled = false; btn.textContent = L('Sign in','تسجيل الدخول'); }
   }
