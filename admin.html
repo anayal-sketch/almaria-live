@@ -764,6 +764,19 @@ const D={
   rp_rentroll_n:'Rate per square metre is the contract value divided by the recorded area. Where an area looks wrong, so will the rate — the register data-quality report lists those.',
   rp_arrears_t:'Collections arrears',
   rp_arrears_d:'Who owes what, aged from the oldest unpaid instalment. The list to work from when chasing.',
+  rp_owing_t:'Former tenants owing',
+  rp_owing_d:'What is still unpaid on terms that have closed — ended, or replaced by a renewal. The active register cannot show this; it is still money owed to the building.',
+  rp_owing_n:'Each row is one instalment on one closed term and is settled on its own. The debt stays with the tenant and term it belongs to; it is never carried into the next resident\'s balance.',
+  ow_total:'Owed on closed terms', ow_oldest:'Oldest', ow_oldest_d:'days since the oldest due date',
+  ow_where:'Shown where', ow_where_v:'Here only', ow_where_d:'not in Collections arrears, which reads live leases',
+  ow_closed:'Term', ow_ended:'ended', ow_superseded:'renewed',
+  ow_record:'Record receipt', ow_settle_t:'Record a receipt on a closed term',
+  ow_on:'Received on', ow_ref:'Receipt reference',
+  ow_settle_n:'This records money received against this one instalment. It does not reopen the tenancy or change the flat.',
+  ow_need:'Enter the date the money was received and the receipt reference.',
+  ow_fail:'Not recorded — the database did not settle this instalment. It may already be paid, or you may not have permission.',
+  ow_gone:'This instalment is no longer outstanding.',
+  ow_done:'{u}: {m} recorded against the closed term, receipt {r}.',
   rp_forecast_t:'Rent due, twelve months',
   rp_forecast_d:'What falls due each month across every live lease, what has already been received against it, and what is still expected. Cash planning rather than history.',
   rp_forecast_n:'Instalments already overdue are shown separately at the top rather than folded into a future month, so a debt cannot hide inside a forecast.',
@@ -858,6 +871,8 @@ const D={
   doc_store_fingerprint:'The file itself is not kept — only its name, size, type and fingerprint. Attach it again after the backend is built and it will be stored properly.',
   doc_store_supabase:'The file is stored in the Almaria document store, and this record is its fingerprint.',
   doc_attachbtn:'Attach',
+  doc_no_lease:'This flat has no current lease to attach a contract to. Record the lease first.',
+  doc_no_inst:'This instalment has not been read back from the database yet. Refresh the register and try again.',
   doc_evidence:'Evidence',
   doc_backed:'Backed by a document',
   doc_unbacked:'No document on file',
@@ -1450,6 +1465,19 @@ const D={
   rp_rentroll_n:'الريال لكل متر هو قيمة العقد مقسومة على المساحة المسجلة. وحيث تكون المساحة خاطئة يكون المعدل خاطئاً — ويوردها تقرير جودة السجل.',
   rp_arrears_t:'متأخرات التحصيل',
   rp_arrears_d:'من عليه ماذا، محسوباً من أقدم دفعة غير مسددة. القائمة المعتمدة للتحصيل.',
+  rp_owing_t:'مستحقات على مستأجرين سابقين',
+  rp_owing_d:'ما لا يزال غير مسدَّد على مدد منتهية — انتهت أو حلّ محلها تجديد. لا يستطيع السجل النشط إظهاره، وهو مع ذلك مال مستحق للمبنى.',
+  rp_owing_n:'كل صف دفعة واحدة على مدة منتهية واحدة وتُسوّى وحدها. يبقى الدين على المستأجر والمدة اللذين يخصّهما، ولا يُنقل أبداً إلى رصيد الساكن التالي.',
+  ow_total:'المستحق على مدد منتهية', ow_oldest:'الأقدم', ow_oldest_d:'يوماً منذ أقدم تاريخ استحقاق',
+  ow_where:'يظهر في', ow_where_v:'هنا فقط', ow_where_d:'وليس في متأخرات التحصيل التي تقرأ العقود السارية',
+  ow_closed:'المدة', ow_ended:'منتهية', ow_superseded:'مجدَّدة',
+  ow_record:'تسجيل إيصال', ow_settle_t:'تسجيل إيصال على مدة منتهية',
+  ow_on:'تاريخ الاستلام', ow_ref:'مرجع الإيصال',
+  ow_settle_n:'يسجّل هذا مبلغاً مستلَماً مقابل هذه الدفعة وحدها. لا يعيد فتح التعاقد ولا يغيّر الشقة.',
+  ow_need:'أدخل تاريخ استلام المبلغ ومرجع الإيصال.',
+  ow_fail:'لم يُسجَّل — لم تُسوِّ قاعدة البيانات هذه الدفعة. قد تكون مسدَّدة بالفعل، أو قد لا تملك الصلاحية.',
+  ow_gone:'هذه الدفعة لم تعد مستحقة.',
+  ow_done:'{u}: سُجِّل {m} على المدة المنتهية، الإيصال {r}.',
   rp_forecast_t:'الإيجار المستحق خلال اثني عشر شهراً',
   rp_forecast_d:'ما يستحق شهرياً على كل العقود السارية، وما حُصّل منه، وما يبقى متوقعاً. تخطيط للسيولة لا سرد للماضي.',
   rp_forecast_n:'الدفعات المتأخرة تُعرض منفصلة في الأعلى بدل دمجها في شهر قادم، حتى لا يختفي دين داخل توقّع.',
@@ -1544,6 +1572,8 @@ const D={
   doc_store_fingerprint:'لا يُحفظ الملف نفسه — بل اسمه وحجمه ونوعه وبصمته فقط. أرفقه مجدداً بعد بناء النظام الخلفي ليُحفظ كاملاً.',
   doc_store_supabase:'الملف محفوظ في مستودع مستندات المارية، وهذا السجل هو بصمته.',
   doc_attachbtn:'إرفاق',
+  doc_no_lease:'لا يوجد عقد حالي لهذه الشقة لإرفاق نسخة العقد به. سجّل العقد أولاً.',
+  doc_no_inst:'لم تُقرأ هذه الدفعة من قاعدة البيانات بعد. حدّث السجل وحاول مرة أخرى.',
   doc_evidence:'المستندات',
   doc_backed:'مدعوم بمستند',
   doc_unbacked:'لا يوجد مستند',
@@ -1843,7 +1873,7 @@ const UNITS=REGISTER.map(r=>({
   u:r.id, floor:r.floor, type:r.type, area:r.area,
   occupied:r.let, tenant:r.tenant, tenant_ar:r.tenantAr,
   rent:r.value||0, leaseStart:r.start?new Date(r.start):null, leaseEnd:r.end?new Date(r.end):null,
-  inst:(r.inst||[]).map(x=>({q:x.n, amt:x.amt, due:x.due?new Date(x.due):null,
+  inst:(r.inst||[]).map(x=>({id:x.id || null, q:x.n, amt:x.amt, due:x.due?new Date(x.due):null,
         billed: x.due? new Date(x.due)<=TODAY : false, paid:x.paid,
         /* The date it was actually paid, or nothing. Never the due date:
            that is a guess wearing a record's clothes — DATA-07. */
@@ -2346,6 +2376,9 @@ const SUPPLIERS=[];
 
 /* Read from the announcements table. See REGISTER above. */
 const ANNS=[];
+/* F-02. Unpaid instalments on closed terms — money the active register has no
+   place for. Read whole from Postgres, keyed by instalment id, settled by it. */
+const OWING=[];
 
 /* ------------------------------ derived figures ------------------------------ */
 /* One definition of "breached", used by the queue, the panels and the SLA
@@ -3126,7 +3159,7 @@ function applyRegister(rows){
     occupied:r.let, tenant:r.tenant, tenant_ar:r.tenantAr,
     leaseId: r.leaseId || null,                       /* N-01 — see toRegister */
     rent:r.value||0, leaseStart:r.start?new Date(r.start):null, leaseEnd:r.end?new Date(r.end):null,
-    inst:(r.inst||[]).map(x=>({q:x.n, amt:x.amt, due:x.due?new Date(x.due):null,
+    inst:(r.inst||[]).map(x=>({id:x.id || null, q:x.n, amt:x.amt, due:x.due?new Date(x.due):null,
           billed: x.due? new Date(x.due)<=TODAY : false, paid:x.paid,
           /* The date it was actually paid, or nothing. Never the due date:
              that is a guess wearing a record's clothes — DATA-07. */
@@ -4539,6 +4572,91 @@ function repArrears(){
   };
 }
 
+/* F-02. Former tenants owing: what is still unpaid on terms that have closed.
+   Collections arrears reads the active register and so, by construction, can
+   never show this — a debt on a closed term is not an arrear of any current
+   tenancy. It is still money. Each row is one instalment on one closed term,
+   named by its own id, and the action settles THAT row: never the flat, never
+   the next tenant's balance. */
+function repOwing(){
+  const rows = OWING.slice().sort((a,b) => (a.due && b.due ? a.due - b.due : 0) || a.id - b.id).map(x => ({
+    unit:x.unit, tenant:L(x.tenant, x.tenant_ar),
+    term: (x.start ? fmtDay(x.start) : '—') + ' → ' + (x.end ? fmtDay(x.end) : '—'),
+    closed: x.status === 'superseded' ? T('ow_superseded') : T('ow_ended'),
+    seq:x.seq, due:x.due, amount:x.amt,
+    age: x.due ? Math.max(0, Math.floor((TODAY - x.due) / 864e5)) : null,
+    act: x.id
+  }));
+  const total = rows.reduce((a,r) => a + r.amount, 0);
+  const flats = new Set(rows.map(r => r.unit)).size;
+  const oldest = rows.reduce((m,r) => r.age !== null && r.age > m ? r.age : m, 0);
+  return {
+    stats:[[T('ow_total'), money(total), NUM(rows.length)+' '+L('instalments','دفعات')+' · '+NUM(flats)+' '+L('apartments','شقق')],
+           [T('ow_oldest'), rows.length ? NUM(oldest)+' '+T('days') : '—', T('ow_oldest_d')],
+           [T('ow_where'), T('ow_where_v'), T('ow_where_d')]],
+    cols:[{k:'unit',l:T('unit')},{k:'tenant',l:T('tenant')},{k:'term',l:T('f_term')},{k:'closed',l:T('ow_closed')},
+          {k:'seq',l:T('f_instal'),num:1},{k:'due',l:T('f_arr_due'),date:1},{k:'amount',l:T('f_amount'),num:1,money:1},
+          {k:'age',l:T('f_arr_age'),num:1},{k:'act',l:'',act:'owingSettle'}],
+    rows,
+    foot:{unit:T('rp_total'), amount:total},
+    note:T('rp_owing_n')
+  };
+}
+
+/* F-02. Record money received against ONE instalment of a closed term. This
+   does not go through the active register's payment writer, which keys on
+   unit → active lease → seq and rightly refuses a flat with no active lease;
+   it names the row by its id and asks the database to settle exactly that row
+   if it is still unpaid. A date and a reference are required — DATA-07: a
+   paid date is a record, never a guess. */
+async function owingSettle(id){
+  if(!writeGate()) return;
+  const r = OWING.find(x => x.id === Number(id)); if(!r){ toast(T('ow_gone')); return; }
+  const isoLocal = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  openDrawer(T('ow_settle_t') + `<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${L('Apartment','شقة')} ${esc(r.unit)} · ${T('f_instal')} ${NUM(r.seq)}</div>`, `
+    <div class="card mb"><div class="bd">
+      <dl class="kv">
+        <dt>${T('tenant')}</dt><dd>${esc(L(r.tenant, r.tenant_ar))}</dd>
+        <dt>${T('f_term')}</dt><dd>${r.start ? fmtDay(r.start) : '—'} → ${r.end ? fmtDay(r.end) : '—'} · ${r.status === 'superseded' ? T('ow_superseded') : T('ow_ended')}</dd>
+        <dt>${T('f_arr_due')}</dt><dd class="mono">${r.due ? fmtDay(r.due) : '—'}</dd>
+        <dt>${T('f_amount')}</dt><dd class="mono strong">${money(r.amt)} ${T('sar')}</dd>
+      </dl>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:14px">
+        <div class="fgroup"><label class="f" for="owOn">${T('ow_on')}</label>
+          <input class="inp" id="owOn" type="date" value="${isoLocal(TODAY)}" max="${isoLocal(TODAY)}"></div>
+        <div class="fgroup"><label class="f" for="owRef">${T('ow_ref')}</label>
+          <input class="inp" id="owRef" type="text" autocomplete="off"></div>
+      </div>
+      <div class="note" style="margin-top:12px">${T('ow_settle_n')}</div>
+    </div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn pri" data-id="${Number(r.id)}" onclick="owingSettleConfirm(Number(this.dataset.id))">${I('check',16,2.2)} ${T('ow_record')}</button>
+      <button class="btn" onclick="closeDrawer()">${T('rc_cancel')}</button>
+    </div>`);
+}
+async function owingSettleConfirm(id){
+  if(!writeGate()) return;
+  const r = OWING.find(x => x.id === Number(id)); if(!r){ toast(T('ow_gone')); return; }
+  const on  = ($('owOn')  && $('owOn').value)  || '';
+  const ref = (($('owRef') && $('owRef').value) || '').trim();
+  if(!on || !ref){ toast(T('ow_need')); return; }
+  const key = 'owing:' + r.id; if(PENDING.has(key)) return;
+  saving(key, true);
+  let ok = false;
+  try{
+    /* id AND still unpaid: a second press, or another screen that got there
+       first, changes nothing and is told so. */
+    const rows = await SB.upd('instalments', 'id=eq.' + Number(r.id) + '&paid=eq.false',
+                              {paid:true, paid_on:on, receipt_ref:ref});
+    ok = Array.isArray(rows) && rows.length === 1;
+  }catch(e){ ok = false; }
+  saving(key, false);
+  if(!ok){ toast(T('ow_fail')); return; }
+  const i = OWING.findIndex(x => x.id === r.id); if(i > -1) OWING.splice(i, 1);
+  closeDrawer(); render();
+  toast(T('ow_done').replace('{u}', r.unit).replace('{m}', money(r.amt) + ' ' + T('sar')).replace('{r}', ref));
+}
+
 /* twelve months of instalments, so the office can see what is due before it is due */
 function repForecast(){
   const buckets = [];
@@ -4945,6 +5063,7 @@ const blocked = (needs, why) => () => ({blocked:{needs, why}});
 const REPORTS = [
   {id:'rentroll', g:'money', s:'ready',   f:repRentRoll},
   {id:'arrears',  g:'money', s:'ready',   f:repArrears},
+  {id:'owing',    g:'money', s:'ready',   f:repOwing},
   {id:'forecast', g:'money', s:'ready',   f:repForecast},
   {id:'ledger',   g:'money', s:'ready',   f:repLedger},
 
@@ -5112,10 +5231,16 @@ function docCandidates(text){
 }
 
 /* ------------------------------ the store ------------------------------ */
-const docKey = r => r.type==='unit' ? 'u:'+r.unit
-                  : r.type==='inst' ? 'i:'+r.unit+':'+r.inst
+/* F-01. A contract is keyed by its LEASE and a receipt by its INSTALMENT —
+   the same keys the database now writes into ref_key from the row's binding.
+   These were 'u:<flat>' and 'i:<flat>:<seq>': a renewal restarts the numbering
+   and keeps the flat, so the old term's receipt was evidence for the new one,
+   and a document followed the flat to its next tenant. A ref with no lease or
+   no instalment id has no key: nothing matches it and nothing attaches to it. */
+const docKey = r => r.type==='unit' ? (r.lease ? 'lease:'+r.lease : null)
+                  : r.type==='inst' ? (r.id ? 'inst:'+r.id : null)
                   : 'w:'+r.wo;
-const docsFor = r => (LINK.get().docs||[]).filter(d=>d.key===docKey(r));
+const docsFor = r => { const k = docKey(r); return k ? (LINK.get().docs||[]).filter(d=>d.key===k) : []; };
 const docCount = r => docsFor(r).length;
 
 /* DOC-01. One builder, used by every upload, so the two paths cannot drift.
@@ -5155,9 +5280,14 @@ async function docAttach(file, ref, kind){
   if(/pdf/i.test(file.type) || /\.pdf$/i.test(file.name)){
     try{ read = await pdfText(buf); }catch(e){ read = {ok:false, why:'unreadable', text:''}; }
   }
+  const key = docKey(ref);
+  if(!key) return {error:'unbound'};
   const rec = {
     id: 'D-' + fp.hex.slice(0,12),
-    key: docKey(ref), ref, kind,
+    key, ref, kind,
+    /* F-01. What the document is evidence OF, as the database will record it. */
+    lease_id: ref.type==='unit' ? ref.lease : ref.type==='inst' ? (ref.lease || null) : null,
+    instalment_id: ref.type==='inst' ? ref.id : null,
     name: file.name, mime: file.type||'', size: file.size,
     algo: fp.algo, hash: fp.hex,
     /* The account that is signed in, not a label from the interface. */
@@ -5200,7 +5330,27 @@ function docRemove(id, key){
 /* ------------------------------ attach UI ------------------------------ */
 let DOCCTX = null;
 
-function docOpen(ref, kind){
+/* The kinds a reference can carry. A contract names a lease, a receipt names an
+   instalment, an invoice names a job; 'other' goes anywhere. Offering a receipt
+   on a lease reference was how a document could be attached with nothing to
+   bind it to — and now the database refuses the row, so the form does first. */
+const DOC_KINDS_FOR = r => r.type==='unit' ? ['contract','other'] : r.type==='inst' ? ['receipt','other'] : ['invoice','other'];
+async function docOpen(ref, kind){
+  if(ref.type==='unit' && !ref.lease){ toast(T('doc_no_lease')); return; }
+  /* An instalment row written by this console in this session — a renewal
+     receipt, a corrected schedule — has no id until the register is read
+     back. Ask the database for it now rather than key the receipt to a guess. */
+  if(ref.type==='inst' && !ref.id){
+    let rows = null;
+    try{ rows = ref.lease ? await SB.sel('instalments', 'select=id&lease_id=eq.' + encodeURIComponent(ref.lease) + '&seq=eq.' + Number(ref.inst) + '&limit=1') : null; }catch(e){ rows = null; }
+    const id = rows && rows[0] && rows[0].id;
+    if(!id){ toast(T('doc_no_inst')); return; }
+    ref = Object.assign({}, ref, {id});
+    const u = UNITS.find(x => x.u === ref.unit);
+    const row = u && (u.inst||[]).find(x => x.q === Number(ref.inst));
+    if(row) row.id = id;
+  }
+  if(!DOC_KINDS_FOR(ref).includes(kind)) kind = DOC_KINDS_FOR(ref)[0];
   DOCCTX = {ref, kind};
   const list = docsFor(ref);
   const label = ref.type==='unit' ? `${L('Apartment','شقة')} ${ref.unit}`
@@ -5211,7 +5361,7 @@ function docOpen(ref, kind){
       <div class="warnbox" style="margin-bottom:14px">${I('alert',16,2.2)}<span>${T('doc_store_'+DOCSTORE.mode)}</span></div>
       <label class="f" for="dKind">${T('doc_kind')}</label>
       <select class="inp" id="dKind" style="margin-bottom:12px">
-        ${DOCKINDS.map(k=>`<option value="${k}" ${kind===k?'selected':''}>${T('doc_k_'+k)}</option>`).join('')}
+        ${DOC_KINDS_FOR(ref).map(k=>`<option value="${k}" ${kind===k?'selected':''}>${T('doc_k_'+k)}</option>`).join('')}
       </select>
       <label class="f" for="dFile">${T('doc_file')}</label>
       <input type="file" class="inp" id="dFile" onchange="docRun(this)"
@@ -5249,6 +5399,7 @@ async function docRun(input){
             ? T('doc_e_big').replace('{n}', NUM(Math.round(DOC_MAX_BYTES / 1048576)))
         : out.error === 'wrong_type' ? T('doc_e_type')
         : out.error === 'empty'      ? T('doc_e_empty')
+        : out.error === 'unbound'    ? T('doc_no_lease')
         : T('doc_e_meta').replace('{p}', out.path || '');
       $('dOut').innerHTML = `<div class="card"><div class="bd"><div class="warnbox">${I('alert',16,2.2)}<span>${esc(msg)}</span></div></div></div>`;
       return;
@@ -5432,10 +5583,13 @@ function docCoverage(){
   const rows = [];
   UNITS.forEach(u=>{
     if(!u.occupied) return;
-    const c = docsFor({type:'unit',unit:u.u}).filter(d=>d.kind==='contract').length;
+    /* F-01. Evidence is counted for THIS lease and THESE instalments. A
+       renewal opens a new lease with no documents until its own are attached;
+       the old term's contract and receipts stay with the old term. */
+    const c = docsFor({type:'unit',unit:u.u,lease:u.leaseId}).filter(d=>d.kind==='contract').length;
     const billed = u.inst.filter(x=>x.billed);
     const paid = billed.filter(x=>x.paid);
-    const withR = paid.filter(x=>docsFor({type:'inst',unit:u.u,inst:x.q}).length).length;
+    const withR = paid.filter(x=>docsFor({type:'inst',unit:u.u,inst:x.q,id:x.id,lease:u.leaseId}).length).length;
     rows.push({unit:u.u, tenant:L(u.tenant,u.tenant_ar), contract:c,
       value:u.rent, paid:paid.length, receipts:withR,
       gap: paid.length - withR,
@@ -5465,8 +5619,21 @@ function repEvidence(){
   };
 }
 
+/* The actions a report row may carry, by name. rpAction looks the name up
+   here and nowhere else, so a row can only ever invoke what this list allows,
+   and the handler in the markup is a constant. */
+const RP_ACTIONS = { owingSettle: id => owingSettle(id) };
+function rpAction(btn){
+  const f = RP_ACTIONS[btn && btn.dataset && btn.dataset.act];
+  if(f) f(Number(btn.dataset.id));
+}
 /* ------------------------------ rendering ------------------------------ */
 function rpCell(c, v){
+  /* An action column: the value is the row's own id, the handler is a function
+     THIS file named on the column — never a string off a row. Shown only to
+     someone who may write; a viewer sees the figure and no button. */
+  if(c.act) return (v === null || v === undefined || rolesViewer()) ? ''
+    : `<button class="tbtn" data-id="${Number(v)}" data-act="${esc(c.act)}" onclick="rpAction(this)">${I('check',13,2.2)}<span>${T('ow_record')}</span></button>`;
   if(v === null || v === undefined || v === '') return '<span class="sub2">—</span>';
   /* a footer row puts a label in the first column, whatever that column's type */
   if((c.date||c.month) && !(v instanceof Date)) return esc(v);
@@ -5772,7 +5939,7 @@ function rpExport(id){
       (meta.g === 'maint' || ['cost','maint','net'].includes(c.k))).map(c => c.k);
   return exportRows({
     what: id, personal, title: rpName(id), costCols,
-    cols: out.cols, rows: out.rows||[], foot: out.foot, extra: out.extra,
+    cols: (out.cols||[]).filter(c => !c.act), rows: out.rows||[], foot: out.foot, extra: out.extra,
     period: out.period ? rpPeriodLabel() : null,
     note: out.note
   });
@@ -6109,8 +6276,8 @@ function finDetail(uid){
    <td class="mono sub2">${x.paidOn?fmtD(x.paidOn):'—'}</td>
    <td><span class="pill ${st[0]}">${st[2]?I(st[2],12,2.1):''}${T(st[1])}</span></td>
    <td class="num">${(()=>{
-     const has = docsFor({type:'inst',unit:u.u,inst:x.q}).length;
-     const attach = `<button class="tbtn" data-unit="${esc(u.u)}" data-q="${x.q}" onclick="docOpen({type:'inst',unit:this.dataset.unit,inst:Number(this.dataset.q)},'receipt')">${has?I('check',13,2.2):I('up',13)}<span>${has?T('doc_backed'):T('doc_attachbtn')}</span></button>`;
+     const has = docsFor({type:'inst',unit:u.u,inst:x.q,id:x.id,lease:u.leaseId}).length;
+     const attach = `<button class="tbtn" data-unit="${esc(u.u)}" data-q="${x.q}" data-id="${x.id||''}" data-lease="${u.leaseId||''}" onclick="docOpen({type:'inst',unit:this.dataset.unit,inst:Number(this.dataset.q),id:Number(this.dataset.id)||null,lease:Number(this.dataset.lease)||null},'receipt')">${has?I('check',13,2.2):I('up',13)}<span>${has?T('doc_backed'):T('doc_attachbtn')}</span></button>`;
      if(x.paid) return (x.ref?`<span class="mono sub2" style="margin-inline-end:8px">${esc(x.ref)}</span>`:'') + attach;
      return `<button class="tbtn" data-unit="${esc(u.u)}" data-q="${x.q}" onclick="recordPayment(this.dataset.unit,Number(this.dataset.q))">${x.billed?L('Record','تسجيل'):L('Record early','تسجيل مقدّم')}</button> ` + attach;
    })()}</td></tr>`;
@@ -6155,11 +6322,11 @@ function finDetail(uid){
 
   <div class="sect" style="margin-top:0">${T('f_lease')}</div>
   <div class="card mb">
-   <div class="hd"><div style="flex:1">${(()=>{const n=docsFor({type:'unit',unit:u.u}).filter(d=>d.kind==='contract').length;
+   <div class="hd"><div style="flex:1">${(()=>{const n=docsFor({type:'unit',unit:u.u,lease:u.leaseId}).filter(d=>d.kind==='contract').length;
      return n?`<span class="pill p-good">${I('check',12,2.1)}${T('doc_backed')}</span>`
              :`<span class="pill p-warn">${I('alert',12,2.1)}${T('doc_unbacked')}</span>`;})()}</div>
     ${u.leaseEnd?`<button class="tbtn" data-unit="${esc(u.u)}" onclick="openLeaseEdit(this.dataset.unit)">${I('edit',15)}<span>${T('f_editlease')}</span></button>`:''}
-    <button class="tbtn" data-unit="${esc(u.u)}" onclick="docOpen({type:'unit',unit:this.dataset.unit},'contract')">${I('up',15)}<span>${T('doc_attachbtn')}</span></button></div>
+    <button class="tbtn" data-unit="${esc(u.u)}" data-lease="${u.leaseId||''}" onclick="docOpen({type:'unit',unit:this.dataset.unit,lease:Number(this.dataset.lease)||null},'contract')">${I('up',15)}<span>${T('doc_attachbtn')}</span></button></div>
    <div class="bd"><dl class="kv">
     <dt>${T('tenant')}</dt><dd>${esc(L(u.tenant,u.tenant_ar))}</dd>
     <dt>${T('f_term')}</dt><dd>${fmtDay(u.leaseStart)} — ${fmtDay(u.leaseEnd)}</dd>
@@ -8395,7 +8562,7 @@ const LIVE = (function(){
 
   /* --------------------------------- read -------------------------------- */
   async function pull(){
-    const [units, leases, inst, wos, anns, docs, costs] = await Promise.all([
+    const [units, leases, inst, wos, anns, docs, costs, owing] = await Promise.all([
       SB.selAll('units', 'select=*&order=id.asc'),
       /* CON-08. Every collection the console needs whole goes through selAll,
          and every order ends in a unique key. */
@@ -8442,9 +8609,19 @@ const LIVE = (function(){
              'suppliers(name_en)&order=occurred_on.asc,id.asc')
         .then(rows => ({ok:true, rows}))
         .catch(e => { console.warn('building_costs unavailable', e);
-                      return {ok:false, why:(e && e.message) || String(e)}; })
+                      return {ok:false, why:(e && e.message) || String(e)}; }),
+      /* F-02. What is still unpaid on terms that have CLOSED — ended, or
+         superseded by a renewal. SCALE-03 bounded the register to active
+         leases, correctly, and in doing so left this money with no screen at
+         all: SAR 127,258 across four flats on the day it was found. Only the
+         unpaid rows of closed terms, joined to their lease, ordered to the
+         unique key. Nobody but staff writes instalments, so this is bounded by
+         the office's own history and not by anything a resident can do. */
+      SB.selAll('instalments', 'select=id,lease_id,seq,amount,due_on,paid,' +
+                               'leases!inner(id,unit_id,status,starts_on,ends_on,contract_value,residents(name_en,name_ar))' +
+                               '&leases.status=in.(ended,superseded)&paid=eq.false&order=lease_id.asc,seq.asc')
     ]);
-    return {units, leases, inst, wos, anns, docs, costs};
+    return {units, leases, inst, wos, anns, docs, costs, owing};
   }
 
   const toRegister = d => d.units.map(u => {
@@ -8478,7 +8655,10 @@ const LIVE = (function(){
          from the DUE date, so the console displayed a payment date that was not
          the payment date, and no receipt at all. A fabricated date is worse
          than a blank one: nobody ever queries it. */
-      inst: rows.map(x => ({n:x.seq, amt:N(x.amount), due:x.due_on, paid:!!x.paid,
+      /* F-01. The row's own id travels with it, so a receipt can name the
+         instalment it settles rather than the flat and a number a renewal
+         will reuse. */
+      inst: rows.map(x => ({id:x.id, n:x.seq, amt:N(x.amount), due:x.due_on, paid:!!x.paid,
                             on:x.paid_on || null, ref:x.receipt_ref || null}))
     };
   });
@@ -8528,9 +8708,21 @@ const LIVE = (function(){
       aud:a.audience || 'all', st:a.status, date:(a.published_at || '').slice(0,10), ok:true
     }));
 
+    OWING.length = 0;
+    (d.owing || []).forEach(x => {
+      const l = x.leases || {};
+      OWING.push({ id:Number(x.id), lease:Number(x.lease_id), seq:Number(x.seq), amt:N(x.amount),
+                   due: x.due_on ? new Date(x.due_on) : null,
+                   unit:l.unit_id, status:l.status,
+                   start: l.starts_on ? new Date(l.starts_on) : null, end: l.ends_on ? new Date(l.ends_on) : null,
+                   value:N(l.contract_value),
+                   tenant:(l.residents && l.residents.name_en) || '', tenant_ar:(l.residents && l.residents.name_ar) || '' });
+    });
+
     state = BLANK();
     state.docs = d.docs.map(x => ({
       id:x.id, row:x.id, key:x.ref_key || '', kind:x.kind, name:x.filename,
+      lease_id:x.lease_id || null, instalment_id:x.instalment_id || null,
       mime:x.mime, size:Number(x.bytes) || 0, hash:x.sha256, algo:'SHA-256',
       at:x.uploaded_at, by:'', readable:x.readable, storage:'supabase', path:x.storage_path
     }));
@@ -9126,7 +9318,8 @@ const LIVE = (function(){
       if((before.docs || []).some(x => x.id === d.id && x.key === d.key)) return;
       attempt('doc:' + d.id, SB.ins('documents', {
         kind:d.kind, storage_path:d.path || ('unstored/' + d.id), filename:d.name,
-        mime:d.mime, bytes:d.size, sha256:d.hash, readable:!!d.readable, ref_key:d.key
+        mime:d.mime, bytes:d.size, sha256:d.hash, readable:!!d.readable, ref_key:d.key,
+        lease_id: d.lease_id || null, instalment_id: d.instalment_id || null
       }).then(r => { if(r && r[0]) d.row = r[0].id; return r; }),
         () => { const i = (after.docs || []).indexOf(d); if(i > -1) after.docs.splice(i, 1); });
     });
