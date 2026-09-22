@@ -1012,6 +1012,8 @@ const D={
   f_notrenewed_do:'Yes — end the tenancy',
   f_notrenewed_fail:'The flat was NOT changed — the database did not accept it. It is as it was.',
   f_notrenewed_ok:'{u} is now vacant — the tenancy has ended.',
+  f_notrenewed_owed:'{u} is now vacant — the tenancy has ended. {m} is still unpaid on the closed term, across {n} instalment(s). It stays on record and remains collectable.',
+  f_notrenewed_owed_warn:'{m} is still unpaid on this term, across {n} instalment(s). Ending the tenancy does not collect it and does not remove it — it stays on the closed lease.',
   rc_title:'This schedule disagrees with money already received',
   rc_lead:'Nothing has been written. Every paid instalment below is kept exactly as it is — the database will not let it be changed. Read what the change does, then apply it or leave it.',
   rc_unit:'Flat', rc_seq:'Instalment', rc_what:'What it means',
@@ -1613,6 +1615,8 @@ const D={
   f_notrenewed_t:'لم يُجدَّد',
   f_notrenewed_confirm:'وضع {u} كغير مُجدَّد؟ يُنهى التعاقد وتصبح الشقة شاغرة. تبقى الدفعات والسجلّات المُسجَّلة كما هي.',
   f_notrenewed_do:'نعم — إنهاء التعاقد',
+  f_notrenewed_owed:'{u} أصبحت شاغرة — انتهى التعاقد. لا يزال مبلغ {m} غير مسدَّد على المدة المنتهية ضمن {n} دفعة. يبقى مسجَّلاً وقابلاً للتحصيل.',
+  f_notrenewed_owed_warn:'لا يزال مبلغ {m} غير مسدَّد على هذه المدة ضمن {n} دفعة. إنهاء التعاقد لا يُحصِّله ولا يحذفه — يبقى على العقد المنتهي.',
   f_notrenewed_fail:'لم تتغيّر الشقة — لم تقبله قاعدة البيانات. هي كما كانت.',
   f_notrenewed_ok:'{u} أصبحت شاغرة — انتهى التعاقد.',
   rc_title:'هذا الجدول يخالف مبالغ مقبوضة فعلاً',
@@ -6406,8 +6410,17 @@ function notRenewed(unit){
   const u = UNITS.find(x=>x.u===unit); if(!u) return;
   /* Vacating a flat ends a tenancy, so it is confirmed before it is written —
      Cancel returns to the flat unchanged. */
+  /* What the flat still owes on the term about to be closed, from the rows the
+     drawer is already showing. Ending a tenancy does not collect the money and
+     does not delete it — but the person pressing the button should see the
+     figure before they press it, not after. */
+  const owedRows = (u.inst || []).filter(x => !x.paid);
+  const owed     = owedRows.reduce((a, x) => a + (x.amt || 0), 0);
   openDrawer(`${T('f_notrenewed_t')}<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${L('Apartment','شقة')} ${esc(u.u)}</div>`, `
     <div class="warnbox">${I('alert',16,2.2)}<span>${esc(T('f_notrenewed_confirm').replace('{u}', u.u))}</span></div>
+    ${owed > 0 ? `<div class="warnbox" style="margin-top:10px">${I('alert',16,2.2)}<span>${
+      esc(T('f_notrenewed_owed_warn').replace('{m}', money(owed) + ' ' + T('sar'))
+                                     .replace('{n}', NUM(owedRows.length)))}</span></div>` : ''}
     <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
       <button class="btn danger" data-unit="${esc(u.u)}" onclick="notRenewedConfirm(this.dataset.unit)">${T('f_notrenewed_do')}</button>
       <button class="btn" data-unit="${esc(u.u)}" onclick="finDetail(this.dataset.unit)">${T('rc_cancel')}</button>
@@ -6418,19 +6431,29 @@ async function notRenewedConfirm(unit){
   const u = UNITS.find(x=>x.u===unit); if(!u) return;
   const key = 'outcome:' + u.u; if(PENDING.has(key)) return;
   saving(key, true);
-  let ok = false;
+  let ok = false, rec = null;
   /* A direct named write, awaited: the screen changes only once the database
      has ended the tenancy and vacated the flat. A refusal leaves the flat as it
      was and says so — the same rule as every other write in this console. */
-  try{ const r = await SB.rpc('set_lease_outcome', {p_unit_id: u.u, p_outcome: 'not_renewed'});
-       ok = !!(r && r.occupied === false); }
+  try{ rec = await SB.rpc('set_lease_outcome', {p_unit_id: u.u, p_outcome: 'not_renewed'});
+       ok = !!(rec && rec.occupied === false); }
   catch(e){ ok = false; lastWriteErr = e; }
   saving(key, false);
   if(!ok){ toast(T('f_notrenewed_fail')); return; }
   u.occupied = false; u.tenant = null; u.tenant_ar = null;
   u.leaseEnd = null; u.leaseStart = null;
+  u.leaseId = null;                       /* the tenancy is over; nothing to pay against */
   recompute(); closeDrawer(); render();
-  toast(T('f_notrenewed_ok').replace('{u}', u.u));
+  /* The receipt is what the database actually did, so the amount reported here
+     is the amount that was outstanding at the moment the term closed — not a
+     figure recomputed from a screen that has since moved on. `outstanding` is
+     absent on an older backend, and then this reads exactly as it always did. */
+  const owed = Number(rec && rec.outstanding) || 0;
+  toast(owed > 0
+    ? T('f_notrenewed_owed').replace('{u}', u.u)
+        .replace('{m}', money(owed) + ' ' + T('sar'))
+        .replace('{n}', NUM(Number(rec.outstanding_rows) || 0))
+    : T('f_notrenewed_ok').replace('{u}', u.u));
 }
 let lastWriteErr = null;
 
