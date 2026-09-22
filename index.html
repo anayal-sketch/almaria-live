@@ -3449,8 +3449,19 @@ async function otpSend(again){
           'إذا كان العنوان مسجّلاً لدينا، فالرمز في طريقه إليك.'));
 }
 
+/* OTP-04. `replace(/\D/g,'')` keeps ASCII digits and throws everything else
+   away — so a resident who types or pastes ١٢٣٤٥٦ had all six digits deleted
+   and was told to enter a six-digit code, with six digits on the screen. An
+   Arabic app that cannot read Arabic numerals in the one box every tenant must
+   use is not bilingual; it is an English app with Arabic labels.
+   U+0660–0669 are the Arabic-Indic digits, U+06F0–06F9 the Eastern Arabic-Indic
+   ones used in Persian and Urdu keyboards. Both map to the same six digits the
+   verifier expects. Anything that is still not a digit afterwards is dropped as
+   before, so letters and punctuation are refused exactly as they were. */
+const arabicDigits = t => String(t || '').replace(/[\u0660-\u0669]/g, d => String(d.charCodeAt(0) - 0x0660))
+                                         .replace(/[\u06F0-\u06F9]/g, d => String(d.charCodeAt(0) - 0x06F0));
 async function otpIn(){
-  const code = ((($('sbCode') && $('sbCode').value) || '').replace(/\D/g,''));
+  const code = arabicDigits(($('sbCode') && $('sbCode').value) || '').replace(/\D/g,'');
   if(code.length !== 6)
     return toast(L('Enter the six-digit code from the email.',
                    'أدخل الرمز المكوّن من ستة أرقام من البريد.'));

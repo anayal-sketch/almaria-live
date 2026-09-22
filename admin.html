@@ -989,6 +989,9 @@ const D={
   f_renew_total:'Total',
   f_renew_confirm:'Renew — open the new term',
   f_renew_need:'Enter the start and end dates, the annual rent, and the number of instalments.',
+  f_plan_fields:'Enter the start and end dates, the annual rent, and the number of instalments.',
+  f_plan_order:'The end date must be after the start date.',
+  f_plan_past:'This plan puts {n} instalment(s) after the lease ends — the first on {d}. Reduce the number of instalments, change how often they fall, or extend the term.',
   f_renewed_ok:'{u} renewed — new term to {d} at {r}.',
   f_renew_fail:'The renewal was NOT saved — the flat is unchanged.',
   f_editlease:'Edit',
@@ -1589,6 +1592,9 @@ const D={
   f_renew_total:'الإجمالي',
   f_renew_confirm:'تجديد — فتح المدة الجديدة',
   f_renew_need:'أدخل تاريخي البداية والنهاية، والإيجار السنوي، وعدد الدفعات.',
+  f_plan_fields:'أدخل تاريخي البداية والنهاية، والإيجار السنوي، وعدد الدفعات.',
+  f_plan_order:'يجب أن يكون تاريخ النهاية بعد تاريخ البداية.',
+  f_plan_past:'هذه الخطة تضع {n} دفعة بعد انتهاء العقد — أولاها في {d}. قلّل عدد الدفعات، أو غيّر دوريتها، أو مدّد المدة.',
   f_renewed_ok:'تم تجديد {u} — مدة جديدة حتى {d} بقيمة {r}.',
   f_renew_fail:'لم يُحفظ التجديد — الشقة دون تغيير.',
   f_editlease:'تعديل',
@@ -2151,18 +2157,20 @@ function LINK_apply(s){
     if(c.value && c.n && c.start){
       /* DUAL-02. Paid lines are carried across by instalment number, as
          docApplyLease carries them; this rebuilt every line unpaid. */
+      /* N-02. This rebuilt the schedule one MONTH apart whatever the cadence —
+         `applyLeaseEdit` writes `freq` into the shared record and this ignored
+         it, so a confirmed quarterly plan replayed as monthly and pulled every
+         due date, and the arrears they drive, forward. It also carried its own
+         money split, a second implementation of a rule that already had one.
+         Both are now renewRows(), the generator the forms preview from, so a
+         replayed schedule is the schedule that was confirmed. */
       const had = {};
       (u.inst || []).forEach(x => { if(x.paid) had[x.q] = x; });
-      const rows=[]; let left=c.value;
-      for(let i=0;i<c.n;i++){
-        const d=addMonthsClamped(c.start, i);
-        const amt = i===c.n-1 ? left : Math.round(c.value/c.n);
-        left -= amt;
-        const k = had[i+1];
-        rows.push({q:i+1, amt, due:d, billed:d<=TODAY,
-                   paid: !!k, paidOn: k ? (k.paidOn || null) : null, ref: k ? (k.ref || null) : null});
-      }
-      u.inst = rows;
+      u.inst = renewRows(c.start, c.value, c.n, c.freq).map(r => {
+        const k = had[r.seq];
+        return {q:r.seq, amt:r.amount, due:r.due, billed:r.due<=TODAY,
+                paid: !!k, paidOn: k ? (k.paidOn || null) : null, ref: k ? (k.ref || null) : null};
+      });
     }
     if(c.value || c.start) u.occupied = true;
   });
@@ -2213,7 +2221,9 @@ function LINK_boot(){
     s.nextSeq = Math.max(s.nextSeq||0, maxSeq+1);
   }, 'console');
   LINK_apply(LINK.get());
-  LINK.onChange(s=>{ LINK_apply(s); render(); linkFlash(); });
+  /* N-02. A notification that follows a failed read repaints but does not
+     replay: nothing new was learned, so nothing should be rebuilt from it. */
+  LINK.onChange((s,m)=>{ if(!(m && m.stale)) LINK_apply(s); render(); linkFlash(); });
 }
 
 /* A visible sign that the change came from the other side, so a demonstration
@@ -3079,6 +3089,7 @@ function applyRegister(rows){
     lettable: r.lettable !== false,
     lettableSource: r.lettableSource || null,
     occupied:r.let, tenant:r.tenant, tenant_ar:r.tenantAr,
+    leaseId: r.leaseId || null,                       /* N-01 — see toRegister */
     rent:r.value||0, leaseStart:r.start?new Date(r.start):null, leaseEnd:r.end?new Date(r.end):null,
     inst:(r.inst||[]).map(x=>({q:x.n, amt:x.amt, due:x.due?new Date(x.due):null,
           billed: x.due? new Date(x.due)<=TODAY : false, paid:x.paid,
@@ -6170,11 +6181,35 @@ function renewVals(){
     freq:  $('rnFreq')  ? $('rnFreq').value : 'quarterly'
   };
 }
-function renewValid(v){ return !!(v.start && v.end && v.rent > 0 && v.n >= 1 && v.end > v.start); }
+/* N-03. renewValid and editValid were byte-identical and neither checked the
+   one thing that matters about a generated plan: that it fits inside the term.
+   With the count defaulted from the existing schedule and the frequency
+   defaulting to quarterly, opening A-103 → Renewed proposed six quarterly
+   instalments across a one-year term — the fifth and sixth falling after the
+   lease had ended — with nothing typed. Both forms now ask the same function,
+   and it answers with the reason, so the preview can say what is wrong rather
+   than only that something is. */
+function planReason(v){
+  if(!(v.start && v.end && v.rent > 0 && v.n >= 1)) return {k:'f_plan_fields'};
+  if(!(v.end > v.start)) return {k:'f_plan_order'};
+  const rows = renewRows(v.start, v.rent, v.n, v.freq);
+  if(rows.length !== v.n) return {k:'f_plan_fields'};
+  const end  = new Date(v.end + 'T00:00:00');
+  const over = rows.filter(r => r.due > end);
+  if(over.length) return {k:'f_plan_past', n:over.length, first:over[0].due};
+  return null;
+}
+function planWhy(v){
+  const r = planReason(v); if(!r) return '';
+  return r.k === 'f_plan_past'
+    ? T('f_plan_past').replace('{n}', NUM(r.n)).replace('{d}', fmtD(r.first))
+    : T(r.k);
+}
+function renewValid(v){ return planReason(v) === null; }
 function previewRenewal(){
   const el = $('rnPrev'); if(!el) return;
   const v = renewVals();
-  if(!renewValid(v)){ el.innerHTML = `<div class="note">${T('f_renew_need')}</div>`; return; }
+  if(!renewValid(v)){ el.innerHTML = `<div class="note">${esc(planWhy(v))}</div>`; return; }
   const rows = renewRows(v.start, v.rent, v.n, v.freq);
   const total = rows.reduce((a, r) => a + r.amount, 0);
   const th = 'text-align:left;padding:6px 8px;border-bottom:1px solid rgba(128,128,128,.25);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.03em';
@@ -6231,7 +6266,7 @@ async function applyRenewal(){
   if(!writeGate()) return;
   const u = UNITS.find(x => x.u === RENEW_UNIT); if(!u) return;
   const v = renewVals();
-  if(!renewValid(v)){ toast(T('f_renew_need')); return; }
+  if(!renewValid(v)){ toast(planWhy(v)); return; }
   const key = 'renew:' + u.u; if(PENDING.has(key)) return;
   saving(key, true);
   let ok = false, rec = null;
@@ -6246,6 +6281,17 @@ async function applyRenewal(){
   }catch(e){ ok = false; }
   saving(key, false);
   if(!ok){ toast(T('f_renew_fail')); return; }
+  /* N-01. This is the line whose absence let a payment recorded straight after
+     a renewal be written against the SUPERSEDED lease. The receipt carries the
+     new lease id; the screen adopted its instalments and threw the id away, and
+     the payment writer went on resolving the unit through a map that is only
+     rebuilt by a full read. Between the renewal and the next successful read,
+     `instalment 1 paid` targeted the old term's seq 1 — a row that usually
+     exists and is usually already settled, so one row was affected, the write
+     reported success, and a historical receipt reference and payment date were
+     overwritten. Adopting the id here, from the same receipt that supplied the
+     instalments, is what makes those two things one fact. */
+  u.leaseId    = rec.new_lease;
   u.leaseStart = new Date(v.start);
   u.leaseEnd   = new Date(v.end);
   u.rent       = v.rent;
@@ -6276,12 +6322,12 @@ function editVals(){
     freq:  $('leFreq')  ? $('leFreq').value : 'quarterly'
   };
 }
-function editValid(v){ return !!(v.start && v.end && v.rent > 0 && v.n >= 1 && v.end > v.start); }
+function editValid(v){ return planReason(v) === null; }   /* N-03 — same rule, one place */
 function previewLeaseEdit(){
   const el = $('lePrev'); if(!el) return;
   const u = UNITS.find(x => x.u === EDIT_UNIT); if(!u) return;
   const v = editVals();
-  if(!editValid(v)){ el.innerHTML = `<div class="note">${T('fe_need')}</div>`; return; }
+  if(!editValid(v)){ el.innerHTML = `<div class="note">${esc(planWhy(v))}</div>`; return; }
   const rows = renewRows(v.start, v.rent, v.n, v.freq);
   const paidSeq = {}; (u.inst || []).forEach(x => { if(x.paid) paidSeq[x.q] = true; });
   const total = rows.reduce((a, r) => a + r.amount, 0);
@@ -6336,7 +6382,7 @@ async function applyLeaseEdit(){
   if(!writeGate()) return;
   const u = UNITS.find(x => x.u === EDIT_UNIT); if(!u) return;
   const v = editVals();
-  if(!editValid(v)){ toast(T('fe_need')); return; }
+  if(!editValid(v)){ toast(planWhy(v)); return; }
   const key = 'lease:' + u.u; if(PENDING.has(key)) return;
   saving(key, true);
   LINK.commit(s => { s.leases = s.leases || {};
@@ -8230,7 +8276,15 @@ const LIVE = (function(){
      read in `pull()` belongs here, including through a join. */
   const WATCH = ['work_orders','announcements','instalments','leases','documents','units',
                  'building_costs','residents','suppliers'];
-  let state = null, subs = [], leaseOf = {}, lastErr = null, pulling = false, again = false, timer = null;
+  let state = null, subs = [], lastErr = null, pulling = false, again = false, timer = null;
+  /* N-01. There used to be a `leaseOf` map here: a unit-to-lease cache with four
+     writers inside this module and one reader in the payment writer — and no way
+     for applyRenewal, which lives outside it, to correct it. A renewal therefore
+     moved the instalments on screen while the map still pointed at the closed
+     term, and the next payment went to the wrong lease.
+     The lease id now lives on the unit, beside the instalments it belongs to.
+     One value, one owner, set by whichever response last established it. */
+  const setLeaseId = (unit, id) => { const u = UNITS.find(x => x.u === unit); if(u) u.leaseId = id || null; };
   /* DATA-02. The last cost register that actually arrived, and whether the most
      recent attempt to re-read it failed. A failed read keeps the last good
      figures on screen and says they are stale; it never silently substitutes
@@ -8293,8 +8347,6 @@ const LIVE = (function(){
         .catch(e => { console.warn('building_costs unavailable', e);
                       return {ok:false, why:(e && e.message) || String(e)}; })
     ]);
-    leaseOf = {};
-    leases.forEach(l => { leaseOf[l.unit_id] = l.id; });
     return {units, leases, inst, wos, anns, docs, costs};
   }
 
@@ -8313,6 +8365,10 @@ const LIVE = (function(){
          so, and it cannot if the column never leaves the database. */
       lettable: u.lettable !== false,
       lettableSource: u.lettable_source || null,
+      /* N-01. The id of the lease these instalments belong to travels WITH
+         them. A payment is written against this id, so the row on screen and
+         the row in Postgres cannot be two different leases. */
+      leaseId: l ? l.id : null,
       tenant:   r ? r.name_en : null,
       tenantAr: r ? (r.name_ar || r.name_en) : null,
       value: l ? N(l.contract_value) : null,
@@ -8476,7 +8532,12 @@ const LIVE = (function(){
       } while(again && ++n < MAX_PASSES);
     } finally { pulling = false; }
     if(again) nudge();
-    subs.forEach(fn => { try{ fn(state, {by:'live'}); }catch(e){} });
+    /* N-02. `stale` says this notification follows a read that did NOT succeed.
+       Subscribers still run — the screen has to show that the connection is in
+       trouble — but the shared-record replay must not, because replaying
+       approximate terms over the register is how a failed refresh silently
+       rewrote a schedule. A failure is a reason to say so, not to recompute. */
+    subs.forEach(fn => { try{ fn(state, {by:'live', stale: !!lastErr}); }catch(e){} });
   }
   /* A debounce with a ceiling. This was a pure trailing debounce, and the audit
      named what that costs: "prevent continuous events from postponing updates
@@ -8573,14 +8634,14 @@ const LIVE = (function(){
     if(!receipt || !receipt._args) throw new Error('nothing to apply');
     const args = Object.assign({}, receipt._args, {p_dry_run:false});
     const r = await SB.rpc('save_lease_schedule', args);
-    if(r && r.lease_id && r.unit) leaseOf[r.unit] = r.lease_id;
+    if(r && r.lease_id && r.unit) setLeaseId(r.unit, r.lease_id);
     nudge();
     return r;
   }
 
   async function saveLease(unit, a, opts){
     const r = await writeSchedule(unit, a, opts);
-    if(r && r.lease_id) leaseOf[unit] = r.lease_id;
+    if(r && r.lease_id) setLeaseId(unit, r.lease_id);
     return r;
   }
 
@@ -8647,7 +8708,7 @@ const LIVE = (function(){
                              {p_units: plan.units, p_leases: plan.leases, p_dry_run: false});
     const receipts = (got && got.receipts) || [];
     receipts.forEach(r => {
-      if(r && r.lease_id && r.unit) leaseOf[r.unit] = r.lease_id;
+      if(r && r.lease_id && r.unit) setLeaseId(r.unit, r.lease_id);
     });
     nudge();
     return receipts;
@@ -8932,7 +8993,11 @@ const LIVE = (function(){
           const cur = after.pay && after.pay[unit] && after.pay[unit].paid;
           if(cur && eq(cur[q], sent)){ if(was === undefined) delete cur[q]; else cur[q] = was; }
         };
-        const lid = leaseOf[unit];
+        /* N-01. Resolved from the unit — the same object whose instalments the
+           operator is looking at — not from a separate cache that a renewal can
+           leave behind. */
+        const pu = UNITS.find(x => x.u === unit);
+        const lid = pu && pu.leaseId;
         /* CON-02. This used to `return` — and a payment recorded against a
            flat with no active lease was dropped on the floor with nothing
            pushed, nothing failed, and settled() reporting a clean success. It
