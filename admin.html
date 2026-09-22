@@ -1780,15 +1780,46 @@ setInterval(function(){
    what a rent schedule means. This is the same rule as add_months_clamped in
    Postgres, and the two must agree: the console previews a schedule the
    database then generates. */
+function clampMonth(y, m, d, n){
+  const t = new Date(Date.UTC(y, m + n, 1));
+  const last = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 0)).getUTCDate();
+  return {y: t.getUTCFullYear(), m: t.getUTCMonth(), d: Math.min(d, last)};
+}
+/* F-03. One rule, two projections. clampMonth is the calendar arithmetic; these
+   two only choose which fields of a Date it reads and writes.
+
+   addMonthsClamped works on the LOCAL fields. Its callers step dates built from
+   TODAY — report windows, forecast buckets — and TODAY carries Riyadh's calendar
+   in the reader's local fields, so local is the right projection there.
+
+   addMonthsClampedUTC works on the UTC fields, for a date-only value: this
+   console parses '2026-09-08' as UTC midnight, so its calendar day lives in the
+   UTC fields and only there. renewRows stepped such a start with the LOCAL
+   setters, which is correct only for a reader at UTC or east of it — and even
+   in Riyadh the due date it produced sat three hours after an end that
+   planReason had built at local midnight, so a plan whose last instalment fell
+   on the lease's final day was refused. A reader west of Greenwich saw every
+   due date a day early. The tests ran in a UTC container, the one zone in which
+   the two projections agree, which is why they passed. */
 function addMonthsClamped(d, n){
   const x = new Date(d);
-  const day = x.getDate();
-  x.setDate(1);
-  x.setMonth(x.getMonth() + n);
-  const last = new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate();
-  x.setDate(Math.min(day, last));
+  const c = clampMonth(x.getFullYear(), x.getMonth(), x.getDate(), n);
+  x.setFullYear(c.y, c.m, c.d);
   return x;
 }
+function addMonthsClampedUTC(d, n){
+  const x = new Date(d);
+  const c = clampMonth(x.getUTCFullYear(), x.getUTCMonth(), x.getUTCDate(), n);
+  x.setUTCFullYear(c.y, c.m, c.d);
+  return x;
+}
+/* A date-only value, as this console holds it: UTC midnight of that calendar
+   day. dateUTC accepts the string a form or the database gives, or a Date
+   already so held; isoUTC reads the calendar day back. Neither consults the
+   reader's clock. */
+const dateUTC = s => s instanceof Date ? new Date(s.getTime())
+                   : new Date(String(s || '').slice(0, 10) + 'T00:00:00Z');
+const isoUTC  = d => (d instanceof Date && !isNaN(d)) ? d.toISOString().slice(0, 10) : '';
 
 /* Almaria Residence — canonical register, extracted from بيان ايجارات الشقق 19.xlsx (19 Aug 2026).
    Units, areas, floors, contract values, payment schedules and occupancy are the real figures.
@@ -3133,7 +3164,17 @@ const fmtD=d=>{const m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','O
 const ageH=workedH;
 
 const floorName=f=>f===0?L('Ground','الأرضي'):NUM(f);
-const fmtISO=str=>(!str||str==='—')?'—':fmtD(new Date(str));
+/* F-03. A ten-character ISO string is a calendar date and is shown as one, in
+   every zone; anything longer is a moment and is shown in the reader's local
+   time, as before. The shape of the string says which — nothing is guessed. */
+const fmtISO=str=>(!str||str==='—')?'—':/^\d{4}-\d{2}-\d{2}$/.test(String(str))?fmtDay(new Date(str+'T00:00:00Z')):fmtD(new Date(str));
+/* F-03. A calendar date, as opposed to a moment. A date-only value is held at
+   UTC midnight, so its day is in the UTC fields; fmtD reads the LOCAL fields,
+   which is right for a moment (TODAY, a timestamp) and a day early for a
+   calendar date read west of Greenwich. The lease forms and the drawer they
+   open from use this. The rest of the console still reads calendar dates
+   through fmtD and fmtISO — R-06, pending. */
+const fmtDay=d=>(d instanceof Date && !isNaN(d)) ? fmtD(new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), 12)) : '—';
 const STA={submitted:['p-info','clock','st_sub'],assigned:['p-info','check','st_ass'],
  progress:['p-warn','clock','st_prog'],hold:['p-ser','pause','st_hold'],
  done:['p-good','check','st_done'],cancelled:['p-neut','x','st_can']};
@@ -6105,7 +6146,7 @@ function finDetail(uid){
 
   ${isExpired(u) ? `
   <div class="card mb"><div class="bd">
-    <div class="warnbox">${I('alert',16,2.2)}<span>${esc(T('f_expired_lead').replace('{d}', fmtD(u.leaseEnd)))}</span></div>
+    <div class="warnbox">${I('alert',16,2.2)}<span>${esc(T('f_expired_lead').replace('{d}', fmtDay(u.leaseEnd)))}</span></div>
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
       <button class="btn pri" data-unit="${esc(u.u)}" onclick="openRenewal(this.dataset.unit)">${I('check',16,2.2)} ${T('f_renewed')}</button>
       <button class="btn" data-unit="${esc(u.u)}" onclick="notRenewed(this.dataset.unit)">${T('f_notrenewed')}</button>
@@ -6121,7 +6162,7 @@ function finDetail(uid){
     <button class="tbtn" data-unit="${esc(u.u)}" onclick="docOpen({type:'unit',unit:this.dataset.unit},'contract')">${I('up',15)}<span>${T('doc_attachbtn')}</span></button></div>
    <div class="bd"><dl class="kv">
     <dt>${T('tenant')}</dt><dd>${esc(L(u.tenant,u.tenant_ar))}</dd>
-    <dt>${T('f_term')}</dt><dd>${fmtD(u.leaseStart)} — ${fmtD(u.leaseEnd)}</dd>
+    <dt>${T('f_term')}</dt><dd>${fmtDay(u.leaseStart)} — ${fmtDay(u.leaseEnd)}</dd>
     <dt>${T('h_annual')}</dt><dd>${money(u.rent)} ${T('sar')}</dd>
     <dt>${T('f_profile')}</dt><dd>${payPill(u.profile)}</dd>
     <dt>${T('h_net')}</dt><dd>${money(u.collected-maint)} ${T('sar')}</dd>
@@ -6166,15 +6207,30 @@ function renewStep(f){ return f==='monthly'?1 : f==='quarterly'?3 : f==='semiann
 function renewRows(start, rent, n, freq){
   const rows = [];
   if(!start || !(rent > 0) || !(n >= 1)) return rows;
+  const s0 = dateUTC(start);
+  if(isNaN(s0)) return rows;
   const step = renewStep(freq);
   const totalHal = Math.round(rent * 100);
   const baseHal  = Math.floor(totalHal / n);
   const restHal  = totalHal - baseHal * n;
   for(let i = 1; i <= n; i++){
     const amt = (i === n ? baseHal + restHal : baseHal) / 100;
-    rows.push({seq:i, amount:amt, due:addMonthsClamped(start, (i - 1) * step)});
+    rows.push({seq:i, amount:amt, due:addMonthsClampedUTC(s0, (i - 1) * step)});
   }
   return rows;
+}
+/* The number of instalments that fit the term at this cadence — the largest n
+   whose last due date is on or before the end. The renewal form opens with
+   this, so what it proposes is a plan it would accept. It opened A-103 with the
+   old schedule's six instalments and quarterly selected, and refused its own
+   default before anything was typed. */
+function planFit(start, end, freq){
+  if(!start || !end) return 1;
+  const step = renewStep(freq), s0 = dateUTC(start);
+  if(isNaN(s0)) return 1;
+  let n = 0;
+  while(n < 60 && isoUTC(addMonthsClampedUTC(s0, n * step)) <= end) n++;
+  return Math.max(1, n);
 }
 function renewVals(){
   return {
@@ -6198,15 +6254,16 @@ function planReason(v){
   if(!(v.end > v.start)) return {k:'f_plan_order'};
   const rows = renewRows(v.start, v.rent, v.n, v.freq);
   if(rows.length !== v.n) return {k:'f_plan_fields'};
-  const end  = new Date(v.end + 'T00:00:00');
-  const over = rows.filter(r => r.due > end);
+  /* Calendar day against calendar day. The end used to be built at LOCAL
+     midnight and compared with dues held at UTC midnight — F-03. */
+  const over = rows.filter(r => isoUTC(r.due) > v.end);
   if(over.length) return {k:'f_plan_past', n:over.length, first:over[0].due};
   return null;
 }
 function planWhy(v){
   const r = planReason(v); if(!r) return '';
   return r.k === 'f_plan_past'
-    ? T('f_plan_past').replace('{n}', NUM(r.n)).replace('{d}', fmtD(r.first))
+    ? T('f_plan_past').replace('{n}', NUM(r.n)).replace('{d}', fmtDay(r.first))
     : T(r.k);
 }
 function renewValid(v){ return planReason(v) === null; }
@@ -6223,7 +6280,7 @@ function previewRenewal(){
     + `<table style="width:100%;border-collapse:collapse;font-size:13px">`
     + `<thead><tr><th style="${th}">#</th><th style="${th}">${T('f_renew_due')}</th>`
     + `<th style="${th};text-align:right">${T('f_renew_amount')}</th></tr></thead><tbody>`
-    + rows.map(r => `<tr><td style="${td}">${r.seq}</td><td style="${td}">${fmtD(r.due)}</td>`
+    + rows.map(r => `<tr><td style="${td}">${r.seq}</td><td style="${td}">${fmtDay(r.due)}</td>`
         + `<td style="${td};text-align:right" class="mono">${money(r.amount)}</td></tr>`).join('')
     + `</tbody><tfoot><tr><td style="${td}"></td>`
     + `<td style="${td};text-align:right" class="strong">${T('f_renew_total')}</td>`
@@ -6233,30 +6290,36 @@ function openRenewal(unit){
   if(!writeGate()) return;
   const u = UNITS.find(x => x.u === unit); if(!u) return;
   RENEW_UNIT = unit;
-  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  const oldEnd = u.leaseEnd ? new Date(u.leaseEnd) : new Date(TODAY);
-  const st = new Date(oldEnd.getTime()); st.setDate(st.getDate() + 1);          // the day after the closed term
-  const en = new Date(st.getTime()); en.setFullYear(en.getFullYear() + 1); en.setDate(en.getDate() - 1);
-  const n0 = (u.inst && u.inst.length) ? u.inst.length : 4;
+  /* leaseEnd is a date-only value (UTC midnight); TODAY carries Riyadh's date in
+     the reader's LOCAL fields. Each is read through its own projection, and the
+     arithmetic is then done on the calendar day in UTC — the day after the
+     closed term, and a year less a day from there — so the defaults are the
+     same dates for every reader. Local setters on the UTC-midnight end gave a
+     reader west of Greenwich the closed term's own last day as the new start. */
+  const isoLocal = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const st = dateUTC(u.leaseEnd ? isoUTC(u.leaseEnd) : isoLocal(TODAY));
+  st.setUTCDate(st.getUTCDate() + 1);                                            // the day after the closed term
+  const en = new Date(st.getTime()); en.setUTCFullYear(en.getUTCFullYear() + 1); en.setUTCDate(en.getUTCDate() - 1);
+  const FIT = {12:'monthly', 4:'quarterly', 2:'semiannual', 1:'annual'};
+  const freq0 = FIT[(u.inst || []).length] || 'quarterly';
+  const n0 = planFit(isoUTC(st), isoUTC(en), freq0);
   const rent0 = u.rent || 0;
   openDrawer(`${T('f_renew_t')}<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${L('Apartment','شقة')} ${esc(u.u)}</div>`, `
     <p class="muted" style="margin:0 0 12px">${T('f_renew_lead')}</p>
-    <div class="note" style="margin:0 0 16px">${esc(T('f_renew_super').replace('{d}', u.leaseEnd ? fmtD(u.leaseEnd) : '—'))}</div>
+    <div class="note" style="margin:0 0 16px">${esc(T('f_renew_super').replace('{d}', u.leaseEnd ? fmtDay(u.leaseEnd) : '—'))}</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px">
       <div class="fgroup"><label class="f" for="rnStart">${T('f_renew_start')}</label>
-        <input class="inp" id="rnStart" type="date" value="${iso(st)}" oninput="previewRenewal()"></div>
+        <input class="inp" id="rnStart" type="date" value="${isoUTC(st)}" oninput="previewRenewal()"></div>
       <div class="fgroup"><label class="f" for="rnEnd">${T('f_renew_end')}</label>
-        <input class="inp" id="rnEnd" type="date" value="${iso(en)}" oninput="previewRenewal()"></div>
+        <input class="inp" id="rnEnd" type="date" value="${isoUTC(en)}" oninput="previewRenewal()"></div>
       <div class="fgroup"><label class="f" for="rnRent">${T('f_renew_rent')}</label>
         <input class="inp" id="rnRent" type="number" min="1" step="1" value="${rent0}" oninput="previewRenewal()"></div>
       <div class="fgroup"><label class="f" for="rnCount">${T('f_renew_count')}</label>
         <input class="inp" id="rnCount" type="number" min="1" step="1" value="${n0}" oninput="previewRenewal()"></div>
       <div class="fgroup"><label class="f" for="rnFreq">${T('f_renew_freq')}</label>
-        <select class="inp" id="rnFreq" onchange="previewRenewal()">
-          <option value="monthly">${T('freq_monthly')}</option>
-          <option value="quarterly" selected>${T('freq_quarterly')}</option>
-          <option value="semiannual">${T('freq_semiannual')}</option>
-          <option value="annual">${T('freq_annual')}</option>
+        <select class="inp" id="rnFreq" onchange="renewFit();previewRenewal()">
+          ${['monthly','quarterly','semiannual','annual'].map(f =>
+            `<option value="${f}"${f === freq0 ? ' selected' : ''}>${T('freq_' + f)}</option>`).join('')}
         </select></div>
     </div>
     <div id="rnPrev" style="margin:16px 0"></div>
@@ -6265,6 +6328,14 @@ function openRenewal(unit){
       <button class="btn" data-unit="${esc(u.u)}" onclick="finDetail(this.dataset.unit)">${T('rc_cancel')}</button>
     </div>`);
   previewRenewal();
+}
+/* Changing the cadence re-fits the count to the term; the number typed for one
+   cadence is rarely the number meant for another. Dates and rent are left to
+   the operator — the preview says what does not fit. */
+function renewFit(){
+  const c = $('rnCount'); if(!c) return;
+  const v = renewVals();
+  if(v.start && v.end && v.end > v.start) c.value = planFit(v.start, v.end, v.freq);
 }
 async function applyRenewal(){
   if(!writeGate()) return;
@@ -6304,7 +6375,7 @@ async function applyRenewal(){
             due: new Date(x.due_on), billed: new Date(x.due_on) <= TODAY,
             paid: false, paidOn: null, ref: null}));
   recompute(); closeDrawer(); render();
-  toast(T('f_renewed_ok').replace('{u}', u.u).replace('{d}', fmtD(u.leaseEnd)).replace('{r}', money(v.rent)));
+  toast(T('f_renewed_ok').replace('{u}', u.u).replace('{d}', fmtDay(u.leaseEnd)).replace('{r}', money(v.rent)));
 }
 
 /* ---------- editing a lease in place (no document required) ----------
@@ -6342,7 +6413,7 @@ function previewLeaseEdit(){
     + `<table style="width:100%;border-collapse:collapse;font-size:13px">`
     + `<thead><tr><th style="${th}">#</th><th style="${th}">${T('f_renew_due')}</th>`
     + `<th style="${th};text-align:right">${T('f_renew_amount')}</th><th style="${th}"></th></tr></thead><tbody>`
-    + rows.map(r => `<tr><td style="${td}">${r.seq}</td><td style="${td}">${fmtD(r.due)}</td>`
+    + rows.map(r => `<tr><td style="${td}">${r.seq}</td><td style="${td}">${fmtDay(r.due)}</td>`
         + `<td style="${td};text-align:right" class="mono">${money(r.amount)}</td>`
         + `<td style="${td}">${paidSeq[r.seq] ? `<span class="pill p-good">${L('Paid','مسدَّد')}</span>` : ''}</td></tr>`).join('')
     + `</tbody><tfoot><tr><td style="${td}"></td><td style="${td};text-align:right" class="strong">${T('f_renew_total')}</td>`
@@ -6352,7 +6423,10 @@ function openLeaseEdit(unit){
   if(!writeGate()) return;
   const u = UNITS.find(x => x.u === unit); if(!u) return;
   EDIT_UNIT = unit;
-  const iso = d => d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : '';
+  /* F-03. leaseStart and leaseEnd are date-only values; their calendar day is
+     in the UTC fields. Read through local getters they were a day early for a
+     reader west of Greenwich. */
+  const iso = d => d ? isoUTC(d) : '';
   const n0 = (u.inst && u.inst.length) ? u.inst.length : 4;
   const guess = n0 === 12 ? 'monthly' : n0 === 2 ? 'semiannual' : n0 === 1 ? 'annual' : 'quarterly';
   openDrawer(`${T('fe_t')}<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${L('Apartment','شقة')} ${esc(u.u)}</div>`, `
@@ -6403,7 +6477,7 @@ async function applyLeaseEdit(){
     return k ? {q:r.seq, amt:k.amt, due:k.due || r.due, billed:true, paid:true, paidOn:k.paidOn || null, ref:k.ref || null}
              : {q:r.seq, amt:r.amount, due:r.due, billed:r.due <= TODAY, paid:false, paidOn:null, ref:null}; });
   recompute(); closeDrawer(); render();
-  toast(T('fe_ok').replace('{u}', u.u).replace('{r}', money(v.rent)).replace('{d}', fmtD(u.leaseEnd)));
+  toast(T('fe_ok').replace('{u}', u.u).replace('{r}', money(v.rent)).replace('{d}', fmtDay(u.leaseEnd)));
 }
 function notRenewed(unit){
   if(!writeGate()) return;
