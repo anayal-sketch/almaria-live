@@ -960,10 +960,21 @@ const D={
   floor:'Floor', type:'Type', area:'Area', tenant:'Tenant', leaseend:'Lease ends',
   openjobs:'Open', costytd:'Cost', occupied:'Occupied', vacant:'Vacant',
   /* residents */
-  account:'Account', verified:'Verified', pending:'Invited', inactive:'Deactivated',
+  account:'Resident app', verified:'Signed in', pending:'Email on file', inactive:'No email yet',
   lastseen:'Last sign-in', channel:'Prefers',
+  res_email:'Email', res_add:'Add email', res_change:'Change',
+  res_t:'Sign-in email', res_lead:'The resident app sends a six-digit code to this address. It must be an address the tenant reads, and it must be theirs alone.',
+  res_field:'Email address',
+  res_note:'Saving this does not invite anyone. The tenant can sign in once their login has been created in the dashboard with this same address.',
+  res_save:'Save email',
+  res_bad:'Enter a complete email address, like name@example.com.',
+  res_dup:'That address is already on another resident\'s record. One address signs in to one tenancy.',
+  res_fail:'Not saved — the database did not accept the change. You may not have permission, or the connection dropped.',
+  res_ok:'{u}: sign-in email saved.',
+  res_signed:'This tenant has already signed in to the app. Their login stays with them, so changing the address here would not change it.',
+  res_nolease:'No current lease on this flat — record the lease before inviting the tenant.',
   adopt_t:'App adoption', adopt_d:'The figure that governs whether the maintenance log can be trusted',
-  activated:'units with an active account', inapp:'of requests raised in the app',
+  activated:'units whose tenant has signed in', inapp:'of requests raised in the app',
   /* reports */
   r_pack:'Monthly pack', r_run:'Run', r_top:'Cost by unit — highest ten',
   r_exp:'Leases expiring within 90 days', r_none:'None in the window',
@@ -1292,10 +1303,21 @@ const D={
   cond_good:'جيدة', cond_fair:'مقبولة', cond_poor:'ضعيفة',
   floor:'الدور', type:'النوع', area:'المساحة', tenant:'الساكن', leaseend:'نهاية العقد',
   openjobs:'مفتوحة', costytd:'التكلفة', occupied:'مشغولة', vacant:'شاغرة',
-  account:'الحساب', verified:'موثّق', pending:'مدعو', inactive:'موقوف',
+  account:'تطبيق الساكن', verified:'سجّل الدخول', pending:'البريد مسجّل', inactive:'لا يوجد بريد بعد',
   lastseen:'آخر دخول', channel:'يفضّل',
+  res_email:'البريد الإلكتروني', res_add:'إضافة بريد', res_change:'تغيير',
+  res_t:'بريد تسجيل الدخول', res_lead:'يرسل تطبيق الساكن رمزاً من ستة أرقام إلى هذا العنوان. يجب أن يكون عنواناً يقرؤه المستأجر، وأن يكون له وحده.',
+  res_field:'عنوان البريد الإلكتروني',
+  res_note:'حفظ العنوان لا يرسل دعوة لأحد. يستطيع المستأجر تسجيل الدخول بعد إنشاء حسابه في لوحة التحكم بالعنوان نفسه.',
+  res_save:'حفظ البريد',
+  res_bad:'أدخل عنوان بريد كاملاً، مثل name@example.com.',
+  res_dup:'هذا العنوان مسجّل لساكن آخر. العنوان الواحد يدخل إلى تعاقد واحد.',
+  res_fail:'لم يُحفظ — لم تقبل قاعدة البيانات التغيير. قد لا تملك الصلاحية، أو انقطع الاتصال.',
+  res_ok:'{u}: حُفظ بريد تسجيل الدخول.',
+  res_signed:'سجّل هذا المستأجر الدخول إلى التطبيق. حسابه يبقى معه، ولن يغيّره تعديل العنوان هنا.',
+  res_nolease:'لا يوجد عقد حالي لهذه الشقة — سجّل العقد قبل دعوة المستأجر.',
   adopt_t:'استخدام التطبيق', adopt_d:'المؤشر الذي يحدد مدى موثوقية سجل الصيانة',
-  activated:'وحدة لديها حساب مفعّل', inapp:'من الطلبات عبر التطبيق',
+  activated:'وحدة سجّل مستأجرها الدخول', inapp:'من الطلبات عبر التطبيق',
   r_pack:'الحزمة الشهرية', r_run:'تشغيل', r_top:'التكلفة حسب الوحدة — أعلى عشر',
   r_exp:'عقود تنتهي خلال ٩٠ يوماً', r_none:'لا يوجد',
   title_en:'العنوان (إنجليزي)', title_ar:'العنوان (عربي)', audience:'الجمهور', published:'منشور',
@@ -3158,6 +3180,9 @@ function applyRegister(rows){
     lettableSource: r.lettableSource || null,
     occupied:r.let, tenant:r.tenant, tenant_ar:r.tenantAr,
     leaseId: r.leaseId || null,                       /* N-01 — see toRegister */
+    /* Absent (an imported spreadsheet row) is not the same as empty: undefined
+       keeps what the screen already knew until the next read says otherwise. */
+    residentId: r.residentId, email: r.email, signedIn: r.signedIn,
     rent:r.value||0, leaseStart:r.start?new Date(r.start):null, leaseEnd:r.end?new Date(r.end):null,
     inst:(r.inst||[]).map(x=>({id:x.id || null, q:x.n, amt:x.amt, due:x.due?new Date(x.due):null,
           billed: x.due? new Date(x.due)<=TODAY : false, paid:x.paid,
@@ -3167,11 +3192,18 @@ function applyRegister(rows){
     sheetPaid:r.paid, sheetRemain:r.remain
   }));
   const keep = {};
-  UNITS.forEach(u => keep[u.u] = {account:u.account, lastSeen:u.lastSeen, prefers:u.prefers});
+  UNITS.forEach(u => keep[u.u] = {account:u.account, lastSeen:u.lastSeen, prefers:u.prefers,
+                                  residentId:u.residentId, email:u.email, signedIn:u.signedIn});
   UNITS.length = 0;
   built.forEach((u,i) => {
     const k = keep[u.u] || {};
-    u.account = k.account || 'none';
+    if(u.residentId === undefined){ u.residentId = k.residentId || null; u.email = k.email || null; u.signedIn = !!k.signedIn; }
+    u.residentId = u.residentId || null; u.email = u.email || null; u.signedIn = !!u.signedIn;
+    /* The app account is read, not assumed: signed in, an address on file
+       waiting for its first sign-in, or nothing yet. It was 'none' for every
+       flat and the page called that "Deactivated" — nobody had ever been
+       activated, so nobody had been deactivated either. */
+    u.account = u.signedIn ? 'verified' : u.email ? 'pending' : 'none';
     u.lastSeen = k.lastSeen ?? null;
     u.prefers = k.prefers || null;
     u.profile = 'none';
@@ -4476,16 +4508,71 @@ function pgRes(){
  </div>
  <div class="card mb"><div class="bd"><div class="warnbox">${I('alert',16,2.2)}<span>${T('adopt_d')}. ${L('Below roughly 70 per cent of requests raised in the app, the maintenance log understates activity and every cost report is weakened.','دون ٧٠٪ تقريباً من الطلبات عبر التطبيق، يقلّ سجل الصيانة عن النشاط الفعلي وتضعف كل تقارير التكلفة.')}</span></div></div></div>
  <div class="card"><div class="tw"><table>
-  <thead><tr><th>${T('unit')}</th><th>${T('tenant')}</th><th>${T('account')}</th><th>${T('lastseen')}</th><th>${T('channel')}</th><th>${T('leaseend')}</th></tr></thead>
+  <thead><tr><th>${T('unit')}</th><th>${T('tenant')}</th><th>${T('res_email')}</th><th>${T('account')}</th><th>${T('channel')}</th><th>${T('leaseend')}</th><th></th></tr></thead>
   <tbody>${occ.map(u=>`<tr>
    <td class="strong">${NUM(u.u)}</td><td>${esc(L(u.tenant,u.tenant_ar))}</td>
+   <td class="mono" dir="ltr" style="word-break:break-all">${u.email?esc(u.email):'<span class="sub2">—</span>'}</td>
    <td>${u.account==='verified'?`<span class="pill p-good">${I('check',12,2.1)}${T('verified')}</span>`
      :u.account==='pending'?`<span class="pill p-warn">${I('clock',12,2.1)}${T('pending')}</span>`
      :`<span class="pill p-neut">${T('inactive')}</span>`}</td>
-   <td class="mono">${u.lastSeen!==null?NUM(u.lastSeen)+' '+L('days ago','يوم مضى'):'—'}</td>
-   <td>${u.prefers==='app'?T('ch_app'):T('ch_phone')}</td>
-   <td class="mono">${fmtD(u.leaseEnd)}</td></tr>`).join('')}</tbody>
+   <td>${u.prefers==='app'?T('ch_app'):u.prefers==='phone'?T('ch_phone'):'<span class="sub2">—</span>'}</td>
+   <td class="mono">${fmtD(u.leaseEnd)}</td>
+   <td class="num">${resEmailAction(u)}</td></tr>`).join('')}</tbody>
  </table></div></div>`;
+}
+
+/* ---------- the sign-in email a tenant uses ----------
+   The resident app signs a tenant in by a code sent to the address on their
+   resident record; link_resident() matches the two. This is where the office
+   records that address. It is a staff write the database already permits
+   (residents_staff_upd, can_write()), keyed on the resident's own id — never
+   on the flat, so it cannot land on a different tenant of the same unit. */
+function resEmailAction(u){
+  if(rolesViewer() || !u.residentId || !u.leaseId) return '';
+  if(u.signedIn) return '';
+  return `<button class="tbtn" data-unit="${esc(u.u)}" onclick="resEmailOpen(this.dataset.unit)">${I(u.email?'edit':'plus',14,2.1)}<span>${u.email?T('res_change'):T('res_add')}</span></button>`;
+}
+const resEmailOK = m => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m);
+function resEmailOpen(unit){
+  if(!writeGate()) return;
+  const u = UNITS.find(x => x.u === unit); if(!u) return;
+  if(!u.leaseId || !u.residentId){ toast(T('res_nolease')); return; }
+  if(u.signedIn){ toast(T('res_signed')); return; }
+  openDrawer(T('res_t') + `<div style="font-size:12px;color:var(--muted);font-weight:600;margin-top:2px">${L('Apartment','شقة')} ${esc(u.u)} · ${esc(L(u.tenant,u.tenant_ar))}</div>`, `
+    <p class="muted" style="margin:0 0 14px">${T('res_lead')}</p>
+    <div class="fgroup"><label class="f" for="resMail">${T('res_field')}</label>
+      <input class="inp" id="resMail" type="email" inputmode="email" autocomplete="off" dir="ltr"
+             value="${esc(u.email || '')}"></div>
+    <div class="note" style="margin:12px 0 16px">${T('res_note')}</div>
+    <div id="resOut"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn pri" data-unit="${esc(u.u)}" onclick="resEmailSave(this.dataset.unit)">${I('check',16,2.2)} ${T('res_save')}</button>
+      <button class="btn" onclick="closeDrawer()">${T('rc_cancel')}</button>
+    </div>`);
+}
+async function resEmailSave(unit){
+  if(!writeGate()) return;
+  const u = UNITS.find(x => x.u === unit); if(!u || !u.residentId) return;
+  /* Stored as the app will compare it: trimmed and lower-case. The unique
+     index is on lower(email) and link_resident() lowers both sides, so a
+     capital letter typed here can never make an address that will not match. */
+  const mail = String(($('resMail') && $('resMail').value) || '').trim().toLowerCase();
+  const say = k => { const o = $('resOut'); if(o) o.innerHTML = `<div class="warnbox" style="margin-bottom:12px">${I('alert',16,2.2)}<span>${esc(T(k))}</span></div>`; };
+  if(!resEmailOK(mail)){ say('res_bad'); return; }
+  const key = 'resmail:' + u.residentId; if(PENDING.has(key)) return;
+  saving(key, true);
+  let ok = false, dup = false;
+  try{
+    const rows = await SB.upd('residents', 'id=eq.' + encodeURIComponent(u.residentId), {email: mail});
+    ok = Array.isArray(rows) && rows.length === 1;
+  }catch(e){
+    dup = !!(e && (e.status === 409 || /23505|duplicate|unique/i.test(String((e.body && (e.body.code || e.body.message)) || e.message || ''))));
+  }
+  saving(key, false);
+  if(!ok){ say(dup ? 'res_dup' : 'res_fail'); return; }
+  u.email = mail; u.account = 'pending';
+  recompute(); closeDrawer(); render();
+  toast(T('res_ok').replace('{u}', u.u));
 }
 
 /* ---------- reports ---------- */
@@ -8566,8 +8653,12 @@ const LIVE = (function(){
       SB.selAll('units', 'select=*&order=id.asc'),
       /* CON-08. Every collection the console needs whole goes through selAll,
          and every order ends in a unique key. */
-      SB.selAll('leases', 'select=id,unit_id,starts_on,ends_on,contract_value,status,' +
-                          'residents(name_en,name_ar)&status=eq.active&order=unit_id.asc,id.asc'),
+      /* Pilot onboarding. The resident's own id and email come with the lease,
+         so the office can record the address a tenant signs in with, and
+         auth_uid comes only so the console can say whether they have — it is
+         reduced to a yes/no in toRegister and not kept. */
+      SB.selAll('leases', 'select=id,unit_id,resident_id,starts_on,ends_on,contract_value,status,' +
+                          'residents(id,name_en,name_ar,email,auth_uid)&status=eq.active&order=unit_id.asc,id.asc'),
       /* SCALE-03. This read the whole instalments table and then threw most of
          it away: toRegister() keeps only the rows belonging to the flat's ACTIVE
          lease, and that is the only place this payload is read. Every superseded
@@ -8643,6 +8734,11 @@ const LIVE = (function(){
          them. A payment is written against this id, so the row on screen and
          the row in Postgres cannot be two different leases. */
       leaseId: l ? l.id : null,
+      /* Onboarding: who the tenant is on record, the address they sign in
+         with, and whether they have. auth_uid itself goes no further. */
+      residentId: r ? (r.id || null) : (l ? (l.resident_id || null) : null),
+      email:      r ? (r.email || null) : null,
+      signedIn:   !!(r && r.auth_uid),
       tenant:   r ? r.name_en : null,
       tenantAr: r ? (r.name_ar || r.name_en) : null,
       value: l ? N(l.contract_value) : null,

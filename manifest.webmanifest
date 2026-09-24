@@ -1,0 +1,16 @@
+{
+  "name": "Almaria Residence",
+  "short_name": "Almaria",
+  "description": "The resident app for Almaria Residence — your tenancy, payments and maintenance requests.",
+  "start_url": "./index.html",
+  "scope": "./index.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#00293B",
+  "theme_color": "#00293B",
+  "dir": "auto",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
