@@ -39,7 +39,7 @@
   manifest-src 'self'">
 
 <!-- ACC-01. This carried maximum-scale=1 and user-scalable=no, which stops a
-     reader pinching to zoom. On the page a resident reads their rent schedule
+     reader pinching to zoom. On the page a resident reads their requests
      on. The console has never had it; the two were written months apart and
      only one of them locked the screen. -->
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -301,24 +301,6 @@ textarea.inp{min-height:92px;resize:none}
 }
 
 /* ---------- payments ---------- */
-.leasecard{
-  border-radius:var(--r);padding:20px;color:#fff;box-shadow:var(--shadow);margin-bottom:16px;
-  background:linear-gradient(125deg,#00293B 0%,#00506B 52%,#B8912F 100%);position:relative;overflow:hidden
-}
-.leasecard::after{
-  content:"";position:absolute;inset-inline-end:-40px;top:-50px;width:170px;height:170px;border-radius:50%;
-  background:radial-gradient(circle,rgba(232,192,88,.42),transparent 65%)
-}
-.leasecard .mk{position:absolute;inset-inline-end:16px;bottom:12px;width:66px;opacity:.22;color:#fff}
-.leasecard .lbl{font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;opacity:.7;font-weight:800}
-.leasecard .big{font-size:27px;font-weight:800;margin:5px 0 2px;letter-spacing:-.02em}
-.lease-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px;position:relative}
-.lease-grid .lbl{margin-bottom:4px}
-.lease-grid .v{font-size:14px;font-weight:800}
-.payrow{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
-.payrow:last-child{border-bottom:none}
-.bar{height:7px;border-radius:99px;background:#EAECEF;overflow:hidden;margin:12px 0 8px}
-.bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--gold-1),var(--gold-2))}
 
 /* ---------- community ---------- */
 .post{background:#fff;border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow);margin-bottom:14px;cursor:pointer}
@@ -600,27 +582,27 @@ const D = {
   en:{
     appName:'Almaria Residence', hub:'Your building hub', welcome:'Welcome back',
     lock_title:'Sign in to your apartment',
-    lock_body:'This app shows your own tenancy — your lease, your payment schedule and your maintenance requests. There is nothing to see until you sign in.',
+    lock_body:'This app shows your own apartment — your maintenance requests and the building\'s notices. There is nothing to see until you sign in.',
     lock_help:'The code goes to the email address the office holds for you. If you are not sure which address that is, or you have not given the office one, contact them.',
     menu_priv:'Privacy', priv_link:'How we use your information', priv_t:'Your privacy',
     priv_who_h:'Who is responsible',
     priv_who:'Almaria Investment Company, which manages Almaria Residence, is responsible for the information in this app.',
     priv_what_h:'What we hold',
-    priv_what:'Your name and apartment, your lease and its payment schedule, the payments recorded against it, the email address you sign in with, and the maintenance requests you raise — what you write, when, and the rating you give.',
+    priv_what:'Your name and apartment, the email address you sign in with, and the maintenance requests you raise — what you write, when, and the rating you give. The office also keeps your lease and payment records; only the office uses them, and they are not shown in this app.',
     priv_why_h:'Why',
-    priv_why:'So you can see your tenancy and payments, raise and follow maintenance requests, and read building announcements. We do not use it for advertising and we do not sell it.',
+    priv_why:'So you can raise and follow maintenance requests and read building announcements, and so the office can manage your tenancy. We do not use it for advertising and we do not sell it.',
     priv_see_h:'Who can see it',
-    priv_see:'You, for your own tenancy, and authorised Almaria staff. No other resident can see your information. When your tenancy ends, your access to it in the app ends.',
+    priv_see:'You, for your own apartment, and authorised Almaria staff. No other resident can see your information. When you move out, your access to it in the app ends.',
     priv_where_h:'Where it is kept',
     priv_where:'In a database run for us by Supabase, on servers in Japan. Sign-in codes are sent to you by email.',
     priv_long_h:'How long',
     priv_long:'While you are a resident, and afterwards only as long as the law requires tenancy and payment records to be kept.',
     priv_rights_h:'Your choices',
     priv_rights:'You can ask for a copy of your information, ask us to correct it, or ask us to delete what we are not required to keep. Write to us at the address below.',
-    priv_updated:'Updated 24 September 2026',
+    priv_updated:'Updated 27 September 2026',
     nt_title:'No apartment is attached to this account',
-    nt_body:'You are signed in, but this account is not linked to a current tenancy, so there is nothing here to show. If you are a resident, contact the building office. If this is a staff account, use the management console.',
-    tab_home:'Home', tab_svc:'Services', tab_pay:'Payments', tab_com:'Community', tab_prof:'Profile',
+    nt_body:'You are signed in, but this account is not linked to an apartment in the building, so there is nothing here to show. If you are a resident, contact the building office. If this is a staff account, use the management console.',
+    tab_home:'Home', tab_svc:'Services', tab_com:'Community', tab_prof:'Profile',
     heroKicker:'ALMARIA RESIDENCE', heroTitle:'Everything your home needs, in one place',
     /* DATA-03. This said "37 apartments". It was true, and the resident app has
        no way of knowing it: a resident may read exactly one row of the unit
@@ -628,16 +610,12 @@ const D = {
        the number was a constant on a screen with nothing behind it, and it
        would have gone on reading 37 through any change to the building. The
        console can count; this app cannot, so it stops saying. */
-    heroText:'Maintenance, rent, building notices and amenities — one app.',
+    heroText:'Maintenance, building notices and amenities — one app.',
     quick:'Quick actions',
     qa_req:'New request', qa_req_d:'Report a maintenance issue',
     qa_gate:'Visitor pass', qa_gate_d:'Send a QR code in seconds',
-    qa_pay:'Rent & payments', qa_pay_d:'Schedule, receipts, balance',
     qa_call:'Contact building', qa_call_d:'Manager, security, emergency',
-    openReq:'Your open requests', viewAll:'View all', nextPay:'Next payment',
-    pay_allpaid:'Nothing outstanding', pay_allpaid_d:'Every instalment on this lease is paid.',
-    pay_none:'No schedule on file', pay_none_d:'The office has not entered a payment schedule for this tenancy yet.',
-    pay_paid:'Paid', pay_overdue_d:'days overdue', pay_today:'Due today',
+    openReq:'Your open requests', viewAll:'View all',
     req_hold_d:'Paused by the office',
     latest:'Latest announcement', amenities:'Building amenities',
     svc_cat:'Services', svc_open:'Open', svc_hist:'History',
@@ -655,10 +633,6 @@ const D = {
     assignedTo:'Assigned to', sla:'Target', progress:'Progress', rate:'Rate this service', rated:'You rated',
     a_stars:'{n} out of 5', a_rated:'Rated {n} out of 5', a_close:'Close',
     cancelReq:'Cancel request',
-    lease:'Your lease', annualRent:'Annual rent', instalment:'Instalment', paid:'Paid', due:'Due', upcoming:'Upcoming',
-    overdue:'Overdue', leaseTerm:'Lease term', leaseType:'Apartment type', paidToDate:'Paid to date',
-    schedule:'Payment schedule', receipts:'Receipts', downloadRcpt:'Download receipt',
-    payNow:'View payment instructions', payNote:'Payments are made by bank transfer or cheque to Almaria. The app does not process card payments.',
     community:'Your building', commSub:'Notices & announcements', readMore:'Read more',
     post:'Notice', event:'Event',
     prof_info:'Resident information', prof_email:'Email', prof_phone:'Mobile', prof_unit:'Apartment',
@@ -667,7 +641,7 @@ const D = {
     household:'Household members', documents:'My documents', emergency:'Emergency contacts',
     logout:'Sign out', del:'Delete account',
     menu_id:'Resident ID', menu_gate:'Visitor pass', menu_req:'My requests', menu_comp:'Complaints',
-    menu_pay:'Payments', menu_house:'Household', menu_docs:'Documents', menu_info:'Building info',
+    menu_house:'Household', menu_docs:'Documents', menu_info:'Building info',
     gatePass:'Visitor pass', visitorName:'Visitor name', visitDate:'Visit date', validFor:'Valid for',
     hours4:'4 hours', hours12:'12 hours', day1:'Full day', generate:'Generate pass', showGuard:'Show this to the guard at the entrance',
     contact:'Contact', mgr:'Building manager', security:'Security desk', emerg:'Emergency (24h)',
@@ -679,7 +653,7 @@ const D = {
     no_office:'no connection to the office system',
     toastPass:'Visitor pass created and sent by SMS.',
     toastRateNone:'Your rating was not sent — there was nothing new to send. Reopen the request and try again.',
-    days:'days', hrs:'hours', sar:'SAR', of:'of', close:'Close', back:'Back',
+    hrs:'hours', close:'Close', back:'Back',
     open_:'Open', closed:'Closed', hours:'Hours', included:'Included in your lease',
     amen_incl:'Included in your lease', amen_charged:'Charged to your account — rates on request',
     amen_partner:'A resident benefit — show your resident ID',
@@ -701,38 +675,34 @@ const D = {
   ar:{
     appName:'المارية ريزيدنس', hub:'مركز خدمات سكنك', welcome:'أهلاً بعودتك',
     lock_title:'سجّل الدخول لعرض شقتك',
-    lock_body:'يعرض هذا التطبيق عقدك أنت — الإيجار وجدول الدفعات وطلبات الصيانة الخاصة بك. لا يوجد ما يُعرض قبل تسجيل الدخول.',
+    lock_body:'يعرض هذا التطبيق شقتك أنت — طلبات الصيانة الخاصة بك وإشعارات المبنى. لا يوجد ما يُعرض قبل تسجيل الدخول.',
     lock_help:'يُرسل الرمز إلى البريد الإلكتروني المسجّل لدى الإدارة. إن لم تكن متأكداً من العنوان، أو لم تزوّد الإدارة بعنوان، فتواصل معها.',
     menu_priv:'الخصوصية', priv_link:'كيف نستخدم بياناتك', priv_t:'خصوصيتك',
     priv_who_h:'الجهة المسؤولة',
     priv_who:'شركة المارية للأستثمار، التي تدير المارية ريزيدنس، هي المسؤولة عن البيانات الموجودة في هذا التطبيق.',
     priv_what_h:'ما نحتفظ به',
-    priv_what:'اسمك وشقتك، وعقد الإيجار وجدول دفعاته، والدفعات المسجّلة عليه، والبريد الإلكتروني الذي تسجّل به الدخول، وطلبات الصيانة التي ترفعها — ما تكتبه فيها ووقتها وتقييمك لها.',
+    priv_what:'اسمك وشقتك، والبريد الإلكتروني الذي تسجّل به الدخول، وطلبات الصيانة التي ترفعها — ما تكتبه فيها ووقتها وتقييمك لها. وتحتفظ الإدارة كذلك بعقد إيجارك وسجلات مدفوعاتك، ولا يستخدمها غيرها، ولا تُعرض في هذا التطبيق.',
     priv_why_h:'لماذا',
-    priv_why:'لتطّلع على عقدك ودفعاتك، وترفع طلبات الصيانة وتتابعها، وتقرأ إعلانات المبنى. لا نستخدمها في الإعلان ولا نبيعها.',
+    priv_why:'لترفع طلبات الصيانة وتتابعها، وتقرأ إعلانات المبنى، ولتتمكّن الإدارة من إدارة عقدك. لا نستخدمها في الإعلان ولا نبيعها.',
     priv_see_h:'من يطّلع عليها',
-    priv_see:'أنت فيما يخص عقدك، وموظفو المارية المخوّلون. لا يستطيع أي ساكن آخر الاطلاع على بياناتك. وعند انتهاء عقدك ينتهي اطلاعك عليها في التطبيق.',
+    priv_see:'أنت فيما يخص شقتك، وموظفو المارية المخوّلون. لا يستطيع أي ساكن آخر الاطلاع على بياناتك. وعند انتقالك من الشقة ينتهي اطلاعك عليها في التطبيق.',
     priv_where_h:'أين تُحفظ',
     priv_where:'في قاعدة بيانات تديرها لنا شركة Supabase على خوادم في اليابان. وتُرسل رموز الدخول إليك بالبريد الإلكتروني.',
     priv_long_h:'مدة الاحتفاظ',
     priv_long:'طوال إقامتك، وبعد انتهاء العقد فقط للمدة التي يوجبها النظام لحفظ سجلات الإيجار والمدفوعات.',
     priv_rights_h:'حقوقك',
     priv_rights:'يمكنك طلب نسخة من بياناتك، أو تصحيحها، أو حذف ما لا يلزمنا النظام بالاحتفاظ به. راسلنا على العنوان أدناه.',
-    priv_updated:'آخر تحديث: ٢٤ سبتمبر ٢٠٢٦',
+    priv_updated:'آخر تحديث: ٢٧ سبتمبر ٢٠٢٦',
     nt_title:'لا توجد شقة مرتبطة بهذا الحساب',
-    nt_body:'تم تسجيل دخولك، لكن هذا الحساب غير مرتبط بعقد سكن حالي، فلا يوجد ما يُعرض هنا. إن كنت ساكناً فتواصل مع إدارة المبنى. وإن كان هذا حساب موظف فاستخدم لوحة الإدارة.',
-    tab_home:'الرئيسية', tab_svc:'الخدمات', tab_pay:'المدفوعات', tab_com:'المجتمع', tab_prof:'حسابي',
+    nt_body:'تم تسجيل دخولك، لكن هذا الحساب غير مرتبط بشقة في المبنى، فلا يوجد ما يُعرض هنا. إن كنت ساكناً فتواصل مع إدارة المبنى. وإن كان هذا حساب موظف فاستخدم لوحة الإدارة.',
+    tab_home:'الرئيسية', tab_svc:'الخدمات', tab_com:'المجتمع', tab_prof:'حسابي',
     heroKicker:'المارية ريزيدنس', heroTitle:'كل ما يحتاجه سكنك في مكان واحد',
-    heroText:'الصيانة والإيجار وإشعارات المبنى والمرافق — تطبيق واحد.',
+    heroText:'الصيانة وإشعارات المبنى والمرافق — تطبيق واحد.',
     quick:'إجراءات سريعة',
     qa_req:'طلب جديد', qa_req_d:'الإبلاغ عن عطل أو صيانة',
     qa_gate:'تصريح زائر', qa_gate_d:'إرسال رمز دخول خلال ثوانٍ',
-    qa_pay:'الإيجار والمدفوعات', qa_pay_d:'الجدول والإيصالات والرصيد',
     qa_call:'التواصل مع الإدارة', qa_call_d:'المدير، الأمن، الطوارئ',
-    openReq:'طلباتك المفتوحة', viewAll:'عرض الكل', nextPay:'الدفعة القادمة',
-    pay_allpaid:'لا يوجد مستحق', pay_allpaid_d:'جميع دفعات هذا العقد مسدَّدة.',
-    pay_none:'لا يوجد جدول دفعات', pay_none_d:'لم تُدخل الإدارة جدول دفعات لهذا العقد بعد.',
-    pay_paid:'مدفوعة', pay_overdue_d:'يوم تأخير', pay_today:'مستحقة اليوم',
+    openReq:'طلباتك المفتوحة', viewAll:'عرض الكل',
     req_hold_d:'موقوف مؤقتاً من الإدارة',
     latest:'آخر إعلان', amenities:'مرافق المبنى',
     svc_cat:'الخدمات', svc_open:'المفتوحة', svc_hist:'السجل',
@@ -750,10 +720,6 @@ const D = {
     assignedTo:'الفني المسؤول', sla:'المدة المستهدفة', progress:'مسار الطلب', rate:'قيّم الخدمة', rated:'تقييمك',
     a_stars:'{n} من ٥', a_rated:'التقييم {n} من ٥', a_close:'إغلاق',
     cancelReq:'إلغاء الطلب',
-    lease:'عقد الإيجار', annualRent:'الإيجار السنوي', instalment:'الدفعة', paid:'مدفوعة', due:'مستحقة', upcoming:'قادمة',
-    overdue:'متأخرة', leaseTerm:'مدة العقد', leaseType:'نوع الشقة', paidToDate:'المدفوع حتى تاريخه',
-    schedule:'جدول الدفعات', receipts:'الإيصالات', downloadRcpt:'تحميل الإيصال',
-    payNow:'تعليمات السداد', payNote:'يتم السداد عبر التحويل البنكي أو الشيك لصالح المارية. التطبيق لا يعالج مدفوعات البطاقات.',
     community:'مبناك', commSub:'الإشعارات والإعلانات', readMore:'اقرأ المزيد',
     post:'إعلان', event:'فعالية',
     prof_info:'بيانات الساكن', prof_email:'البريد الإلكتروني', prof_phone:'الجوال', prof_unit:'الشقة',
@@ -762,7 +728,7 @@ const D = {
     household:'أفراد الأسرة', documents:'مستنداتي', emergency:'أرقام الطوارئ',
     logout:'تسجيل الخروج', del:'حذف الحساب',
     menu_id:'بطاقة الساكن', menu_gate:'تصريح زائر', menu_req:'طلباتي', menu_comp:'الشكاوى',
-    menu_pay:'المدفوعات', menu_house:'أفراد الأسرة', menu_docs:'المستندات', menu_info:'معلومات المبنى',
+    menu_house:'أفراد الأسرة', menu_docs:'المستندات', menu_info:'معلومات المبنى',
     gatePass:'تصريح زائر', visitorName:'اسم الزائر', visitDate:'تاريخ الزيارة', validFor:'مدة الصلاحية',
     hours4:'٤ ساعات', hours12:'١٢ ساعة', day1:'يوم كامل', generate:'إصدار التصريح', showGuard:'اعرض هذا الرمز على حارس المدخل',
     contact:'التواصل', mgr:'مدير المبنى', security:'مكتب الأمن', emerg:'الطوارئ (٢٤ ساعة)',
@@ -774,7 +740,7 @@ const D = {
     no_office:'لا يوجد اتصال بنظام الإدارة',
     toastPass:'تم إصدار تصريح الزائر وإرساله برسالة نصية.',
     toastRateNone:'لم يُرسل تقييمك — لا يوجد جديد لإرساله. افتح الطلب مرة أخرى وحاول مجدداً.',
-    days:'يوم', hrs:'ساعة', sar:'ريال', of:'من', close:'إغلاق', back:'رجوع',
+    hrs:'ساعة', close:'إغلاق', back:'رجوع',
     open_:'مفتوح', closed:'مغلق', hours:'أوقات العمل', included:'مشمول ضمن عقدك',
     amen_incl:'مشمول ضمن عقدك', amen_charged:'يُضاف إلى حسابك — الأسعار عند الطلب',
     amen_partner:'ميزة للسكان — أبرز بطاقة الساكن',
@@ -797,18 +763,22 @@ const D = {
 const T = k => (D[LANG][k] !== undefined ? D[LANG][k] : k);
 const L = (en,ar) => LANG==='en' ? en : ar;
 /* DATA-04, the same guard the console needed: a value the database does not
-   hold is not the word "null". `money()` and `shown()` below already say so;
-   this is the third door into the same room. */
-const NUM = s => (s===null||s===undefined||s==='') ? '\u2014'
+   hold is not the word "null". `shown()` below already says so; this is the
+   second door into the same room. */
+const NUM = s => (s===null||s===undefined||s==='') ? '—'
   : LANG==='en' ? String(s) : String(s).replace(/[0-9]/g, d=>'٠١٢٣٤٥٦٧٨٩'[d]);
-/* An amount the database does not hold is not zero, and must not print as a
-   number. This used to throw on null — which is why every caller had been
-   given a fallback to the demo lease's figure instead, and that was far worse
-   than a crash: a real tenant was shown an invented rent as their own. */
+/* MONEY-01, 27 September 2026 (Ahmed): rent, payment schedules, receipts and
+   payment reminders belong to the office and live in the console only. This
+   app shows the apartment, its maintenance requests and the building's
+   notices. It never asks the database for a lease, an instalment or a
+   document, and it asks for requests without the office's labour and material
+   figures — so no amount is fetched here to print, to cache or to leak.
+   Tenants' read access to those tables is closed in the database as well
+   (sql/2026-09-27_resident_app_no_money.sql); the console reads them through
+   the staff rules, which are separate and unchanged. */
 const NONE = () => L('Not recorded', 'غير مسجَّل');
-const money = n => (n === null || n === undefined || n === '' || isNaN(Number(n)))
-  ? NONE() : NUM(Number(n).toLocaleString('en-US')) + ' ' + T('sar');
-/* Any other value the database does not hold. Same rule, same reason. */
+/* A value the database does not hold is neither the word "null" nor an
+   invented stand-in: it reads as "Not recorded". */
 const shown = v => (v === null || v === undefined || v === '') ? NONE() : v;
 
 /* An ellipsis is a statement: there is more of this than you can see. Appended
@@ -863,9 +833,6 @@ const STATUS = {
 
 /* Filled from this resident's own work orders. See RESIDENT above. */
 let REQUESTS = [];
-
-/* The shape only. See RESIDENT above. */
-const LEASE = { annual:null, inst:null, term_en:null, term_ar:null, rows:[] };
 
 /* Filled from the announcements the office has published, and from nothing
    else. See RESIDENT above. */
@@ -1108,7 +1075,7 @@ const ENV = {
 const LINK = (function(){
   const KEY = ENV.prefix + '.link.v1';
   const CHAN = ENV.prefix + '.link';
-  const BLANK = () => ({v:1, rev:0, at:0, by:'', wo:{}, newWO:[], anns:[], pay:{}});
+  const BLANK = () => ({v:1, rev:0, at:0, by:'', wo:{}, newWO:[], anns:[]});
 
   let cache = null, subs = [], bc = null, ok = true;
 
@@ -1122,7 +1089,6 @@ const LINK = (function(){
     if(!cache.wo) cache.wo = {};
     if(!Array.isArray(cache.newWO)) cache.newWO = [];
     if(!Array.isArray(cache.anns)) cache.anns = [];
-    if(!cache.pay) cache.pay = {};
     return cache;
   }
 
@@ -1213,22 +1179,9 @@ function LINK_apply(s){
       fresh:true
     });
   });
-
-  /* 3. instalments the office has recorded as received */
-  const mine = (s.pay||{})[RESIDENT.unit];
-  if(mine && mine.paid){
-    Object.keys(mine.paid).forEach(n=>{
-      const row = LEASE.rows.find(r=>String(r.n)===String(n)); if(!row) return;
-      row.st = 'paid';
-      row.ref = mine.paid[n].ref || row.ref;
-    });
-    /* The re-marking loop that stood here is gone with the one in paint(). It
-       set the first unsettled row to 'due' and every later one to 'upcoming',
-       which is a statement about position dressed as a statement about time —
-       and it is what showed a tenant months into arrears a grey "Upcoming"
-       pill. Whether a row is due, overdue or upcoming is asked of payState(),
-       which reads that row's own date. `st` says paid or unpaid, and no more. */
-  }
+  /* A third branch stood here: instalments the office had recorded as
+     received, marked paid on this screen. Payments are not shown in this app
+     any more (MONEY-01), so there is nothing for it to mark. */
 }
 
 /* quiet: the one caller waits for this write and reports on it itself, and a
@@ -1358,29 +1311,11 @@ function esc(v){
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 
-/* DATA-05. daysTo used to clamp at zero, so an instalment five days overdue
-   read "0 days" — the same as one due today. Days are now signed and the
-   caller decides what to say about them. */
-function daysTo(iso){
-  return Math.ceil((new Date(iso+'T00:00:00') - new Date(new Date().toDateString()))/864e5);
-}
-
-/* DATA-05. The schedule used to mark only the FIRST unpaid row 'due' whatever
-   its date, leaving later overdue rows labelled Upcoming. State is derived from
-   the date of each row, per row. */
-function payState(r){
-  if(r.st === 'paid') return 'paid';
-  const d = daysTo(r.iso);
-  return d < 0 ? 'overdue' : d <= 7 ? 'due' : 'upcoming';
-}
-function dueChip(r){
-  const st = payState(r), d = daysTo(r.iso);
-  if(st === 'paid')    return `<span class="pill g">${T('pay_paid')}</span>`;
-  if(st === 'overdue') return `<span class="pill r">${NUM(-d)} ${T('pay_overdue_d')}</span>`;
-  if(d === 0)          return `<span class="pill a">${T('pay_today')}</span>`;
-  return `<span class="pill a">${NUM(d)} ${T('days')}</span>`;
-}
-function go(tab){ TAB = tab; closeAll(); render(); $('screen').scrollTop = 0; }
+/* MONEY-01. Only the four tabs that exist. A stale call to the Payments tab
+   that used to be here lands on Home, not on whichever screen happens to be
+   renderScreen's last branch. */
+const TABS = ['home', 'svc', 'com', 'prof'];
+function go(tab){ TAB = TABS.includes(tab) ? tab : 'home'; closeAll(); render(); $('screen').scrollTop = 0; }
 /* APP-05/06. `demo()` used to be here: a toast reading "Prototype — this
    action is not wired up", behind eighteen controls. It has no callers left.
    The controls were not disabled or relabelled; they were removed, because a
@@ -1426,8 +1361,8 @@ function unlocked(){
   try { return SB.configured() && SB.signedIn() && LINK.live && LINK.live() === true; }
   catch (e) { return false; }
 }
-/* Signed in, but this account holds no tenancy — a member of staff opening the
-   resident app, or a resident whose lease has ended. It used to be the state
+/* Signed in, but this account holds no apartment — a member of staff opening
+   the resident app, or a resident whose residence has ended. It used to be the state
    that produced somebody else's flat. It has to say so rather than guess. */
 let NOTENANCY = false;
 function renderNoTenancy(){
@@ -1499,8 +1434,8 @@ function renderTop(){
       </div>
       <div class="avatar">${esc(RESIDENT.initials)}</div>`;
   } else {
-    const titles = {svc:T('tab_svc'), pay:T('tab_pay'), com:T('community'), prof:T('tab_prof')};
-    const subs   = {svc:L('Maintenance & building services','الصيانة وخدمات المبنى'), pay:L('Lease, schedule and receipts','العقد والجدول والإيصالات'), com:T('commSub'), prof:L('Account and building information','الحساب ومعلومات المبنى')};
+    const titles = {svc:T('tab_svc'), com:T('community'), prof:T('tab_prof')};
+    const subs   = {svc:L('Maintenance & building services','الصيانة وخدمات المبنى'), com:T('commSub'), prof:L('Account and building information','الحساب ومعلومات المبنى')};
     bar.innerHTML = `
       <div class="grow">
         <h1>${titles[TAB]}</h1>
@@ -1514,7 +1449,8 @@ function renderTabs(){
   const items = [
     ['home','home',T('tab_home'),0],
     ['svc','gear',T('tab_svc'),openReqs().length],
-    ['pay','card',T('tab_pay'),0],
+    /* MONEY-01. A Payments tab stood here. Rent and schedules are the
+       office's, in the console; this app has four places to go. */
     /* This carried a literal 1. It said "one new thing in Community" on a
        building with no announcements at all, and went on saying it after the
        resident had read every one — nothing anywhere records what a resident
@@ -1534,24 +1470,17 @@ function renderScreen(){
   const s = $('screen');
   if(TAB==='home') s.innerHTML = viewHome();
   else if(TAB==='svc') s.innerHTML = viewServices();
-  else if(TAB==='pay') s.innerHTML = viewPayments();
   else if(TAB==='com') s.innerHTML = viewCommunity();
   else s.innerHTML = viewProfile();
 }
 
 /* ---------------------------- HOME ---------------------------- */
 function viewHome(){
-  /* APP-01. This was `LEASE.rows.find(r=>r.st==='due')` and then read
-     nextRow.amt unconditionally. A tenant who has paid everything, or whose
-     schedule has not been entered, or who has no active lease, opened the app
-     to a blank screen and a TypeError. Paying in full is not an error state.
-
-     The next payment is simply the first unpaid row in schedule order. It used
-     to prefer one flagged 'due'; that flag is gone, because it described a
-     position in the list while reading like a statement about time. */
-  const unpaid  = (LEASE.rows || []).filter(r => r.st !== 'paid');
-  const nextRow = unpaid[0] || null;
-  const allPaid = (LEASE.rows || []).length > 0 && unpaid.length === 0;
+  /* MONEY-01. The "Next payment" card and the "Rent & payments" shortcut
+     stood on this screen: an amount, a due date and an overdue warning, read
+     from a register the office had not yet reconciled. Payments are the
+     office's, in the console; Home is the apartment, its requests and the
+     building's notices. */
   const op = openReqs();
   const p = POSTS[0];
   return `
@@ -1569,7 +1498,6 @@ function viewHome(){
   <div class="sect first">${T('quick')}</div>
   <div class="quick">
     ${qa('plus','#FBF3DE','#A8811A',T('qa_req'),T('qa_req_d'),'sheetNewRequest()')}
-    ${qa('card','#E6F2EC','#2C8259',T('qa_pay'),T('qa_pay_d'),"go('pay')")}
     ${qa('phone','#FBEAEA','#C0504A',T('qa_call'),T('qa_call_d'),'sheetContact()')}
   </div>
 
@@ -1582,33 +1510,6 @@ function viewHome(){
       <div style="padding:18px 4px;text-align:center">
         <div class="muted">${T('noOpenD')}</div>
       </div>`}
-  </div>
-
-  <div class="sect">${T('nextPay')}</div>
-  <div class="card"${pressable("go('pay')")} style="cursor:pointer">
-    ${nextRow ? `
-    <div class="row">
-      <div class="icobox" style="background:var(--gold-soft);color:#A8811A">${I('cal',22)}</div>
-      <div class="grow">
-        <div style="font-size:15px;font-weight:800">${money(nextRow.amt)}</div>
-        <div class="muted">${T('instalment')} ${NUM(nextRow.n)} ${T('of')} ${NUM(LEASE.rows.length)} · ${L(nextRow.due_en,nextRow.due_ar)}</div>
-      </div>
-      ${dueChip(nextRow)}
-    </div>` : allPaid ? `
-    <div class="row">
-      <div class="icobox" style="background:#E6F2EC;color:#2C8259">${I('check',22)}</div>
-      <div class="grow">
-        <div style="font-size:15px;font-weight:800">${T('pay_allpaid')}</div>
-        <div class="muted">${T('pay_allpaid_d')}</div>
-      </div>
-    </div>` : `
-    <div class="row">
-      <div class="icobox" style="background:#F1F3F5;color:var(--ink-2)">${I('cal',22)}</div>
-      <div class="grow">
-        <div style="font-size:15px;font-weight:800">${T('pay_none')}</div>
-        <div class="muted">${T('pay_none_d')}</div>
-      </div>
-    </div>`}
   </div>
 
   <div class="sect-row">
@@ -1970,8 +1871,10 @@ function sheetContact(){
    how to ask about it. Every statement here is one this project has proved or
    the office has decided: the controller and the contact address were set by
    Ahmed on 24 September 2026; "no other resident can see your information" and
-   "access ends with the tenancy" are the isolation proofs of 22 September; the
-   Tokyo region is the project's own. Reachable before sign-in, from the lock
+   "access ends when you move out" are the isolation proofs of 22 September; the
+   Tokyo region is the project's own. MONEY-01 (27 September): lease and payment
+   records are named as held and used by the office only, because they still
+   are — they are simply not shown here. Reachable before sign-in, from the lock
    screen, because the sign-in form is where the email is first asked for. */
 const PRIVACY_MAIL = 'info@almaria.sa';
 function sheetPrivacy(){
@@ -2002,91 +1905,6 @@ function sheetAmenity(i){
       <p>${T(a.note || 'included')}</p>
     </div>
   `);
-}
-
-/* ---------------------------- PAYMENTS ---------------------------- */
-function viewPayments(){
-  const paidCount = LEASE.rows.filter(r=>r.st==='paid').length;
-  const paidAmt   = LEASE.rows.filter(r=>r.st==='paid').reduce((a,r)=>a+r.amt,0);
-  const schedTot  = LEASE.rows.reduce((a,r)=>a+r.amt,0);
-  /* An empty schedule is not a divide-by-zero, it is a lease with no
-     instalments recorded — which is what a real tenancy looks like before the
-     office has entered one. This printed NaN%. */
-  const pct = schedTot > 0 ? Math.round(paidAmt/schedTot*100) : 0;
-  /* The pill comes from the row's OWN due date, through the same payState the
-     Home card uses — not from a flag written once when the schedule loaded.
-
-     `st` only ever distinguished paid from unpaid; the loop in paint() then
-     marked the FIRST unpaid row 'due' and left every later one 'upcoming'. So a
-     tenant four months into arrears saw four grey "Upcoming" pills — the same
-     pill as an instalment not due for another fortnight — while Home, which
-     already went through payState, called the very same row overdue. Two
-     answers about one instalment, in one app.
-
-     The red pill and the 'Overdue' string in both languages already existed.
-     Nothing here is new; this list simply stops ignoring them. */
-  const pillFor = r => {
-    const st = payState(r), d = daysTo(r.iso);
-    return st === 'paid'    ? `<span class="pill g">${T('paid')}</span>`
-         : st === 'overdue' ? `<span class="pill r">${NUM(-d)} ${T('pay_overdue_d')}</span>`
-         : st === 'due'     ? `<span class="pill a">${d === 0 ? T('pay_today') : T('due')}</span>`
-         :                    `<span class="pill n">${T('upcoming')}</span>`;
-  };
-
-  return `
-  <div class="leasecard">
-    <div class="lbl">${T('annualRent')}</div>
-    <div class="big">${money(LEASE.annual)}</div>
-    <div style="font-size:12.5px;opacity:.8;font-weight:700">${L('Apartment','شقة')} ${esc(shown(RESIDENT.unit))} · ${esc(shown(L(RESIDENT.type_en,RESIDENT.type_ar)))}</div>
-    <div class="mk">${MARK('100%',34)}</div>
-    <div class="lease-grid">
-      <div><div class="lbl">${T('leaseTerm')}</div><div class="v">${esc(shown(L(LEASE.term_en,LEASE.term_ar)))}</div></div>
-      <div><div class="lbl">${T('paidToDate')}</div><div class="v">${money(paidAmt)}</div></div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="row" style="justify-content:space-between">
-      <span style="font-size:13.5px;font-weight:800">${NUM(pct)}% ${T('paid')}</span>
-      <span class="muted">${money(schedTot-paidAmt)} ${L('remaining','متبقي')}</span>
-    </div>
-    <div class="bar"><i style="width:${pct}%"></i></div>
-    <div class="muted">${NUM(paidCount)} ${T('of')} ${NUM(LEASE.rows.length)} ${L('instalments settled','دفعات مسددة')}</div>
-  </div>
-
-  <div class="sect">${T('schedule')}</div>
-  <div class="card tight">
-    ${LEASE.rows.map(r=>{ const st = payState(r); return `
-      <div class="payrow">
-        <span class="icobox" style="width:40px;height:40px;border-radius:12px;background:${st==='paid'?'var(--green-soft)':st==='overdue'?'var(--red-soft)':st==='due'?'var(--amber-soft)':'#F1F3F5'};color:${st==='paid'?'var(--green)':st==='overdue'?'var(--red)':st==='due'?'var(--amber)':'#98A0A9'}">
-          ${I(st==='paid'?'check':st==='overdue'?'alert':'cal',20)}
-        </span>
-        <div class="grow">
-          <div style="font-size:14.5px;font-weight:800">${money(r.amt)}</div>
-          <!-- the receipt reference is typed by the office and read by the
-               resident: it is text, and it goes through esc() like every other
-               field on this row. It was the one value here that did not. -->
-          <div class="muted">${T('instalment')} ${NUM(r.n)} · ${L(r.due_en,r.due_ar)}${r.ref?` · ${esc(r.ref)}`:''}</div>
-        </div>
-        ${pillFor(r)}
-      </div>`;}).join('')}
-  </div>
-
-  <div class="note" style="margin-bottom:16px">
-    <span style="color:#A8811A;flex:none">${I('alert',20)}</span>
-    <p>${T('payNote')}</p>
-  </div>
-
-  `;
-  /* APP-05/06. Three placeholders stood here: "View payment instructions" and
-     "Receipts", both of which answered with "Prototype — this action is not
-     wired up", and a tap on any settled instalment that did the same.
-     The note above already carries the payment method, which is what the
-     button claimed to be about; there is no receipt document to open; and a
-     row that looks tappable and is not teaches the resident that the app is a
-     mock-up. Removed rather than shipped.
-     Receipts come back when the payment-evidence backfill does — see D3 in
-     claude/go-live-plan.md. */
 }
 
 /* ---------------------------- COMMUNITY ---------------------------- */
@@ -2207,7 +2025,6 @@ function renderDrawer(){
     </div>
     <div class="dl">
       ${item('gear', T('menu_req'), "go('svc');svcTab('open')")}
-      ${item('card', T('menu_pay'), "go('pay')")}
       ${item('phone', T('contact'), "closeAll();sheetContact()")}
       ${item('file', T('menu_info'), "closeAll();sheetContact()")}
       ${item('shield', T('menu_priv'), "closeAll();sheetPrivacy()")}
@@ -2807,18 +2624,28 @@ const SB = (function(){
 const LIVE = (function(){
   /* SYNC-03. `residents` was missing, and the resident's own name, phone and
      unit assignment all come from that table — a change made at the office
-     reached this phone only when something unrelated happened to fire. */
-  const WATCH = ['work_orders','announcements','instalments','leases','documents','residents'];
-  let state = null, subs = [], lastErr = null, pulling = false, again = false, timer = null, myLease = null;
+     reached this phone only when something unrelated happened to fire.
 
-  const N = v => (v === null || v === undefined) ? null : Number(v);
-  const BLANK = () => ({v:1, rev:0, at:0, by:'', wo:{}, newWO:[], anns:[], pay:{},
-                        docs:[], leases:{}, jobs:[], nextSeq:0});
+     MONEY-01. `instalments`, `leases` and `documents` left this list with the
+     reads that used them. `occupancies` took their place: it is what places a
+     person in a flat now, so the office ending a residence reaches this phone
+     at once rather than at the next unrelated event. */
+  const WATCH = ['work_orders','announcements','occupancies','residents'];
+  /* MONEY-01. The columns of a request this app shows, or needs in order to
+     recognise its own request — and not the office's labour hours, material
+     cost or internal note for the job. `select=*` brought those to the handset,
+     unshown. */
+  const WO_COLS = 'id,unit_id,category,title,description,priority,channel,status,' +
+                  'technician,rating,raised_at,closed_at,visit_window,request_key';
+  let state = null, subs = [], lastErr = null, pulling = false, again = false, timer = null;
+
+  const BLANK = () => ({v:1, rev:0, at:0, by:'', wo:{}, newWO:[], anns:[],
+                        docs:[], jobs:[], nextSeq:0});
 
   const dEN = d => `${d.getDate()} ${EN_MONTH[d.getMonth()]} ${d.getFullYear()}`;
   const dAR = d => `${NUM(d.getDate())} ${AR_MONTH[d.getMonth()]} ${NUM(d.getFullYear())}`;
 
-  /* Who this account is, and nothing else.
+  /* Who this account is, and where they live — nothing else.
 
      This used to ask for every resident and every active lease and then take
      `me[0]` and `leases[0]` — two independent array positions, never joined to
@@ -2828,10 +2655,19 @@ const LIVE = (function(){
      beside an unrelated flat's lease: one real person's name against another
      real person's rent, on a screen that says "your home".
 
-     Both reads are now filtered by the account, and both are checked against
-     the account after they come back. Neither half is redundant: a dropped
-     filter and a backend that ignores one are indistinguishable from here, and
-     the honest answer to either is no tenancy rather than someone else's. */
+     MONEY-01. The flat was then found through the tenant's active lease, and
+     the lease arrived with its rent and every instalment. It is now found the
+     way the database itself decides access — through the person's own open
+     residence, the same `occupancies` rows my_units() reads — and nothing
+     about money is asked for. That also ends the dead end household members
+     met: someone who lives in the flat without being named on the Ejar
+     contract has a residence and no lease, and used to be told that no
+     apartment was attached.
+
+     Both reads are filtered by the account, and both are checked against the
+     account after they come back. Neither half is redundant: a dropped filter
+     and a backend that ignores one are indistinguishable from here, and the
+     honest answer to either is no apartment rather than someone else's. */
   async function pull(){
     const c   = SB.claims && SB.claims();
     const uid = c && c.sub;
@@ -2841,19 +2677,19 @@ const LIVE = (function(){
       'select=*&auth_uid=eq.' + encodeURIComponent(uid) + '&limit=1');
     const me = (meRows && meRows[0]) || null;
     if(!me || String(me.auth_uid) !== String(uid))
-      return {me:null, lease:null, wos:[], anns:[], noTenancy:true};
+      return {me:null, home:null, wos:[], anns:[], noTenancy:true};
 
-    const [leases, anns] = await Promise.all([
-      SB.sel('leases', 'select=id,unit_id,resident_id,starts_on,ends_on,contract_value,status,' +
-                       'units(type,area,floor),instalments(seq,amount,due_on,paid,paid_on,receipt_ref)' +
-                       '&status=eq.active&resident_id=eq.' + encodeURIComponent(me.id) +
-                       '&order=starts_on.desc&limit=1'),
+    const [homes, anns] = await Promise.all([
+      SB.sel('occupancies', 'select=unit_id,resident_id,role,from_date,units(type,area,floor)' +
+                            '&resident_id=eq.' + encodeURIComponent(me.id) +
+                            '&status=eq.active&to_date=is.null' +
+                            '&order=from_date.desc,unit_id.asc&limit=1'),
       /* CON-08. The whole published list, paged, ordered to a unique key. */
       SB.selAll('announcements', 'select=*&status=eq.published&order=published_at.desc,id.desc')
     ]);
-    const lease = (leases && leases[0]) || null;
-    if(lease && String(lease.resident_id) !== String(me.id))
-      return {me, lease:null, wos:[], anns, noTenancy:true};
+    const home = (homes && homes[0]) || null;
+    if(home && String(home.resident_id) !== String(me.id))
+      return {me, home:null, wos:[], anns, noTenancy:true};
 
     /* SYNC-03 and SCALE-01. This used to be `select=*` with no filter at all —
        every work order in the building, fetched to the handset, then narrowed
@@ -2863,27 +2699,27 @@ const LIVE = (function(){
        is not an access-control boundary. It also does not scale — a hundred
        residents each pulling the whole maintenance history, and past a
        thousand rows the answer is silently truncated.
- 
+
        So the read is scoped to the flat, which costs one round trip because
-       the unit is not known until the lease comes back. The filter below stays
-       exactly as it was: a dropped server filter and a backend that ignores one
-       are indistinguishable from here, and the honest answer to either is
-       nothing rather than somebody else's. */
-    const wos = lease
+       the unit is not known until the residence comes back. The filter below
+       stays exactly as it was: a dropped server filter and a backend that
+       ignores one are indistinguishable from here, and the honest answer to
+       either is nothing rather than somebody else's. */
+    const wos = home
       ? await SB.selAll('work_orders',
-          'select=*&unit_id=eq.' + encodeURIComponent(lease.unit_id) +
+          'select=' + WO_COLS + '&unit_id=eq.' + encodeURIComponent(home.unit_id) +
           '&order=raised_at.desc,id.desc')
       : [];
-    const mine = lease
-      ? (wos || []).filter(w => String(w.unit_id) === String(lease.unit_id))
+    const mine = home
+      ? (wos || []).filter(w => String(w.unit_id) === String(home.unit_id))
       : [];
-    return {me, lease, wos: mine, anns, noTenancy: !lease};
+    return {me, home, wos: mine, anns, noTenancy: !home};
   }
 
-  /* The demonstration tenant and their lease, erased. Called at the top of
-     every paint, so a value can only reach the screen by coming back out of
-     the database on this pass. `initials` is a string because it is rendered
-     into an avatar rather than through `shown()`. */
+  /* The demonstration tenant, erased. Called at the top of every paint, so a
+     value can only reach the screen by coming back out of the database on this
+     pass. `initials` is a string because it is rendered into an avatar rather
+     than through `shown()`. */
   function blankResident(){
     RESIDENT.name_en = null;  RESIDENT.name_ar = null;
     RESIDENT.email   = null;  RESIDENT.phone   = null;
@@ -2893,47 +2729,32 @@ const LIVE = (function(){
     RESIDENT.since_en = null; RESIDENT.since_ar = null;
     RESIDENT.last_en = null;  RESIDENT.last_ar = null;
   }
-  function blankLease(){
-    LEASE.annual = null; LEASE.inst = null;
-    LEASE.term_en = null; LEASE.term_ar = null;
-    LEASE.rows = [];
-  }
 
   function paint(d){
-    if(!d.lease){
-      /* Blank first, then say so. Leaving the previous tenancy on screen is
+    if(!d.home){
+      /* Blank first, then say so. Leaving the previous apartment on screen is
          how one account came to be shown another account's flat. */
-      blankResident(); blankLease();
-      POSTS.length = 0; REQUESTS = []; myLease = null;
+      blankResident();
+      POSTS.length = 0; REQUESTS = [];
       NOTENANCY = true;
       return;
     }
     NOTENANCY = false;
-    myLease = d.lease;
-    const u = d.lease.units || {};
+    const u = d.home.units || {};
 
     /* Blank the demonstration person BEFORE filling anything in.
 
        This block used to read `RESIDENT.phone = d.me.phone || RESIDENT.phone`,
        field by field, so every value the database did not supply kept the
-       invented one — and the invented one is a specific fictional tenant of
-       flat B-009 with a lease of their own. A real resident whose record had no
-       phone number was shown the demonstration number as theirs. One whose
-       contract value is not recorded — and one unit's deliberately is not,
-       because its contract disagrees with itself between numerals and words —
-       would have been shown the fictional tenant's annual rent, a figure
-       belonging to nobody, on the screen where they check what they owe.
-
-       (The figures themselves are deliberately not written here. SEC-01: the
-       last leak on this project was a real instalment amount inside a code
-       comment, and this file is served to anyone.)
+       invented one — and the invented one was a specific fictional tenant with
+       a lease of their own. A real resident whose record had no phone number
+       was shown the demonstration number as theirs.
 
        Blanking first inverts the failure: a field the database does not answer
        for is absent, and absent renders as "Not recorded". Adding a field to
        the fixture can no longer leak it into a real session, because the
        fixture is gone by the time anything is read. */
     blankResident();
-    blankLease();
 
     if(d.me){
       RESIDENT.name_en  = d.me.name_en || null;
@@ -2941,7 +2762,7 @@ const LIVE = (function(){
       RESIDENT.phone    = d.me.phone   || null;
     }
     RESIDENT.email = SB.email() || null;
-    RESIDENT.unit  = d.lease.unit_id || null;
+    RESIDENT.unit  = d.home.unit_id || null;
     /* Two real letters, from the name if there is one and otherwise from the
        flat. Both are the resident's own; neither is anybody else's. */
     RESIDENT.initials = (RESIDENT.name_en || RESIDENT.name_ar)
@@ -2958,38 +2779,17 @@ const LIVE = (function(){
       RESIDENT.type_en = beds + ' Bedroom';
       RESIDENT.type_ar = beds === 1 ? 'غرفة نوم' : beds === 2 ? 'غرفتان نوم' : NUM(beds) + ' غرف نوم';
     }
-    if(d.lease.starts_on){
-      const s = new Date(d.lease.starts_on);
-      RESIDENT.since_en = `${EN_MONTH[s.getMonth()]} ${s.getFullYear()}`;
-      RESIDENT.since_ar = `${AR_MONTH[s.getMonth()]} ${NUM(s.getFullYear())}`;
+    /* "Resident since" is the start of this residence as the office recorded
+       it — for every current tenant, the same date their lease starts. It is
+       read by its parts: `new Date('2026-01-01')` is midnight UTC, which is
+       still December 2025 anywhere west of Greenwich — the one-day slip F-03
+       closed in the console. */
+    const since = /^(\d{4})-(\d{2})-\d{2}/.exec(String(d.home.from_date || ''));
+    if(since){
+      const y = Number(since[1]), m = Number(since[2]) - 1;
+      RESIDENT.since_en = `${EN_MONTH[m]} ${y}`;
+      RESIDENT.since_ar = `${AR_MONTH[m]} ${NUM(y)}`;
     }
-
-    /* ---- the schedule, as the database holds it ---- */
-    const rows = (d.lease.instalments || []).slice().sort((a,b)=>a.seq-b.seq);
-    /* No `||`. A contract value the database holds as null is not recorded,
-       and a schedule of zero instalments is a schedule of zero instalments —
-       both are facts about this tenancy, and both used to be replaced by the
-       demonstration lease's own figures. */
-    LEASE.annual = N(d.lease.contract_value);
-    LEASE.inst   = rows.length;
-    if(d.lease.starts_on && d.lease.ends_on){
-      const s = new Date(d.lease.starts_on), e = new Date(d.lease.ends_on);
-      LEASE.term_en = `${dEN(s)} – ${dEN(e)}`;
-      LEASE.term_ar = `${dAR(s)} – ${dAR(e)}`;
-    }
-    LEASE.rows = rows.map(r => {
-      const due = new Date(r.due_on);
-      return {n:r.seq, amt:N(r.amount), iso:r.due_on,
-              due_en:dEN(due), due_ar:dAR(due),
-              /* Paid or not paid, and nothing else. This field used to carry a
-                 third value: a loop below marked the first unpaid row 'due',
-                 which read like a judgement about timing but was only ever
-                 "first in the list". Anything that needs to know whether a row
-                 is due, overdue or upcoming asks payState(), which reads the
-                 row's own date. */
-              st: r.paid ? 'paid' : 'unpaid',
-              ref: r.receipt_ref || undefined};
-    });
 
     /* ---- my requests ---- */
     REQUESTS.length = 0;
@@ -3190,13 +2990,13 @@ const LIVE = (function(){
     try{
       if(body.request_key){
         const rows = await SB.sel('work_orders',
-          'select=*&request_key=eq.' + encodeURIComponent(body.request_key));
+          'select=' + WO_COLS + '&request_key=eq.' + encodeURIComponent(body.request_key));
         return (rows && rows[0]) || null;
       }
       /* A row written before the column existed carries no key. The old
          four-field recognition stays for those, and only those. */
       const rows = await SB.sel('work_orders',
-        'select=*&id=eq.' + encodeURIComponent(body.id) +
+        'select=' + WO_COLS + '&id=eq.' + encodeURIComponent(body.id) +
         '&raised_at=eq.' + encodeURIComponent(body.raised_at));
       const r = rows && rows[0];
       if(!r) return null;
@@ -3372,9 +3172,9 @@ function sbSheet(){
   const inn = SB.signedIn();
   openSheet(L('Sign in','تسجيل الدخول'), inn ? `
     <div class="note">${L(
-      'Signed in as ' + esc(SB.email()) + '. Your apartment, your schedule and your requests are coming from the office system' +
+      'Signed in as ' + esc(SB.email()) + '. Your apartment and your requests are coming from the office system' +
       (SB.rtState() === 'live' ? ', and update the moment the office changes them.' : '.'),
-      'تم تسجيل الدخول باسم ' + esc(SB.email()) + '. شقتك وجدول الدفعات وطلباتك تأتي من نظام الإدارة' +
+      'تم تسجيل الدخول باسم ' + esc(SB.email()) + '. شقتك وطلباتك تأتي من نظام الإدارة' +
       (SB.rtState() === 'live' ? '، وتتحدّث فور تغييرها لدى الإدارة.' : '.'))}</div>
     <button class="btn ghost" style="margin-top:16px" onclick="sbOut()">${L('Sign out','تسجيل الخروج')}</button>
   ` : `
@@ -3541,10 +3341,10 @@ async function otpIn(){
       /* Said plainly, because by this point they have proved they own the
          mailbox — there is nothing left to disclose. */
       throw new Error(linked
-        ? ((e && e.message) || L('no tenancy was found for this account',
-                                 'لم يُعثر على عقد مرتبط بهذا الحساب'))
-        : L('this address is not on a tenancy. Please contact the office.',
-            'هذا العنوان غير مرتبط بعقد. يرجى التواصل مع الإدارة.'));
+        ? ((e && e.message) || L('no apartment was found for this account',
+                                 'لم يُعثر على شقة مرتبطة بهذا الحساب'))
+        : L('this address is not linked to an apartment. Please contact the office.',
+            'هذا العنوان غير مرتبط بشقة. يرجى التواصل مع الإدارة.'));
     }
     LINK.onChange(() => { render(); linkFlash(); });
     OTP.mail = ''; OTP.at = 0;
@@ -3611,8 +3411,8 @@ window.addEventListener('storage', e => {
            here — say so once rather than showing someone else's apartment */
         const e = LIVE.err();
         SB.signOut();
-        setTimeout(() => toast(L('Signed out: ' + ((e && e.message) || 'no tenancy on this account'),
-                                 'تم تسجيل الخروج: ' + ((e && e.message) || 'لا يوجد عقد مرتبط بهذا الحساب'))), 900);
+        setTimeout(() => toast(L('Signed out: ' + ((e && e.message) || 'no apartment on this account'),
+                                 'تم تسجيل الخروج: ' + ((e && e.message) || 'لا توجد شقة مرتبطة بهذا الحساب'))), 900);
       }
     }
   }catch(e){ console.error('backend boot', e); }
