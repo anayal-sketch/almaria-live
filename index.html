@@ -583,23 +583,26 @@ const D = {
     appName:'Almaria Residence', hub:'Your building hub', welcome:'Welcome back',
     lock_title:'Sign in to your apartment',
     lock_body:'This app shows your own apartment — your maintenance requests and the building\'s notices. There is nothing to see until you sign in.',
-    lock_help:'The code goes to the email address the office holds for you. If you are not sure which address that is, or you have not given the office one, contact them.',
+    lock_help:'Sign in with the email address the office holds for you and the password they gave you. The first time, you will choose your own password.',
+    pw_title:'Choose your own password',
+    pw_body:'You signed in with the temporary password the office gave you. Choose your own now — your apartment opens once you have, and the temporary one stops working.',
+    pw_rule:'At least 10 characters, with at least one English letter and one number.',
     menu_priv:'Privacy', priv_link:'How we use your information', priv_t:'Your privacy',
     priv_who_h:'Who is responsible',
     priv_who:'Almaria Investment Company, which manages Almaria Residence, is responsible for the information in this app.',
     priv_what_h:'What we hold',
-    priv_what:'Your name and apartment, the email address you sign in with, and the maintenance requests you raise — what you write, when, and the rating you give.',
+    priv_what:'Your name and apartment, the email address you sign in with, and the maintenance requests you raise — what you write, when, and the rating you give. Your password is kept only in a scrambled form that nobody can read back, the office included.',
     priv_why_h:'Why',
     priv_why:'So you can raise and follow maintenance requests and read building announcements, and so the office can manage your tenancy. We do not use it for advertising and we do not sell it.',
     priv_see_h:'Who can see it',
     priv_see:'You, for your own apartment, and authorised Almaria staff. No other resident can see your information. When you move out, your access to it in the app ends.',
     priv_where_h:'Where it is kept',
-    priv_where:'In a database run for us by Supabase, on servers in Japan. Sign-in codes are sent to you by email.',
+    priv_where:'In a database run for us by Supabase, on servers in Japan.',
     priv_long_h:'How long',
     priv_long:'While you are a resident, and afterwards only as long as the law requires us to keep it.',
     priv_rights_h:'Your choices',
     priv_rights:'You can ask for a copy of your information, ask us to correct it, or ask us to delete what we are not required to keep. Write to us at the address below.',
-    priv_updated:'Updated 27 September 2026',
+    priv_updated:'Updated 30 September 2026',
     nt_title:'No apartment is attached to this account',
     nt_body:'You are signed in, but this account is not linked to an apartment in the building, so there is nothing here to show. If you are a resident, contact the building office. If this is a staff account, use the management console.',
     tab_home:'Home', tab_svc:'Services', tab_com:'Community', tab_prof:'Profile',
@@ -676,23 +679,26 @@ const D = {
     appName:'المارية ريزيدنس', hub:'مركز خدمات سكنك', welcome:'أهلاً بعودتك',
     lock_title:'سجّل الدخول لعرض شقتك',
     lock_body:'يعرض هذا التطبيق شقتك أنت — طلبات الصيانة الخاصة بك وإشعارات المبنى. لا يوجد ما يُعرض قبل تسجيل الدخول.',
-    lock_help:'يُرسل الرمز إلى البريد الإلكتروني المسجّل لدى الإدارة. إن لم تكن متأكداً من العنوان، أو لم تزوّد الإدارة بعنوان، فتواصل معها.',
+    lock_help:'سجّل الدخول بالبريد الإلكتروني المسجّل لدى الإدارة وبكلمة المرور التي أعطتك إياها. وفي المرة الأولى ستختار كلمة مرور خاصة بك.',
+    pw_title:'اختر كلمة مرور خاصة بك',
+    pw_body:'سجّلت الدخول بكلمة المرور المؤقتة التي أعطتك إياها الإدارة. اختر الآن كلمة مرور خاصة بك، فتظهر شقتك بعدها، وتتوقف كلمة المرور المؤقتة عن العمل.',
+    pw_rule:'عشرة أحرف على الأقل، منها حرف إنجليزي واحد ورقم واحد على الأقل.',
     menu_priv:'الخصوصية', priv_link:'كيف نستخدم بياناتك', priv_t:'خصوصيتك',
     priv_who_h:'الجهة المسؤولة',
-    priv_who:'شركة المارية للأستثمار، التي تدير المارية ريزيدنس، هي المسؤولة عن البيانات الموجودة في هذا التطبيق.',
+    priv_who:'شركة المارية للاستثمار، التي تدير المارية ريزيدنس، هي المسؤولة عن البيانات الموجودة في هذا التطبيق.',
     priv_what_h:'ما نحتفظ به',
-    priv_what:'اسمك وشقتك، والبريد الإلكتروني الذي تسجّل به الدخول، وطلبات الصيانة التي ترفعها — ما تكتبه فيها ووقتها وتقييمك لها.',
+    priv_what:'اسمك وشقتك، والبريد الإلكتروني الذي تسجّل به الدخول، وطلبات الصيانة التي ترفعها — ما تكتبه فيها ووقتها وتقييمك لها. أما كلمة المرور فتُحفظ بصيغة مشفّرة لا يمكن لأحد قراءتها، بما في ذلك الإدارة.',
     priv_why_h:'لماذا',
     priv_why:'لترفع طلبات الصيانة وتتابعها، وتقرأ إعلانات المبنى، ولتتمكّن الإدارة من إدارة عقدك. لا نستخدمها في الإعلان ولا نبيعها.',
     priv_see_h:'من يطّلع عليها',
     priv_see:'أنت فيما يخص شقتك، وموظفو المارية المخوّلون. لا يستطيع أي ساكن آخر الاطلاع على بياناتك. وعند انتقالك من الشقة ينتهي اطلاعك عليها في التطبيق.',
     priv_where_h:'أين تُحفظ',
-    priv_where:'في قاعدة بيانات تديرها لنا شركة Supabase على خوادم في اليابان. وتُرسل رموز الدخول إليك بالبريد الإلكتروني.',
+    priv_where:'في قاعدة بيانات تديرها لنا شركة Supabase على خوادم في اليابان.',
     priv_long_h:'مدة الاحتفاظ',
     priv_long:'طوال إقامتك، وبعدها فقط للمدة التي يوجبها النظام.',
     priv_rights_h:'حقوقك',
     priv_rights:'يمكنك طلب نسخة من بياناتك، أو تصحيحها، أو حذف ما لا يلزمنا النظام بالاحتفاظ به. راسلنا على العنوان أدناه.',
-    priv_updated:'آخر تحديث: ٢٧ سبتمبر ٢٠٢٦',
+    priv_updated:'آخر تحديث: ٣٠ سبتمبر ٢٠٢٦',
     nt_title:'لا توجد شقة مرتبطة بهذا الحساب',
     nt_body:'تم تسجيل دخولك، لكن هذا الحساب غير مرتبط بشقة في المبنى، فلا يوجد ما يُعرض هنا. إن كنت ساكناً فتواصل مع إدارة المبنى. وإن كان هذا حساب موظف فاستخدم لوحة الإدارة.',
     tab_home:'الرئيسية', tab_svc:'الخدمات', tab_com:'المجتمع', tab_prof:'حسابي',
@@ -1392,6 +1398,8 @@ function render(){
   /* The desktop preview bar tracks the real connection state, so it is
      refreshed on every render — signed in or out, tenancy or none. */
   try{ updateLinkbar(); }catch(e){}
+  /* PW-01. Signed in on the office's password: that screen and nothing else. */
+  if(PWCHANGE && SB.signedIn()) return renderPwChange();
   if(!unlocked()) return renderLocked();
   if(NOTENANCY) return renderNoTenancy();
   renderTop(); renderScreen(); renderTabs();
@@ -1414,13 +1422,10 @@ function renderLocked(){
       <p class="muted" style="margin:0 auto;max-width:30em;line-height:1.6">${T('lock_body')}</p>
     </div>
     <div class="card" style="margin-top:20px">
-      <div class="bd"><div id="sbForm">${otpForm()}</div></div>
+      <div class="bd"><div id="sbForm">${signForm()}</div></div>
     </div>
     <p class="muted" style="text-align:center;margin-top:18px;line-height:1.6">${T('lock_help')}</p>
     <p style="text-align:center;margin-top:10px"><button class="link" type="button" onclick="sheetPrivacy()">${T('priv_link')}</button></p>`;
-  /* as in sbSheet: otpForm() returned a string, so the resend countdown has to
-     be attached to the nodes that exist only now */
-  if(OTP.mail) otpClock();
 }
 
 function renderTop(){
@@ -1983,6 +1988,7 @@ function viewProfile(){
 
   <div class="card tight">
     ${menuRow('phone', T('emergency'), L('Manager, security, 24h line','المدير، الأمن، خط ٢٤ ساعة'), 'sheetContact()')}
+    ${menuRow('key', L('Change password','تغيير كلمة المرور'), L('Choose a new password for this app','اختر كلمة مرور جديدة لهذا التطبيق'), 'sheetPassword()')}
   </div>
 
   <div class="card tight">
@@ -2224,32 +2230,46 @@ const SB = (function(){
   const email   = () => { const c = claims(); return (c && c.email) || ''; };
   const signedIn= () => !!(sess && sess.access_token);
 
-  /* OTP-01. A resident signs in with a one-time code emailed to the address the
-     office holds for them — not with a password. Nobody has ever signed in to
-     this app with a password (auth.users holds two rows, both staff), so this
-     replaces a path rather than removing one people use.
+  /* PW-01, 30 September. A resident signs in with the email address the office
+     holds for them and a password. The first password is the office's, and it is
+     one-time: until the resident has replaced it, the database returns nothing
+     to that login (password_change_required() in
+     sql/2026-09-30_resident_first_password.sql), and this app shows only the
+     screen that replaces it.
 
-     `create_user:false` is the load-bearing part, and it is NOT the default.
-     Left at its default of true, Supabase creates an `auth.users` row for ANY
-     address typed into the box. Three things follow: anyone could mint an
-     account; every one of those accounts would sign in successfully and land in
-     an empty app, because link_resident() would find no resident with that
-     address; and the send endpoint becomes a way to have mail with Almaria's
-     name on it delivered to an address of the sender's choosing. */
-  async function otpRequest(mail){
-    return call('/auth/v1/otp', {
+     Ahmed, the same day: "i can write the password my self for each unit and
+     then resident when they use this password they change it, so the password i
+     write works as one time password."
+
+     The email codes (OTP-01, 20 September) went with this change. There is no
+     sending mailbox yet, and a sign-in route that cannot deliver its code is a
+     second credential surface with nobody on it. Logins are still created only
+     by the office, in the Supabase dashboard — nothing in this page can make
+     one: the password grant signs in an account that exists, and nothing else. */
+  async function passwordSignIn(mail, pass){
+    const s = await call('/auth/v1/token?grant_type=password', {
       method:'POST', headers:{apikey:KEY, 'Content-Type':'application/json'},
-      body: JSON.stringify({email: mail, create_user: false})});
-  }
-  /* `type:'email'` is a sign-in code for a user who already exists. The other
-     verify types — signup, invite, recovery, magiclink — are different flows
-     with different tokens, and naming the wrong one fails the exchange. */
-  async function otpVerify(mail, code){
-    const s = await call('/auth/v1/verify', {
-      method:'POST', headers:{apikey:KEY, 'Content-Type':'application/json'},
-      body: JSON.stringify({email: mail, token: code, type: 'email'})});
+      body: JSON.stringify({email: mail, password: pass})});
     save(s);
     return s;
+  }
+  /* The resident's own password, replacing the office's. Supabase applies the
+     project's password rules and refuses the same password twice. Not replayed:
+     a change that landed and lost its answer is tried again by the person, who
+     can see what happened, not by this code. */
+  function updatePassword(pass){
+    return authedWrite(() => call('/auth/v1/user', {
+      method:'PUT', headers:hdr({'Content-Type':'application/json'}),
+      body: JSON.stringify({password: pass})}));
+  }
+  /* PW-01 review. Once the resident's own password is in place, every OTHER
+     session of this login ends — whoever else signed in with the office's
+     password is signed out, and the database stops answering their token at
+     once (resident_access_ok). Supabase does this on a password change as
+     well; asking for it costs nothing and does not depend on a setting. */
+  function signOutOthers(){
+    try{ return fetch(BASE + '/auth/v1/logout?scope=others', {method:'POST', headers:hdr()}).catch(() => null); }
+    catch(e){ return Promise.resolve(null); }
   }
   /* AUTH-01. This used to be `catch(e){ save(null); return null; }` — one line,
      and it threw the session away for ANY reason the refresh did not succeed.
@@ -2547,7 +2567,7 @@ const SB = (function(){
 
   const API = {
     base: BASE, configured: () => !!(BASE && KEY),
-    otpRequest, otpVerify, signOut, refresh, ready, signedIn, isStaff, email, claims,
+    passwordSignIn, updatePassword, signOutOthers, signOut, refresh, ready, signedIn, isStaff, email, claims,
     sel, ins, ups, upd, del, rpc, upload, signedUrl,
     watch, stopWatching, rtState: () => rt
   };
@@ -3177,194 +3197,269 @@ function sbSheet(){
       (SB.rtState() === 'live' ? ', and update the moment the office changes them.' : '.'),
       'تم تسجيل الدخول باسم ' + esc(SB.email()) + '. شقتك وطلباتك تأتي من نظام الإدارة' +
       (SB.rtState() === 'live' ? '، وتتحدّث فور تغييرها لدى الإدارة.' : '.'))}</div>
-    <button class="btn ghost" style="margin-top:16px" onclick="sbOut()">${L('Sign out','تسجيل الخروج')}</button>
+    <button class="btn" style="margin-top:16px" onclick="closeAll();sheetPassword()">${L('Change password','تغيير كلمة المرور')}</button>
+    <button class="btn ghost" style="margin-top:10px" onclick="sbOut()">${L('Sign out','تسجيل الخروج')}</button>
   ` : `
     <div class="note">${T('lock_body')}</div>
-    <div id="sbForm" style="margin-top:16px">${otpForm()}</div>
+    <div id="sbForm" style="margin-top:16px">${signForm()}</div>
   `);
-  /* The sheet paints its own markup, so the countdown has to be started against
-     the nodes that now exist — otpForm() only produced the string. */
-  if(!inn && OTP.mail) otpClock();
 }
 
-/* ---------------------------- sign in by code ----------------------------
-   OTP-01. Two steps — ask for a code, then enter it — and the SAME two steps on
-   both surfaces that offer sign-in: the lock screen and the connection sheet.
-   Those carried two copies of one form before, so a change to either was a
-   change the other did not get. One builder, one pair of handlers, one state. */
-const OTP = {mail:'', at:0};
-const OTP_WAIT = 60;                       /* Supabase's own floor between sends */
-const otpLeft = () => Math.max(0, OTP_WAIT - Math.round((Date.now() - OTP.at)/1000));
-const otpMailOK = m => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m);
-let otpTimer = null;
+/* ------------------------------- sign in -----------------------------------
+   PW-01. One form on both surfaces that offer sign-in — the lock screen and the
+   connection sheet: the email address the office holds, and a password. One
+   builder and one handler, so a change to either surface is a change to both. */
+const PW_MIN = 10;
+const pwMailOK = m => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m);
+/* A resident's own password: at least ten characters, with an English letter
+   and a number. The server's rules are the ones that count (Supabase's password
+   settings, where the office sets the same minimum); this check saves a round
+   trip and says what is wrong in the person's own language. */
+const pwRuleOK = p => typeof p === 'string' && p.length >= PW_MIN && /[A-Za-z]/.test(p) && /[0-9]/.test(p);
 
-function otpForm(){
-  if(!OTP.mail) return `
+/* OTP-04, kept for passwords. A resident typing on an Arabic keyboard enters
+   ١٢٣ where the office typed 123. Both sides of every comparison go through
+   the same mapping — here at sign-in and at the change — so a password is the
+   same password whichever digits the keyboard produced. Letters are left
+   exactly as typed. U+0660–0669 are the Arabic-Indic digits, U+06F0–06F9 the
+   Eastern Arabic-Indic ones used on Persian and Urdu keyboards. */
+const arabicDigits = t => String(t || '').replace(/[٠-٩]/g, d => String(d.charCodeAt(0) - 0x0660))
+                                         .replace(/[۰-۹]/g, d => String(d.charCodeAt(0) - 0x06F0));
+
+/* Shown and hidden by the person, never by the page: the field starts hidden
+   and only a press on the button next to it changes that. */
+function pwShow(id, btn){
+  const f = $(id); if(!f) return;
+  const show = f.type === 'password';
+  f.type = show ? 'text' : 'password';
+  if(btn){ btn.textContent = show ? L('Hide','إخفاء') : L('Show','إظهار');
+           btn.setAttribute('aria-pressed', show ? 'true' : 'false'); }
+}
+const pwEye = id => `<button class="link" type="button" aria-pressed="false"
+    aria-label="${L('Show password','إظهار كلمة المرور')}"
+    style="font-size:13px;margin-top:6px" onclick="pwShow('${id}', this)">${L('Show','إظهار')}</button>`;
+
+function signForm(){
+  return `
     <div class="fgroup">
       <label class="f" for="sbMail">${L('Email','البريد الإلكتروني')}</label>
-      <input class="inp" id="sbMail" type="email" autocomplete="email" inputmode="email"
+      <input class="inp" id="sbMail" type="email" autocomplete="username" inputmode="email" dir="ltr"
+             autocapitalize="none" autocorrect="off" spellcheck="false"
              aria-label="${L('Email','البريد الإلكتروني')}"
-             onkeydown="if(event.key==='Enter')otpSend()">
+             onkeydown="if(event.key==='Enter'){const n=$('sbPass'); if(n) n.focus();}">
     </div>
-    <p class="muted" style="margin:0 0 12px;line-height:1.6">${L(
-      'We will email a six-digit code to the address the office holds for you.',
-      'سنرسل رمزاً من ستة أرقام إلى العنوان المسجّل لدى الإدارة.')}</p>
-    <button class="btn primary" id="sbGo" onclick="otpSend()">${
-      L('Email me a code','أرسل لي رمزاً')}</button>`;
-  return `
-    <div class="note"><div style="flex:1;min-width:0">
-      <div>${L('We sent a code to','أرسلنا رمزاً إلى')}</div>
-      <div dir="ltr" style="font-weight:800;word-break:break-all;margin:3px 0 6px;text-align:${
-        LANG==='ar'?'right':'left'}">${esc(OTP.mail)}</div>
-      <div>${L('It expires shortly. Check your junk folder if it is not there.',
-               'تنتهي صلاحيته قريباً. تحقّق من مجلد الرسائل غير المرغوب فيها إن لم تجده.')}</div>
-    </div></div>
-    <div class="fgroup" style="margin-top:14px">
-      <label class="f" for="sbCode">${L('Six-digit code','الرمز المكوّن من ستة أرقام')}</label>
-      <input class="inp" id="sbCode" type="text" inputmode="numeric" autocomplete="one-time-code"
-             maxlength="6" pattern="[0-9]*" dir="ltr"
-             style="letter-spacing:.4em;font-size:19px;text-align:center"
-             aria-label="${L('Six-digit code','الرمز المكوّن من ستة أرقام')}"
-             onkeydown="if(event.key==='Enter')otpIn()">
+    <div class="fgroup">
+      <label class="f" for="sbPass">${L('Password','كلمة المرور')}</label>
+      <input class="inp" id="sbPass" type="password" autocomplete="current-password" dir="ltr"
+             autocapitalize="none" autocorrect="off" spellcheck="false"
+             aria-label="${L('Password','كلمة المرور')}"
+             onkeydown="if(event.key==='Enter')pwIn()">
+      ${pwEye('sbPass')}
     </div>
-    <button class="btn primary" id="sbGo" onclick="otpIn()">${L('Sign in','تسجيل الدخول')}</button>
-    <div style="display:flex;gap:8px;margin-top:10px">
-      <button class="btn ghost grow" id="sbAgain" onclick="otpSend(1)" disabled
-              style="font-size:13px;white-space:nowrap">${L('Resend','إعادة الإرسال')}</button>
-      <button class="btn ghost grow" id="sbBack" onclick="otpBack()"
-              style="font-size:13px;white-space:nowrap">${L('Change address','تغيير العنوان')}</button>
-    </div>`;
+    <button class="btn primary" id="sbGo" onclick="pwIn()">${L('Sign in','تسجيل الدخول')}</button>
+    <p class="muted" style="margin:12px 0 0;line-height:1.6;font-size:13px">${L(
+      'Forgotten your password, or not been given one? Contact the building office — they will give you a new temporary password.',
+      'نسيت كلمة المرور أو لم تستلمها؟ تواصل مع إدارة المبنى، وستعطيك كلمة مرور مؤقتة جديدة.')}</p>`;
 }
 
-/* The resend button counts itself down rather than being enabled on a promise
-   that the minute has passed. If the node goes away — the sheet closed, the
-   person signed in — the clock stops with it. */
-function otpClock(){
-  clearInterval(otpTimer);
-  const tick = () => {
-    const b = $('sbAgain');
-    if(!b){ clearInterval(otpTimer); otpTimer = null; return; }
-    const n = otpLeft();
-    b.disabled = n > 0;
-    b.textContent = n > 0 ? L('Resend in ' + n + 's', 'إعادة الإرسال ' + n + ' ث')
-                          : L('Resend', 'إعادة الإرسال');
-  };
-  tick();
-  otpTimer = setInterval(tick, 1000);
-}
-
-function otpPaint(){
-  const host = $('sbForm');
-  if(!host) return;
-  host.innerHTML = otpForm();
-  const f = $(OTP.mail ? 'sbCode' : 'sbMail');
-  if(f) try{ f.focus(); }catch(e){}
-  if(OTP.mail) otpClock(); else { clearInterval(otpTimer); otpTimer = null; }
-}
-
-function otpBack(){ OTP.mail = ''; OTP.at = 0; otpPaint(); }
-
-async function otpSend(again){
-  const box  = $('sbMail');
-  const mail = ((box ? box.value : OTP.mail) || '').trim().toLowerCase();
-  if(!otpMailOK(mail))
+async function pwIn(){
+  const box = $('sbMail'), pb = $('sbPass');
+  const mail = ((box && box.value) || '').trim().toLowerCase();
+  const pass = arabicDigits((pb && pb.value) || '');
+  if(!pwMailOK(mail))
     return toast(L('Please enter your email address.','يرجى إدخال بريدك الإلكتروني.'));
-  if(again && otpLeft()) return;
-  const btn  = $(again ? 'sbAgain' : 'sbGo');
-  const was  = btn && btn.textContent;
-  if(btn){ btn.disabled = true; btn.textContent = L('Sending…','جارٍ الإرسال…'); }
-  const restore = () => { if(btn){ btn.disabled = false; btn.textContent = was; } };
-  try{
-    await SB.otpRequest(mail);
-  }catch(e){
-    const st = e && e.status;
-    /* OTP-02. An address that is not on file answers differently from one that
-       is, and passing that difference to the screen turns this box into a way to
-       ask the building who lives here. So the not-found family — 400, 403, 422 —
-       gets the same answer a delivered code gets, and the code simply never
-       arrives, which is what the line under the box tells people to expect.
-
-       The two things that are NOT about anybody's tenancy are said plainly: a
-       rate limit is a fact about this browser, and an unreachable server is a
-       fact about the network. Reporting those as "on its way" would be a lie
-       that costs somebody a wait and then a phone call. */
-    if(st === 429){
-      restore();
-      return toast(L('Too many attempts just now. Wait a minute and try again.',
-                     'محاولات كثيرة الآن. انتظر دقيقة ثم حاول مرة أخرى.'));
-    }
-    if(!st || st >= 500){
-      restore();
-      return toast(st ? L('The server could not send the code. Please try again shortly.',
-                          'تعذّر على الخادم إرسال الرمز. يرجى المحاولة بعد قليل.')
-                      : L('Could not reach the server. Check your connection.',
-                          'تعذّر الوصول إلى الخادم. تحقّق من اتصالك.'));
-    }
-  }
-  OTP.mail = mail; OTP.at = Date.now();
-  otpPaint();
-  toast(L('If that address is on file, a code is on its way.',
-          'إذا كان العنوان مسجّلاً لدينا، فالرمز في طريقه إليك.'));
-}
-
-/* OTP-04. `replace(/\D/g,'')` keeps ASCII digits and throws everything else
-   away — so a resident who types or pastes ١٢٣٤٥٦ had all six digits deleted
-   and was told to enter a six-digit code, with six digits on the screen. An
-   Arabic app that cannot read Arabic numerals in the one box every tenant must
-   use is not bilingual; it is an English app with Arabic labels.
-   U+0660–0669 are the Arabic-Indic digits, U+06F0–06F9 the Eastern Arabic-Indic
-   ones used in Persian and Urdu keyboards. Both map to the same six digits the
-   verifier expects. Anything that is still not a digit afterwards is dropped as
-   before, so letters and punctuation are refused exactly as they were. */
-const arabicDigits = t => String(t || '').replace(/[\u0660-\u0669]/g, d => String(d.charCodeAt(0) - 0x0660))
-                                         .replace(/[\u06F0-\u06F9]/g, d => String(d.charCodeAt(0) - 0x06F0));
-async function otpIn(){
-  const code = arabicDigits(($('sbCode') && $('sbCode').value) || '').replace(/\D/g,'');
-  if(code.length !== 6)
-    return toast(L('Enter the six-digit code from the email.',
-                   'أدخل الرمز المكوّن من ستة أرقام من البريد.'));
+  if(!pass)
+    return toast(L('Please enter your password.','يرجى إدخال كلمة المرور.'));
   const btn = $('sbGo');
+  const idle = () => { if(btn){ btn.disabled = false; btn.textContent = L('Sign in','تسجيل الدخول'); } };
   if(btn){ btn.disabled = true; btn.textContent = L('Signing in…','جارٍ تسجيل الدخول…'); }
   try{
-    await SB.otpVerify(OTP.mail, code);
-    /* OTP-03. The code proves the mailbox. It does not find the tenancy.
-       `my_units()` resolves a person only through `residents.auth_uid`, and
-       nothing fills that column in until link_resident() matches the address on
-       the resident record to the address in the token. Without this call every
-       resident would sign in successfully and land in an empty app — the exact
-       failure occupancy-model.md was written to prevent, arriving by a new door.
-       It is idempotent: it returns the existing id if the row is already linked. */
-    let linked = null;
-    try{ linked = await SB.rpc('link_resident'); }catch(e){}
-    if(!await LIVE.start()){
-      const e = LIVE.err();
-      SB.signOut();
-      /* Said plainly, because by this point they have proved they own the
-         mailbox — there is nothing left to disclose. */
-      throw new Error(linked
-        ? ((e && e.message) || L('no apartment was found for this account',
-                                 'لم يُعثر على شقة مرتبطة بهذا الحساب'))
-        : L('this address is not linked to an apartment. Please contact the office.',
-            'هذا العنوان غير مرتبط بشقة. يرجى التواصل مع الإدارة.'));
-    }
-    LINK.onChange(() => { render(); linkFlash(); });
-    OTP.mail = ''; OTP.at = 0;
-    clearInterval(otpTimer); otpTimer = null;
-    closeAll(); render();
-    toast(L('Signed in.','تم تسجيل الدخول.'));
+    await SB.passwordSignIn(mail, pass);
   }catch(e){
+    if(pb) pb.value = '';
+    idle();
     const st = e && e.status;
-    const badCode = st === 400 || st === 401 || st === 403;
-    toast(badCode
-      ? L('That code is not right, or it has expired. Ask for a new one.',
-          'الرمز غير صحيح أو انتهت صلاحيته. اطلب رمزاً جديداً.')
-      : L('Could not sign in: ' + (e.message || e),
-          'تعذّر تسجيل الدخول: ' + (e.message || e)));
-    const f = $('sbCode');
-    if(f){ f.value = ''; try{ f.focus(); }catch(x){} }
-  }finally{
-    if(btn){ btn.disabled = false; btn.textContent = L('Sign in','تسجيل الدخول'); }
+    /* PW-02. A wrong password and an address nobody holds get ONE answer.
+       Supabase gives the same 400 for both, and so does this screen, so the
+       box cannot be used to ask the building who lives here. What is NOT about
+       anybody's account is said plainly: a rate limit is a fact about this
+       browser, and an unreachable server is a fact about the network. */
+    if(st === 429)
+      return toast(L('Too many attempts just now. Wait a few minutes and try again.',
+                     'محاولات كثيرة الآن. انتظر بضع دقائق ثم حاول مرة أخرى.'));
+    if(!st || st >= 500)
+      return toast(st ? L('The server could not sign you in just now. Please try again shortly.',
+                          'تعذّر على الخادم تسجيل دخولك الآن. يرجى المحاولة بعد قليل.')
+                      : L('Could not reach the server. Check your connection.',
+                          'تعذّر الوصول إلى الخادم. تحقّق من اتصالك.'));
+    /* Supabase says this only after the password was right, so it tells
+       nothing to someone who does not hold the login. */
+    if(e && e.body && e.body.error_code === 'email_not_confirmed')
+      return toast(L('This login has not been switched on yet. Please contact the office.',
+                     'لم يُفعَّل هذا الحساب بعد. يرجى التواصل مع الإدارة.'));
+    return toast(L('That email and password do not match. Check them, or ask the office for a new temporary password.',
+                   'البريد الإلكتروني وكلمة المرور غير متطابقين. تحقّق منهما، أو اطلب من الإدارة كلمة مرور مؤقتة جديدة.'));
   }
+  if(pb) pb.value = '';
+  try{ await afterSignIn(); }finally{ idle(); }
+}
+
+/* What follows EVERY successful sign-in, in this order, and nothing is read
+   before the second step has answered:
+     1. link_resident() — the password proves the login; it does not find the
+        tenancy. On the very first sign-in it also records that the password
+        in use is the office's.
+     2. password_change_required() — while the office's password is the one in
+        use, the resident chooses their own before anything else happens. The
+        database would return nothing anyway; this is the screen that says why.
+     3. only then the apartment. */
+let PWCHANGE = false;
+async function mustChangePassword(){
+  /* An error here is taken as "no": the database still refuses a login on the
+     office's password, so the worst case is the no-apartment screen, never an
+     apartment. */
+  try{ return (await SB.rpc('password_change_required')) === true; }catch(e){ return false; }
+}
+async function afterSignIn(){
+  let linked = null;
+  try{ linked = await SB.rpc('link_resident'); }catch(e){}
+  if(await mustChangePassword()){
+    PWCHANGE = true;
+    closeAll(); render();
+    return;
+  }
+  PWCHANGE = false;
+  await openApartment(linked);
+}
+async function openApartment(linked){
+  if(!await LIVE.start()){
+    const e = LIVE.err();
+    SB.signOut();
+    render();
+    /* Said plainly, because by this point they have proved they hold the
+       login — there is nothing left to disclose. */
+    toast(L('Could not sign in: ','تعذّر تسجيل الدخول: ') + (linked
+      ? ((e && e.message) || L('no apartment was found for this account',
+                               'لم يُعثر على شقة مرتبطة بهذا الحساب'))
+      : L('this address is not linked to an apartment. Please contact the office.',
+          'هذا العنوان غير مرتبط بشقة. يرجى التواصل مع الإدارة.')));
+    return false;
+  }
+  LINK.onChange(() => { render(); linkFlash(); });
+  closeAll(); render();
+  toast(L('Signed in.','تم تسجيل الدخول.'));
+  return true;
+}
+
+/* The screen a login on the office's password gets, and the only one. No tabs,
+   no menu, no apartment: the two fields, the rule, and a way out. */
+function renderPwChange(){
+  closeAll();
+  $('tabbar').innerHTML = '';
+  $('topbar').innerHTML = `
+    <div class="grow">
+      <h1 style="font-size:17px">${T('appName')}</h1>
+      <div class="sub">${L('Resident app','تطبيق السكان')}</div>
+    </div>
+    <button class="iconbtn" onclick="setLang(LANG==='en'?'ar':'en')" aria-label="${
+      L('Change language','تغيير اللغة')}">${I('globe',22)}</button>`;
+  $('screen').innerHTML = `
+    <div style="text-align:center;padding:34px 4px 10px">
+      <div style="color:var(--gold);opacity:.9">${MARK('132px',44)}</div>
+      <h2 style="margin:20px 0 6px;font-size:19px;font-weight:800">${T('pw_title')}</h2>
+      <p class="muted" style="margin:0 auto;max-width:32em;line-height:1.6">${T('pw_body')}</p>
+    </div>
+    <div class="card" style="margin-top:20px">
+      <div class="bd"><div id="pwForm">${pwForm(false)}</div></div>
+    </div>
+    <div class="card" style="margin-top:12px"><div class="bd">
+      <button class="btn ghost" onclick="sbOut()">${L('Sign out','تسجيل الخروج')}</button>
+    </div></div>`;
+}
+
+function pwForm(inSheet){
+  return `
+    <div class="fgroup">
+      <label class="f" for="pwNew">${L('New password','كلمة المرور الجديدة')}</label>
+      <input class="inp" id="pwNew" type="password" autocomplete="new-password" dir="ltr"
+             autocapitalize="none" autocorrect="off" spellcheck="false"
+             aria-label="${L('New password','كلمة المرور الجديدة')}"
+             onkeydown="if(event.key==='Enter'){const n=$('pwNew2'); if(n) n.focus();}">
+      ${pwEye('pwNew')}
+    </div>
+    <div class="fgroup">
+      <label class="f" for="pwNew2">${L('Type it again','أعد كتابتها')}</label>
+      <input class="inp" id="pwNew2" type="password" autocomplete="new-password" dir="ltr"
+             autocapitalize="none" autocorrect="off" spellcheck="false"
+             aria-label="${L('Type the new password again','أعد كتابة كلمة المرور الجديدة')}"
+             data-sheet="${inSheet ? '1' : '0'}" onkeydown="if(event.key==='Enter')pwSave(this.dataset.sheet==='1')">
+    </div>
+    <p class="muted" style="margin:0 0 12px;line-height:1.6;font-size:13px">${T('pw_rule')}</p>
+    <button class="btn primary" id="pwGo" data-sheet="${inSheet ? '1' : '0'}" onclick="pwSave(this.dataset.sheet==='1')">${
+      inSheet ? L('Save password','حفظ كلمة المرور') : L('Save and continue','حفظ ومتابعة')}</button>`;
+}
+
+function pwSaveError(code, st, e){
+  if(code === 'same_password')
+    return L('Choose a password different from the one you have now.', 'اختر كلمة مرور مختلفة عن الحالية.');
+  if(code === 'weak_password')
+    return L('That password is too easy to guess. ', 'كلمة المرور هذه سهلة التخمين. ') + T('pw_rule');
+  if(code === 'reauthentication_needed' || st === 401)
+    return L('For your security, sign out and sign in again, then change your password.',
+             'لأمان حسابك، سجّل الخروج ثم الدخول مجدداً، ثم غيّر كلمة المرور.');
+  if(!st || st >= 500)
+    return st ? L('The server could not save it just now. Please try again shortly.', 'تعذّر على الخادم حفظها الآن. يرجى المحاولة بعد قليل.')
+              : L('Could not reach the server. Check your connection.', 'تعذّر الوصول إلى الخادم. تحقّق من اتصالك.');
+  return L('Could not save the password: ', 'تعذّر حفظ كلمة المرور: ') + ((e && e.message) || e);
+}
+
+/* Changing it later, from Profile or the account sheet. The same form and the
+   same handler as the first time — only what happens after the save differs. */
+function sheetPassword(){
+  if(!SB.signedIn()) return sbSheet();
+  openSheet(L('Change password','تغيير كلمة المرور'), `<div id="pwForm">${pwForm(true)}</div>`);
+}
+
+async function pwSave(inSheet){
+  const a = arabicDigits(($('pwNew') && $('pwNew').value) || '');
+  const b = arabicDigits(($('pwNew2') && $('pwNew2').value) || '');
+  if(!pwRuleOK(a)) return toast(T('pw_rule'));
+  if(a !== b) return toast(L('The two passwords are not the same.','كلمتا المرور غير متطابقتين.'));
+  const btn = $('pwGo'), was = btn && btn.textContent;
+  const idle = () => { if(btn){ btn.disabled = false; btn.textContent = was; } };
+  const clear = () => ['pwNew','pwNew2'].forEach(id => { const n = $(id); if(n) n.value = ''; });
+  if(btn){ btn.disabled = true; btn.textContent = L('Saving…','جارٍ الحفظ…'); }
+  let landed = true;
+  try{
+    await SB.updatePassword(a);
+  }catch(e){
+    landed = false;
+    clear();
+    const st = e && e.status;
+    const code = e && e.body && (e.body.error_code || e.body.code);
+    /* A change that landed and lost its answer comes back, on the retry, as
+       "same password". The database knows which it was. */
+    if(!inSheet && code === 'same_password' && !(await mustChangePassword())) landed = true;
+    else { idle(); toast(pwSaveError(code, st, e)); }
+  }
+  if(!landed) return;
+  clear();
+  /* The database decides, not this page: the office's password must be gone
+     from the login before anything opens. */
+  if(await mustChangePassword()){
+    idle();
+    return toast(L('The new password was not recorded. Please try again, or contact the office.',
+                   'لم تُسجَّل كلمة المرور الجديدة. يرجى المحاولة مرة أخرى أو التواصل مع الإدارة.'));
+  }
+  SB.signOutOthers();
+  if(inSheet){
+    idle(); closeAll();
+    return toast(L('Password changed.','تم تغيير كلمة المرور.'));
+  }
+  PWCHANGE = false;
+  if(await openApartment(true))
+    toast(L('Password saved. Welcome.','تم حفظ كلمة المرور. أهلاً بك.'));
+  idle();
 }
 
 /* SEC-03. The prominent Sign out button on Profile called demo() — a toast —
@@ -3404,6 +3499,15 @@ window.addEventListener('storage', e => {
   if(!SB.configured()) return;
   try{
     if(await SB.ready()){
+      /* PW-01. A session that is still on the office's password — the app was
+         closed before the resident chose their own — comes back to that screen,
+         not to "no apartment", which is what the empty reads would otherwise
+         say. link_resident() runs again first, as at sign-in (review, 30 Sep):
+         a sign-in whose link call was lost, or a login given a password after
+         it was linked, is recorded now rather than at the next sign-in. It is
+         idempotent and never re-closes a gate the resident has opened. */
+      try{ await SB.rpc('link_resident'); }catch(e){}
+      if(await mustChangePassword()){ PWCHANGE = true; render(); return; }
       if(await LIVE.start()){
         LINK.onChange(() => { render(); linkFlash(); });
         render();
