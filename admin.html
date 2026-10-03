@@ -815,6 +815,12 @@ const D={
   rp_costsvc_t:'Maintenance cost by service and apartment',
   rp_costsvc_d:'Where the money goes — by trade, and by apartment as a share of the rent that apartment is billed.',
   rp_cost_n:'Cost as a share of rent billed is the figure to watch per apartment. A high share on one apartment usually means a recurring fault rather than an expensive one.',
+  rp_opex_t:'Maintenance and utilities',
+  rp_opex_d:'What the building spends on repairs and on utility bills, month by month, from the office\'s own books.',
+  rp_opex_maint:'Maintenance', rp_opex_util:'Utilities', rp_opex_util_d:'Electricity, water, internet and phones',
+  rp_opex_total:'Both together', rp_opex_total_d:'Maintenance and utilities',
+  rp_opex_n:'Maintenance is the maintenance-works register; utilities are the bills in the office\'s ledger. Each line is dated when the office booked it, so a month\'s bill usually appears in the month after. Labour and cleaning contracts are outside this report.',
+  ut_electricity:'Electricity', ut_water:'Water', ut_internet:'Internet', ut_phone:'Phones',
   rp_supplier_t:'Supplier spend and performance',
   rp_supplier_d:'Spend, job count, average job value and — where the job was raised through the app — response against target and resident rating.',
   rp_sla_t:'Response against target',
@@ -1558,6 +1564,12 @@ const D={
   rp_costsvc_t:'تكلفة الصيانة حسب الخدمة والشقة',
   rp_costsvc_d:'أين يذهب المال — حسب المهنة، وحسب الشقة كنسبة من الإيجار المفوتر عليها.',
   rp_cost_n:'نسبة التكلفة إلى الإيجار المفوتر هي المؤشر لكل شقة. وارتفاعها في شقة واحدة يعني غالباً عطلاً متكرراً لا عطلاً مكلفاً.',
+  rp_opex_t:'الصيانة والمرافق',
+  rp_opex_d:'ما ينفقه المبنى على الإصلاحات وفواتير المرافق شهراً بشهر، من دفاتر المكتب.',
+  rp_opex_maint:'الصيانة', rp_opex_util:'المرافق', rp_opex_util_d:'الكهرباء والمياه والإنترنت والجوال',
+  rp_opex_total:'الإجمالي', rp_opex_total_d:'الصيانة والمرافق معاً',
+  rp_opex_n:'الصيانة من سجل أعمال الصيانة، والمرافق من فواتير دفتر المكتب. كل بند مؤرخ بيوم قيده، لذا تظهر فاتورة الشهر عادةً في الشهر التالي. لا يشمل التقرير العمالة وعقود النظافة.',
+  ut_electricity:'الكهرباء', ut_water:'المياه', ut_internet:'الإنترنت', ut_phone:'الجوال',
   rp_supplier_t:'إنفاق الموردين وأداؤهم',
   rp_supplier_d:'الإنفاق وعدد الأعمال ومتوسط قيمة العمل — وللأعمال المرفوعة من التطبيق: الاستجابة مقابل المستهدف وتقييم الساكن.',
   rp_sla_t:'الاستجابة مقابل المستهدف',
@@ -2422,6 +2434,12 @@ const ANNS=[];
 /* F-02. Unpaid instalments on closed terms — money the active register has no
    place for. Read whole from Postgres, keyed by instalment id, settled by it. */
 const OWING=[];
+/* The office's cost books, line by line, with the register each line came from:
+   maintenance works, external contracts, labour, and utility bills. Utility
+   bills are money out but not jobs — nobody raised them and nobody closed them —
+   so they are kept here and never replayed into the work-order list. The
+   maintenance-and-utilities report reads this, not the jobs. */
+const LEDGER=[];
 
 /* ------------------------------ derived figures ------------------------------ */
 /* One definition of "breached", used by the queue, the panels and the SLA
@@ -4734,6 +4752,7 @@ const rpPeriods = () => [
   {k:'m',    en:'This month',        ar:'هذا الشهر'},
   {k:'q',    en:'Last three months', ar:'آخر ثلاثة أشهر'},
   {k:'y12',  en:'Last twelve months',ar:'آخر اثني عشر شهراً'},
+  {k:'ytd',  en:'This year',         ar:'هذا العام'},
   {k:'all',  en:'Everything',        ar:'الكل'}
 ];
 function rpRange(){
@@ -4742,6 +4761,9 @@ function rpRange(){
   if(RP.period==='m')   from.setDate(1);
   if(RP.period==='q')   from = addMonthsClamped(from, -3);
   if(RP.period==='y12') from = addMonthsClamped(from, -12);
+  /* The calendar year so far — the period a year-to-date statement is read in.
+     From 1 January of the building's own year, not twelve months back. */
+  if(RP.period==='ytd') from = new Date(TODAY.getFullYear(), 0, 1);
   if(RP.period==='all') from.setFullYear(2000);
   from.setHours(0,0,0,0);
   return {from, to};
@@ -5036,6 +5058,47 @@ function repLedger(){
   };
 }
 
+/* Maintenance and utilities, month by month, from the office's own books: the
+   maintenance-works register and the utility bills. Labour and cleaning
+   contracts are other registers and stay out, so "maintenance" here means what
+   the office calls maintenance. Each line counts in the month it was booked —
+   the date on the ledger — which is the only date the books carry. */
+const UTIL_KINDS = ['electricity', 'water', 'internet', 'phone'];
+function repOpex(){
+  const r = rpRange();
+  const by = {};
+  LEDGER.forEach(x => {
+    if(x.register !== 'maintenance' && x.register !== 'utilities') return;
+    if(!rpIn(x.on, r)) return;
+    const key = x.on.getFullYear() + '-' + String(x.on.getMonth() + 1).padStart(2, '0');
+    const b = by[key] = by[key] || {month: new Date(x.on.getFullYear(), x.on.getMonth(), 1),
+                                    maint:0, electricity:0, water:0, internet:0, phone:0, util:0};
+    if(x.register === 'maintenance'){ b.maint += x.amt; return; }
+    if(UTIL_KINDS.includes(x.kind)) b[x.kind] += x.amt;
+    b.util += x.amt;       /* a bill of a kind not named above still counts as a utility */
+  });
+  const rows = Object.keys(by).sort().map(k => by[k]);
+  const sum = f => rows.reduce((a, b) => a + b[f], 0);
+  const maint = sum('maint'), util = sum('util');
+  return {
+    period: true,
+    stats: [[T('rp_opex_maint'), money(maint), rpPeriodLabel()],
+            [T('rp_opex_util'), money(util), T('rp_opex_util_d')],
+            [T('rp_opex_total'), money(maint + util), T('rp_opex_total_d')]],
+    cols: [{k:'month', l:T('rp_month'), month:1},
+           {k:'maint', l:T('rp_opex_maint'), num:1, money:1},
+           {k:'electricity', l:T('ut_electricity'), num:1, money:1},
+           {k:'water', l:T('ut_water'), num:1, money:1},
+           {k:'internet', l:T('ut_internet'), num:1, money:1},
+           {k:'phone', l:T('ut_phone'), num:1, money:1},
+           {k:'util', l:T('rp_opex_util'), num:1, money:1}],
+    rows,
+    foot: {month:T('rp_total'), maint, electricity:sum('electricity'), water:sum('water'),
+           internet:sum('internet'), phone:sum('phone'), util},
+    note: T('rp_opex_n')
+  };
+}
+
 function repRate(){
   const byType = {};
   UNITS.filter(u=>u.occupied && u.area && u.rent).forEach(u=>{
@@ -5286,6 +5349,7 @@ const REPORTS = [
   {id:'owing',    g:'money', s:'ready',   f:repOwing},
   {id:'forecast', g:'money', s:'ready',   f:repForecast},
   {id:'ledger',   g:'money', s:'ready',   f:repLedger},
+  {id:'opex',     g:'money', s:'ready',   f:repOpex},
 
   {id:'evidence', g:'prop',  s:'ready',   f:repEvidence},
   {id:'occupancy',g:'prop',  s:'ready',   f:repOccupancy},
@@ -8829,7 +8893,7 @@ const LIVE = (function(){
          facts and must stay distinguishable. The catch stays — the rent
          register must still load — but it now says what happened. */
       SB.selAll('building_costs',
-             'select=id,occurred_on,description,amount,unit_id,category,invoice_no,' +
+             'select=id,occurred_on,description,amount,unit_id,category,invoice_no,register,' +
              'suppliers(name_en)&order=occurred_on.asc,id.asc')
         .then(rows => ({ok:true, rows}))
         .catch(e => { console.warn('building_costs unavailable', e);
@@ -8977,9 +9041,19 @@ const LIVE = (function(){
       costsErr = {since: (costsErr && costsErr.since) || new Date(),
                   why: d.costs.why, everLoaded: !!lastCosts};
     }
+    /* The books as they are, register by register, for the reports that read
+       money rather than jobs. Utility bills go here and nowhere else: a
+       bill is money out, not a job anybody raised or closed, and replaying it
+       would put every meter's monthly bill into the work-order list. */
+    LEDGER.length = 0;
+    (lastCosts || []).forEach(c => {
+      LEDGER.push({id: c.id, register: c.register || null, kind: c.category || null,
+                   on: new Date(c.occurred_on + 'T12:00:00'), amt: Number(c.amount) || 0});
+    });
     /* SCALE-02. One sort for the whole register, not one per invoice line. */
     const cbulk = bulkAdd();
     (lastCosts || []).forEach(c => {
+      if(c.register === 'utilities') return;
       const when = new Date(c.occurred_on + 'T12:00:00');
       const u = UNITS.find(x => x.u === c.unit_id);
       logJobAdd({
