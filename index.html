@@ -299,6 +299,32 @@ textarea.inp{min-height:92px;resize:none}
   border:1.5px dashed #D2D7DD;border-radius:var(--r-sm);padding:22px;text-align:center;
   color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;background:#FAFBFC
 }
+/* PHOTO-01. Four squares at most: a photo is a thumbnail, the dashed square
+   adds one. The file field itself is out of sight but still in the page, so a
+   button can open it on every phone. */
+.photos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.ph{
+  position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:#EEF1F3;
+  border:1px solid var(--line);padding:0;margin:0;font-family:inherit
+}
+.ph img{width:100%;height:100%;object-fit:cover;display:block}
+button.ph{cursor:pointer}
+.ph.add{
+  border:1.5px dashed #D2D7DD;background:#FAFBFC;color:var(--muted);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:800;line-height:1.2;text-align:center
+}
+.ph.add:disabled{opacity:.5;cursor:default}
+.ph .rm{
+  position:absolute;top:4px;inset-inline-end:4px;width:26px;height:26px;border-radius:50%;border:none;
+  background:rgba(15,37,48,.72);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0
+}
+.ph-note{font-size:12px;color:var(--muted);font-weight:600;line-height:1.5;margin-top:8px}
+.ph-view{width:100%;border-radius:var(--r-sm);display:block;background:#EEF1F3}
+.vh{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+/* NOTE-01. The one place the iPhone app asks about notifications. */
+.pn-card{margin-top:14px}
+.pn-card .acts{display:flex;gap:10px;margin-top:14px}
+.pn-card .acts .btn{padding:12px}
 
 /* ---------- payments ---------- */
 
@@ -591,18 +617,18 @@ const D = {
     priv_who_h:'Who is responsible',
     priv_who:'Almaria Investment Company, which manages Almaria Residence, is responsible for the information in this app.',
     priv_what_h:'What we hold',
-    priv_what:'Your name and apartment, the email address you sign in with, and the maintenance requests you raise — what you write, when, and the rating you give. Your password is kept only in a scrambled form that nobody can read back, the office included.',
+    priv_what:'Your name and apartment, the email address you sign in with, and the maintenance requests you raise — what you write, any photos you add, when, and the rating you give. In the iPhone app, if you turn on notifications, we also keep the code Apple gives your phone so that we can send them; they go through Apple\'s notification service and say only which request changed and how. Your password is kept only in a scrambled form that nobody can read back, the office included.',
     priv_why_h:'Why',
     priv_why:'So you can raise and follow maintenance requests and read building announcements, and so the office can manage your tenancy. We do not use it for advertising and we do not sell it.',
     priv_see_h:'Who can see it',
     priv_see:'You, for your own apartment, and authorised Almaria staff. No other resident can see your information. When you move out, your access to it in the app ends.',
     priv_where_h:'Where it is kept',
-    priv_where:'In a database run for us by Supabase, on servers in Japan.',
+    priv_where:'In a database and file store run for us by Supabase, on servers in Japan.',
     priv_long_h:'How long',
     priv_long:'While you are a resident, and afterwards only as long as the law requires us to keep it.',
     priv_rights_h:'Your choices',
     priv_rights:'You can ask for a copy of your information, ask us to correct it, or ask us to delete what we are not required to keep. Write to us at the address below.',
-    priv_updated:'Updated 30 September 2026',
+    priv_updated:'Updated 13 October 2026',
     nt_title:'No apartment is attached to this account',
     nt_body:'You are signed in, but this account is not linked to an apartment in the building, so there is nothing here to show. If you are a resident, contact the building office. If this is a staff account, use the management console.',
     tab_home:'Home', tab_svc:'Services', tab_com:'Community', tab_prof:'Profile',
@@ -626,7 +652,29 @@ const D = {
     f_cat:'Service', f_unit:'Apartment', f_title:'Short title', f_title_ph:'e.g. Bedroom A/C not cooling',
     f_desc:'Description', f_desc_ph:'Tell us what is happening, and where in the apartment…',
     f_pri:'Priority', f_time:'Preferred visit time', f_photo:'Photos (optional)',
-    photoHint:'Tap to attach a photo of the issue',
+    ph_add:'Add photo', ph_title:'Photos',
+    ph_note:'Up to 4 photos. Each one is made smaller, and its location data removed, before it is sent.',
+    ph_max:'A request can have up to 4 photos.',
+    ph_bad:'That file could not be read as a photo. Try another one.',
+    ph_big:'That photo is too large to send. Try another one.',
+    ph_remove:'Remove photo {n}', ph_open:'Photo {n} of {m}',
+    ph_sending:'Sending photos…', ph_sending_n:'Sending photo {n} of {m}…',
+    ph_loading:'Loading photos…', ph_none:'No photos on this request.', ph_prep:'Preparing…',
+    ph_none_open:'No photos yet. A photo helps the technician come prepared.',
+    ph_load_fail:'The photos could not be loaded just now.',
+    ph_up_fail:'The photo did not reach the office. Check your connection and try again.',
+    ph_refused:'The office system did not accept the photo. A request can hold up to 4 photos, and only while it is open.',
+    ph_added:'Photo added.', ph_added_n:'Photos added.', ph_back:'Back to the request',
+    toastReqPhotos:'Request submitted with {n}. You can follow its progress here in the app.',
+    toastReqPhotoFail:'Request submitted, but some photos did not reach the office ({n} of {m}). Open the request to add them again.',
+    pn_card_t:'Get notified about your requests',
+    pn_card_d:'Your phone will tell you when the office assigns, starts, pauses or completes one of your requests. Only about your own requests.',
+    pn_on_btn:'Turn on', pn_later:'Not now', pn_busy:'Turning on…',
+    pn_on:'Notifications are on. Your phone will tell you when one of your requests changes.',
+    pn_denied:'Notifications are off for this app. You can turn them on in the iPhone Settings app, under Almaria.',
+    pn_fail:'Notifications could not be turned on just now. Please try again later.',
+    pn_row:'Notifications', pn_row_on:'On — when your requests change', pn_row_off:'Off — tap to turn on',
+    pn_row_denied:'Off — turn on in iPhone Settings, under Almaria', pn_signing_out:'Signing out…',
     p_routine:'Routine', p_urgent:'Urgent', p_emergency:'Emergency',
     t_morning:'Morning 9–12', t_after:'Afternoon 1–5', t_eve:'Evening 5–8', t_any:'Any time',
     st_sub:'Submitted', st_ass:'Assigned', st_prog:'In progress', st_hold:'On hold', st_done:'Completed', st_can:'Cancelled',
@@ -687,18 +735,18 @@ const D = {
     priv_who_h:'الجهة المسؤولة',
     priv_who:'شركة المارية للاستثمار، التي تدير المارية ريزيدنس، هي المسؤولة عن البيانات الموجودة في هذا التطبيق.',
     priv_what_h:'ما نحتفظ به',
-    priv_what:'اسمك وشقتك، والبريد الإلكتروني الذي تسجّل به الدخول، وطلبات الصيانة التي ترفعها — ما تكتبه فيها ووقتها وتقييمك لها. أما كلمة المرور فتُحفظ بصيغة مشفّرة لا يمكن لأحد قراءتها، بما في ذلك الإدارة.',
+    priv_what:'اسمك وشقتك، والبريد الإلكتروني الذي تسجّل به الدخول، وطلبات الصيانة التي ترفعها — ما تكتبه فيها والصور التي ترفقها ووقتها وتقييمك لها. وفي تطبيق الآيفون، إذا فعّلت التنبيهات، نحتفظ أيضاً بالرمز الذي تمنحه Apple لجوالك لنتمكّن من إرسالها؛ وهي تمرّ عبر خدمة التنبيهات لدى Apple ولا تذكر إلا الطلب الذي تغيّر وكيف تغيّر. أما كلمة المرور فتُحفظ بصيغة مشفّرة لا يمكن لأحد قراءتها، بما في ذلك الإدارة.',
     priv_why_h:'لماذا',
     priv_why:'لترفع طلبات الصيانة وتتابعها، وتقرأ إعلانات المبنى، ولتتمكّن الإدارة من إدارة عقدك. لا نستخدمها في الإعلان ولا نبيعها.',
     priv_see_h:'من يطّلع عليها',
     priv_see:'أنت فيما يخص شقتك، وموظفو المارية المخوّلون. لا يستطيع أي ساكن آخر الاطلاع على بياناتك. وعند انتقالك من الشقة ينتهي اطلاعك عليها في التطبيق.',
     priv_where_h:'أين تُحفظ',
-    priv_where:'في قاعدة بيانات تديرها لنا شركة Supabase على خوادم في اليابان.',
+    priv_where:'في قاعدة بيانات ومخزن ملفات تديرهما لنا شركة Supabase على خوادم في اليابان.',
     priv_long_h:'مدة الاحتفاظ',
     priv_long:'طوال إقامتك، وبعدها فقط للمدة التي يوجبها النظام.',
     priv_rights_h:'حقوقك',
     priv_rights:'يمكنك طلب نسخة من بياناتك، أو تصحيحها، أو حذف ما لا يلزمنا النظام بالاحتفاظ به. راسلنا على العنوان أدناه.',
-    priv_updated:'آخر تحديث: ٣٠ سبتمبر ٢٠٢٦',
+    priv_updated:'آخر تحديث: ١٣ أكتوبر ٢٠٢٦',
     nt_title:'لا توجد شقة مرتبطة بهذا الحساب',
     nt_body:'تم تسجيل دخولك، لكن هذا الحساب غير مرتبط بشقة في المبنى، فلا يوجد ما يُعرض هنا. إن كنت ساكناً فتواصل مع إدارة المبنى. وإن كان هذا حساب موظف فاستخدم لوحة الإدارة.',
     tab_home:'الرئيسية', tab_svc:'الخدمات', tab_com:'المجتمع', tab_prof:'حسابي',
@@ -716,7 +764,29 @@ const D = {
     f_cat:'نوع الخدمة', f_unit:'رقم الشقة', f_title:'عنوان مختصر', f_title_ph:'مثال: مكيف غرفة النوم لا يبرّد',
     f_desc:'الوصف', f_desc_ph:'اشرح لنا المشكلة وموقعها داخل الشقة…',
     f_pri:'الأولوية', f_time:'الوقت المفضل للزيارة', f_photo:'صور (اختياري)',
-    photoHint:'اضغط لإرفاق صورة للمشكلة',
+    ph_add:'إضافة صورة', ph_title:'الصور',
+    ph_note:'حتى ٤ صور. تُصغَّر كل صورة وتُحذف منها بيانات الموقع قبل إرسالها.',
+    ph_max:'يمكن إرفاق ٤ صور كحد أقصى لكل طلب.',
+    ph_bad:'تعذّرت قراءة هذا الملف كصورة. جرّب صورة أخرى.',
+    ph_big:'هذه الصورة أكبر من أن تُرسل. جرّب صورة أخرى.',
+    ph_remove:'إزالة الصورة {n}', ph_open:'الصورة {n} من {m}',
+    ph_sending:'جارٍ إرسال الصور…', ph_sending_n:'جارٍ إرسال الصورة {n} من {m}…',
+    ph_loading:'جارٍ تحميل الصور…', ph_none:'لا توجد صور على هذا الطلب.', ph_prep:'جارٍ التجهيز…',
+    ph_none_open:'لا توجد صور بعد. الصورة تساعد الفني على الحضور مستعداً.',
+    ph_load_fail:'تعذّر تحميل الصور الآن.',
+    ph_up_fail:'لم تصل الصورة إلى الإدارة. تحقّق من اتصالك وحاول مرة أخرى.',
+    ph_refused:'لم يقبل نظام الإدارة الصورة. يمكن إرفاق ٤ صور كحد أقصى للطلب، وما دام مفتوحاً فقط.',
+    ph_added:'تمت إضافة الصورة.', ph_added_n:'تمت إضافة الصور.', ph_back:'العودة إلى الطلب',
+    toastReqPhotos:'تم إرسال الطلب مع {n}. يمكنك متابعة حالته هنا في التطبيق.',
+    toastReqPhotoFail:'تم إرسال الطلب، لكن بعض الصور لم تصل إلى الإدارة ({n} من {m}). افتح الطلب لإضافتها مرة أخرى.',
+    pn_card_t:'تنبيهات طلبات الصيانة',
+    pn_card_d:'يصلك تنبيه على جوالك عندما تُسند الإدارة أحد طلباتك أو تبدأ العمل عليه أو توقفه مؤقتاً أو تنجزه. تخص طلباتك فقط.',
+    pn_on_btn:'تفعيل', pn_later:'ليس الآن', pn_busy:'جارٍ التفعيل…',
+    pn_on:'تم تفعيل التنبيهات. سيصلك تنبيه عندما يتغيّر أحد طلباتك.',
+    pn_denied:'التنبيهات متوقفة لهذا التطبيق. يمكنك تفعيلها من تطبيق الإعدادات في الآيفون، ضمن «المارية».',
+    pn_fail:'تعذّر تفعيل التنبيهات الآن. يرجى المحاولة لاحقاً.',
+    pn_row:'التنبيهات', pn_row_on:'مفعّلة — عند تغيّر طلباتك', pn_row_off:'متوقفة — اضغط للتفعيل',
+    pn_row_denied:'متوقفة — فعّلها من إعدادات الآيفون، ضمن «المارية»', pn_signing_out:'جارٍ تسجيل الخروج…',
     p_routine:'عادي', p_urgent:'عاجل', p_emergency:'طارئ',
     t_morning:'صباحاً ٩–١٢', t_after:'ظهراً ١–٥', t_eve:'مساءً ٥–٨', t_any:'أي وقت',
     st_sub:'تم الاستلام', st_ass:'تم الإسناد', st_prog:'قيد التنفيذ', st_hold:'معلّق', st_done:'مكتمل', st_can:'ملغي',
@@ -1329,7 +1399,15 @@ function go(tab){ TAB = TABS.includes(tab) ? tab : 'home'; closeAll(); render();
    thing they then believe about the parts that DO work. */
 
 /* ---------------------------- language ---------------------------- */
+/* NOTE-01. The resident's choice of language is kept on this phone, so the app
+   reopens in it — and so a notification, which is written in the language the
+   phone last registered, comes in the language the resident reads. Until 13
+   October every launch opened in English, and every launch would have told the
+   office "English" again. */
+const LANG_KEY = ENV.prefix + '.lang.v1';
+const savedLang = () => { try{ return localStorage.getItem(LANG_KEY) === 'ar' ? 'ar' : 'en'; }catch(e){ return 'en'; } };
 function setLang(l){
+  try{ localStorage.setItem(LANG_KEY, l === 'ar' ? 'ar' : 'en'); }catch(e){}
   /* The same defect as the console's, in the same place: the closed drawer is
      parked off the left edge in English and off the right in Arabic, so
      flipping direction animates it ACROSS the screen for a quarter of a second
@@ -1346,6 +1424,7 @@ function setLang(l){
     : 'تصفّح التطبيق كما لو كان على الجوال. استخدم الزر بالأعلى للتبديل بين العربية والإنجليزية (تنقلب الواجهة بالكامل من اليمين لليسار).';
   tick();
   closeAll(); render();
+  try{ PUSH.langChanged(); }catch(e){}
   try{
     requestAnimationFrame(() => requestAnimationFrame(() =>
       document.documentElement.classList.remove('reflowing')));
@@ -1505,6 +1584,7 @@ function viewHome(){
     ${qa('plus','#FBF3DE','#A8811A',T('qa_req'),T('qa_req_d'),'sheetNewRequest()')}
     ${qa('phone','#FBEAEA','#C0504A',T('qa_call'),T('qa_call_d'),'sheetContact()')}
   </div>
+  ${pushPart('card')}
 
   <div class="sect-row">
     <h2>${T('openReq')}</h2>
@@ -1631,13 +1711,153 @@ function emptyState(ico,t,d,cta){
   </div></div>`;
 }
 
+/* ------- photos (PHOTO-01, 13 October 2026) -------
+   A resident can add up to four photos to a request, when raising it or while
+   it is open. They live in a private storage bucket, `request-photos`, under
+   <flat>/<request>/<random id>.jpg, and the bucket's rules decide everything
+   that matters (sql/2026-10-13_request_photos.sql): only JPEG, 3 MB at most,
+   only on an open request on the resident's own flat, four per request; the
+   resident sees only the photos they added, and only while they live there;
+   the office sees them all. This page shapes what it sends to fit, and says
+   so when the rules refuse. */
+const PHOTO_MAX = 4;
+const PHOTO_EDGE = 1600;                       /* the long side, in pixels */
+const PHOTO_LIMIT = 3 * 1024 * 1024;           /* the bucket's own limit */
+const PHOTO_IN_MAX = 40 * 1024 * 1024;         /* larger than this is not a phone photo */
+/* The same shapes the storage rules accept, checked here first so that an id
+   the rules would refuse is never put into a path at all. */
+const photoPathOK = (unit, id) => /^[A-Za-z0-9-]{1,20}$/.test(String(unit == null ? '' : unit))
+                               && /^[A-Za-z0-9_-]{1,40}$/.test(String(id == null ? '' : id));
+const PHOTO_NAME = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$/;
+function uuid4(){
+  try{ if(crypto.randomUUID) return crypto.randomUUID(); }catch(e){}
+  const b = crypto.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40; b[8] = (b[8] & 0x3f) | 0x80;
+  const h = Array.from(b, x => x.toString(16).padStart(2, '0')).join('');
+  return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
+}
+const phCount = n => LANG === 'ar'
+  ? (n === 1 ? 'صورة واحدة' : n === 2 ? 'صورتين' : NUM(n) + ' صور')
+  : (n === 1 ? '1 photo' : n + ' photos');
+function photoToast(sent, total){
+  const bad = total - ((sent && sent.ok) || 0);
+  return bad > 0 ? T('toastReqPhotoFail').replace('{n}', NUM(bad)).replace('{m}', NUM(total))
+                 : T('toastReqPhotos').replace('{n}', phCount(total));
+}
+
+/* Made smaller on the phone, before anything is sent. A phone photo is 3–12 MB
+   and four thousand pixels across; a technician needs to see the leaking joint,
+   not the grain of the tile, and the bucket takes 3 MB at most. Drawing the
+   picture onto a canvas and encoding it afresh as JPEG also leaves behind
+   everything the camera wrote beside it — the EXIF block, and with it the GPS
+   position of the flat. Only the pixels travel. */
+async function decodePhoto(file){
+  /* createImageBitmap turns the picture the way the camera held it, when it
+     can be asked to; where it cannot, an <img> does so by default in every
+     current browser, and that is the fallback. */
+  try{
+    if(typeof createImageBitmap === 'function'){
+      const b = await createImageBitmap(file, {imageOrientation: 'from-image'});
+      return {img: b, width: b.width, height: b.height, done: () => { try{ b.close(); }catch(e){} }};
+    }
+  }catch(e){}
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  try{
+    img.src = url;
+    if(img.decode) await img.decode();
+    else await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
+  }catch(e){
+    URL.revokeObjectURL(url);
+    throw Object.assign(new Error('not a picture'), {code: 'bad'});
+  }
+  return {img, width: img.naturalWidth, height: img.naturalHeight, done: () => URL.revokeObjectURL(url)};
+}
+async function shrinkPhoto(file){
+  if(!file || (file.size || 0) > PHOTO_IN_MAX) throw Object.assign(new Error('too large'), {code: 'big'});
+  const src = await decodePhoto(file);
+  try{
+    const w0 = src.width, h0 = src.height;
+    if(!(w0 > 0 && h0 > 0)) throw Object.assign(new Error('not a picture'), {code: 'bad'});
+    for(const [edge, q] of [[PHOTO_EDGE, 0.82], [PHOTO_EDGE, 0.7], [1280, 0.7], [1024, 0.6]]){
+      const s = Math.min(1, edge / Math.max(w0, h0));
+      const w = Math.max(1, Math.round(w0 * s)), h = Math.max(1, Math.round(h0 * s));
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const g = c.getContext('2d');
+      g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);   /* a transparent picture turns white, not black */
+      g.drawImage(src.img, 0, 0, w, h);
+      const blob = await new Promise(res => c.toBlob(res, 'image/jpeg', q));
+      c.width = 0; c.height = 0;                       /* hand the memory back at once — iOS counts it */
+      if(!blob) throw Object.assign(new Error('could not encode'), {code: 'bad'});
+      if(blob.size <= PHOTO_LIMIT) return blob.type === 'image/jpeg' ? blob : new Blob([blob], {type: 'image/jpeg'});
+    }
+    throw Object.assign(new Error('too large'), {code: 'big'});
+  }finally{ src.done(); }
+}
+
+const PHOTOS = (function(){
+  const cache = new Map();                   /* object path -> blob: URL, for this page's life */
+  const prefix = (unit, id) => String(unit) + '/' + String(id);
+  const code = e => Number((e && e.body && typeof e.body === 'object' && e.body.statusCode) || (e && e.status) || 0);
+
+  /* What the storage rules let this session see under one request. Only
+     names this app could have written are taken: anything else under the
+     prefix is not a photo this page should be drawing. */
+  async function list(unit, id){
+    if(!photoPathOK(unit, id)) return [];
+    const rows = await SB.photoList(prefix(unit, id));
+    return (Array.isArray(rows) ? rows : [])
+      .filter(o => o && o.id && PHOTO_NAME.test(String(o.name || '')))
+      .map(o => ({path: prefix(unit, id) + '/' + o.name, at: o.created_at || null}))
+      .slice(0, PHOTO_MAX * 2);
+  }
+  async function url(path){
+    if(cache.has(path)) return cache.get(path);
+    const u = URL.createObjectURL(await SB.photoGet(path));
+    cache.set(path, u);
+    return u;
+  }
+  /* Each photo goes under a name chosen once and kept for its one retry. A
+     photo that landed and lost its answer then comes back as "already there"
+     (409) — which is the answer, not an error — rather than being stored a
+     second time under a second name. A refusal is not retried: the rules said
+     no, and asking again changes nothing. */
+  async function putOnce(path, blob){
+    for(let attempt = 0; ; attempt++){
+      try{ return await SB.photoPut(path, blob); }
+      catch(e){
+        const c = code(e);
+        if(c === 409) return path;
+        if(!e || e.noSession) throw e;
+        if(c && c !== 408 && c !== 429 && c < 500) throw Object.assign(e, {refused: true});
+        if(attempt >= 1) throw e;
+      }
+    }
+  }
+  async function sendAll(unit, id, blobs, progress){
+    const out = {ok: 0, failed: 0, refused: false};
+    if(!photoPathOK(unit, id)){ out.failed = blobs.length; out.refused = true; return out; }
+    for(let i = 0; i < blobs.length; i++){
+      try{ if(progress) progress(i + 1, blobs.length); }catch(e){}
+      try{ await putOnce(prefix(unit, id) + '/' + uuid4() + '.jpg', blobs[i]); out.ok++; }
+      catch(e){ out.failed++; if(e && e.refused) out.refused = true; }
+    }
+    return out;
+  }
+  return {list, url, sendAll, cache};
+})();
+
 /* ------- new request sheet ------- */
 /* CON-03. One open of the sheet is one submission, however many times Send is
    pressed before it succeeds. See the matching note in admin.html. */
 let REQ_KEY = null;
 function sheetNewRequest(catId){
   REQ_KEY = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : null;
-  FORM = {cat: catId || null, pri:'routine', time:'any'};
+  /* PHOTO-01. `photos` are this sheet's, prepared and waiting to be sent;
+     `busy` counts photos still being prepared; `spent` is set once the office
+     holds the request, after which this sheet only finishes its photos. */
+  FORM = {cat: catId || null, pri:'routine', time:'any', photos:[], busy:0, spent:false};
   openSheet(T('newRequest'), formHTML());
 }
 function formHTML(){
@@ -1673,6 +1893,14 @@ function formHTML(){
   </div>
 
   <div class="fgroup">
+    <label class="f" for="rPhotoIn">${T('f_photo')}</label>
+    ${formPhotos()}
+    <input type="file" id="rPhotoIn" class="vh" accept="image/*" multiple tabindex="-1"
+           aria-label="${esc(T('ph_add'))}" onchange="photoPicked(this)">
+    <div class="ph-note">${T('ph_note')}</div>
+  </div>
+
+  <div class="fgroup">
     <label class="f" id="lblPri">${T('f_pri')}</label>
     <div class="chips" role="group" aria-labelledby="lblPri">${pri.map(([v,k])=>`<button class="chip ${FORM.pri===v?'on':''}" type="button" aria-pressed="${FORM.pri===v}" onclick="FORM.pri='${v}';refreshForm()">${T(k)}</button>`).join('')}</div>
   </div>
@@ -1683,7 +1911,63 @@ function formHTML(){
   </div>
 
   <button class="btn primary" id="rGo" onclick="submitRequest()"
-          ${SENDING ? 'disabled' : ''}>${SENDING ? T('sending') : T('submit')}</button>`;
+          ${(SENDING || FORM.spent || FORM.busy) ? 'disabled' : ''}>${
+            SENDING ? T('sending') : FORM.spent ? T('ph_sending') : T('submit')}</button>`;
+}
+/* PHOTO-01. The photos this sheet will send, as thumbnails, and the square that
+   adds one. A sheet whose request is already with the office shows its photos
+   going and offers nothing to change. */
+function formPhotos(){
+  const list = FORM.photos || [], n = list.length, edit = !FORM.spent;
+  const cells = list.map((p, i) => `
+    <div class="ph">
+      <img src="${esc(p.url)}" alt="${esc(T('ph_open').replace('{n}', NUM(i + 1)).replace('{m}', NUM(n)))}">
+      ${edit ? `<button class="rm" type="button" data-i="${i}" onclick="photoDrop(this.dataset.i)"
+          aria-label="${esc(T('ph_remove').replace('{n}', NUM(i + 1)))}">${I('x', 14, 2.4)}</button>` : ''}
+    </div>`).join('');
+  const add = edit && n + (FORM.busy || 0) < PHOTO_MAX
+    ? `<button class="ph add" type="button" onclick="photoPick('rPhotoIn')"${FORM.busy ? ' disabled' : ''}>${
+         I('camera', 22)}<span>${FORM.busy ? T('ph_prep') : T('ph_add')}</span></button>`
+    : '';
+  return `<div class="photos" id="rPhotos">${cells}${add}</div>`;
+}
+function paintFormPhotos(){
+  const el = $('rPhotos'); if(el) el.outerHTML = formPhotos();
+  const b = $('rGo');
+  if(b && !SENDING && !FORM.spent){ b.disabled = !!FORM.busy; }
+}
+function photoPick(id){ const f = $(id); if(f) f.click(); }
+function photoDrop(i){
+  const k = parseInt(i, 10), list = FORM.photos || [];
+  if(FORM.spent || !(k >= 0 && k < list.length)) return;
+  const [gone] = list.splice(k, 1);
+  try{ URL.revokeObjectURL(gone.url); }catch(e){}
+  paintFormPhotos();
+}
+/* Chosen photos are made smaller here, on the phone, before anything is sent —
+   see shrinkPhoto. A photo still being prepared holds the Submit button, so a
+   quick tap cannot send the request without it. */
+async function photoPicked(inp){
+  const files = Array.from((inp && inp.files) || []);
+  try{ inp.value = ''; }catch(e){}                /* the same photo can be chosen again */
+  const form = FORM;
+  if(!files.length || form.spent) return;
+  const room = PHOTO_MAX - form.photos.length - form.busy;
+  if(room <= 0) return toast(T('ph_max'));
+  if(files.length > room) toast(T('ph_max'));
+  const take = files.slice(0, room);
+  form.busy += take.length; paintFormPhotos();
+  for(const f of take){
+    try{
+      const blob = await shrinkPhoto(f);
+      if(!form.spent) form.photos.push({blob, url: URL.createObjectURL(blob)});
+    }catch(e){
+      toast(e && e.code === 'big' ? T('ph_big') : T('ph_bad'));
+    }finally{
+      form.busy--;
+      if(FORM === form) paintFormPhotos();
+    }
+  }
 }
 function refreshForm(){
   const t = $('rTitle') ? $('rTitle').value : '';
@@ -1710,6 +1994,12 @@ async function submitRequest(){
      window. Until 8 September 2026 only the title survived — it was copied into
      `desc` and the other two were read from the DOM by nobody. The resident was
      shown a success message either way. */
+  /* PHOTO-01. A sheet whose request the office already holds is only finishing
+     its photos and sends nothing more; and a photo still being prepared is
+     waited for, not left behind. The button says both, so this is the backstop
+     for a tap that gets past it. */
+  if(FORM.spent || FORM.busy) return;
+  const form = FORM;
   const title = ($('rTitle')&&$('rTitle').value.trim()) || L('New maintenance request','طلب صيانة جديد');
   const detail = ($('rDesc') && $('rDesc').value.trim()) || '';
   const visit = visitOK(FORM.time || 'any');
@@ -1787,8 +2077,33 @@ async function submitRequest(){
 
   REQ_KEY = null;                               /* this submission is done with */
   REQUESTS.unshift(rec);
+  form.spent = true;
+
+  /* PHOTO-01. The photos go AFTER the request, because a photo belongs to a
+     request the office already holds: the storage rules accept one only under
+     an open request on the resident's own flat, at the reference that landed —
+     which is why rec.id is read after the REQ-01 correction above and not
+     before. The sheet stays up while they go, its button counting them, so
+     "did my photos go?" has an answer on the screen. */
+  const shots = (form.photos || []).slice();
+  let sent = null;
+  if(shots.length){
+    const btn = $('rGo');
+    if(btn){ btn.disabled = true; btn.textContent = T('ph_sending'); }
+    if(FORM === form){ const el = $('rPhotos'); if(el) el.outerHTML = formPhotos(); }
+    sent = await PHOTOS.sendAll(RESIDENT.unit, rec.id, shots.map(p => p.blob), (k, n) => {
+      const b = $('rGo');
+      if(b && b === btn) b.textContent = T('ph_sending_n').replace('{n}', NUM(k)).replace('{m}', NUM(n));
+    });
+    shots.forEach(p => { try{ URL.revokeObjectURL(p.url); }catch(e){} });
+    /* The resident may have closed this sheet and opened another while the
+       photos went. Only this one is closed, and nobody is moved off a screen
+       they chose. */
+    const ours = !!btn && document.contains(btn) && $('sheet').classList.contains('on');
+    if(!ours){ render(); toast(photoToast(sent, shots.length)); return; }
+  }
   closeAll(); TAB='svc'; SVC_TAB='open'; render();
-  toast(T('toastReq'));
+  toast(sent ? photoToast(sent, shots.length) : T('toastReq'));
 }
 
 /* ------- request detail sheet ------- */
@@ -1832,8 +2147,107 @@ function sheetRequest(id){
 
     <div class="sect" style="margin-top:6px">${T('progress')}</div>
     <div class="card"><ul class="tl">${steps}</ul></div>
+    ${reqPhotosHTML(r)}
     ${stars}
   `);
+  reqPhotosLoad(r);
+}
+
+/* ------- photos on a request (PHOTO-01) -------
+   The resident sees the photos they added to this request, and while it is
+   open can add more, up to four. What they can see is the storage rules'
+   decision, not this page's: their own photos, on their own flat, while they
+   live there. Drawn only with a session of this page's own — a harness that
+   stubs signedIn() has none, and must not reach any network for a photo. */
+let RQ_PHOTO_SEQ = 0;
+let RQ_PHOTOS = null;                 /* {id, urls, count} for the sheet on screen */
+let RQ_ADDING = false;
+const reqOpen = r => ['submitted','assigned','progress','hold'].includes(r && r.status);
+function reqPhotosHTML(r){
+  if(!SB.hasSession() || !photoPathOK(RESIDENT.unit, r.id)) return '';
+  return `<div class="sect" style="margin-top:6px" id="rqPhotosH">${T('ph_title')}</div>
+    <div class="card" id="rqPhotos" data-id="${esc(String(r.id))}" aria-live="polite">
+      <div class="muted">${T('ph_loading')}</div></div>`;
+}
+async function reqPhotosLoad(r){
+  if(!SB.hasSession() || !photoPathOK(RESIDENT.unit, r.id)) return;
+  const mine = ++RQ_PHOTO_SEQ;
+  /* A slow read belongs to the sheet that asked. If the resident has moved
+     on, it paints nothing. */
+  const box = () => {
+    const el = $('rqPhotos');
+    return (el && mine === RQ_PHOTO_SEQ && el.dataset.id === String(r.id)) ? el : null;
+  };
+  let items, urls;
+  try{
+    items = await PHOTOS.list(RESIDENT.unit, r.id);
+    urls = await Promise.all(items.map(it => PHOTOS.url(it.path).catch(() => null)));
+  }catch(e){
+    const el = box(); if(!el) return;
+    if(e && e.noSession){ const h = $('rqPhotosH'); if(h) h.remove(); el.remove(); return; }
+    el.innerHTML = `<div class="muted">${T('ph_load_fail')}</div>`;
+    return;
+  }
+  const el = box(); if(!el) return;
+  const shown = urls.filter(Boolean);
+  RQ_PHOTOS = {id: String(r.id), urls: shown, count: items.length};
+  const n = shown.length, open = reqOpen(r);
+  const canAdd = open && items.length < PHOTO_MAX;
+  const cells = shown.map((u, i) => `<button class="ph" type="button" data-id="${esc(String(r.id))}" data-i="${i}"
+      onclick="reqPhotoView(this.dataset.id, this.dataset.i)"
+      aria-label="${esc(T('ph_open').replace('{n}', NUM(i + 1)).replace('{m}', NUM(n)))}"><img src="${esc(u)}" alt=""></button>`).join('');
+  const add = canAdd ? `<button class="ph add" type="button" id="rqPhotoAdd" onclick="photoPick('rqPhotoIn')"${RQ_ADDING ? ' disabled' : ''}>${
+      I('camera', 22)}<span>${RQ_ADDING ? T('ph_prep') : T('ph_add')}</span></button>` : '';
+  el.innerHTML = `
+    ${(cells || add) ? `<div class="photos">${cells}${add}</div>` : ''}
+    ${items.length ? '' : `<div class="muted"${add ? ' style="margin-top:10px"' : ''}>${T(open ? 'ph_none_open' : 'ph_none')}</div>`}
+    ${items.length > n ? `<div class="muted" style="margin-top:8px">${T('ph_load_fail')}</div>` : ''}
+    ${canAdd ? `<input type="file" id="rqPhotoIn" class="vh" accept="image/*" multiple tabindex="-1"
+         aria-label="${esc(T('ph_add'))}" data-id="${esc(String(r.id))}" onchange="reqPhotoPicked(this)">
+       <div class="ph-note" id="rqPhotoMsg">${T('ph_note')}</div>` : ''}`;
+}
+function reqPhotoView(id, i){
+  const set = (RQ_PHOTOS && RQ_PHOTOS.id === String(id)) ? RQ_PHOTOS.urls : [];
+  const k = parseInt(i, 10), u = set[k];
+  if(!u) return;
+  const name = T('ph_open').replace('{n}', NUM(k + 1)).replace('{m}', NUM(set.length));
+  openSheet(name, `
+    <img class="ph-view" src="${esc(u)}" alt="${esc(name)}">
+    <button class="btn ghost" style="margin-top:14px" data-id="${esc(String(id))}"
+            onclick="sheetRequest(this.dataset.id)">${T('ph_back')}</button>`);
+}
+/* Adding to a request already with the office: prepared the same way, sent
+   the same way, and the section is then read back from storage rather than
+   drawn from what this phone believes it sent. */
+async function reqPhotoPicked(inp){
+  const id = inp && inp.dataset ? inp.dataset.id : null;
+  const files = Array.from((inp && inp.files) || []);
+  try{ inp.value = ''; }catch(e){}
+  const r = REQUESTS.find(x => String(x.id) === String(id));
+  if(!r || !files.length || RQ_ADDING || !reqOpen(r) || !photoPathOK(RESIDENT.unit, r.id)) return;
+  const have = (RQ_PHOTOS && RQ_PHOTOS.id === String(r.id)) ? RQ_PHOTOS.count : 0;
+  const room = PHOTO_MAX - have;
+  if(room <= 0) return toast(T('ph_max'));
+  if(files.length > room) toast(T('ph_max'));
+  RQ_ADDING = true;
+  const busy = on => { const b = $('rqPhotoAdd'); if(b){ b.disabled = on; } };
+  const say = t => { const m = $('rqPhotoMsg'); if(m) m.textContent = t; };
+  busy(true); say(T('ph_prep'));
+  try{
+    const blobs = [];
+    for(const f of files.slice(0, room)){
+      try{ blobs.push(await shrinkPhoto(f)); }
+      catch(e){ toast(e && e.code === 'big' ? T('ph_big') : T('ph_bad')); }
+    }
+    if(!blobs.length) return;
+    const out = await PHOTOS.sendAll(RESIDENT.unit, r.id, blobs, (k, n) =>
+      say(T('ph_sending_n').replace('{n}', NUM(k)).replace('{m}', NUM(n))));
+    if(out.ok === blobs.length) toast(blobs.length === 1 ? T('ph_added') : T('ph_added_n'));
+    else toast(out.refused ? T('ph_refused') : T('ph_up_fail'));
+  }finally{
+    RQ_ADDING = false;
+    reqPhotosLoad(r);
+  }
 }
 
 /* APP-05. The visitor pass is gone, not disabled.
@@ -1989,6 +2403,7 @@ function viewProfile(){
   <div class="card tight">
     ${menuRow('phone', T('emergency'), L('Manager, security, 24h line','المدير، الأمن، خط ٢٤ ساعة'), 'sheetContact()')}
     ${menuRow('key', L('Change password','تغيير كلمة المرور'), L('Choose a new password for this app','اختر كلمة مرور جديدة لهذا التطبيق'), 'sheetPassword()')}
+    ${pushPart('row')}
   </div>
 
   <div class="card tight">
@@ -2008,6 +2423,12 @@ function viewProfile(){
    cursor and a toast saying the action was not wired up. A row that cannot be
    pressed must not look pressable — the chevron is the promise, not the
    handler. */
+/* NOTE-01. Home and Profile ask PUSH what to show, and a page without the
+   plugin — the web app — is shown nothing. Guarded, because a paint must
+   never be what fails. */
+function pushPart(which){
+  try{ return which === 'card' ? PUSH.card() : PUSH.row(); }catch(e){ return ''; }
+}
 function menuRow(ico,t,sv,act){
   return `<div class="menurow"${pressable(act)}>
     <span class="icobox" style="width:40px;height:40px;border-radius:12px;background:#F1F3F5;color:var(--ink-2)">${I(ico,20)}</span>
@@ -2102,7 +2523,7 @@ try {
   setTimeout(()=>{ const sp = $('splash'); if(sp){ sp.classList.add('gone'); setTimeout(()=>sp.remove(), 700); } }, 1250);
   applyMode();
   LINK_boot();
-  setLang('en');
+  setLang(savedLang());
   updateLinkbar();
   tick(); setInterval(tick, 20000);
 } catch (err) {
@@ -2462,6 +2883,71 @@ const SB = (function(){
     });
   }
 
+  /* PHOTO-01. Request photos, in their own private bucket. A signed link would
+     not help here: this page's CSP takes images only from itself and from
+     blob:, so a photo is read with the session and drawn from memory.
+
+     All three need a session of THIS page's own. signedIn() can be stubbed by
+     a harness; `sess` cannot, and a photo call with no session behind it must
+     not reach any network at all — it says so instead. */
+  const PH_BUCKET = 'request-photos';
+  const hasSession = () => !!(sess && sess.access_token);
+  const noSession = () => Promise.reject(Object.assign(new Error('not signed in'), {noSession: true}));
+  const phPath = p => String(p).split('/').map(encodeURIComponent).join('/');
+  /* CON-07 again: the body is read INSIDE the deadline, not after it — a
+     server that sends headers and then stalls must not hold a photo for ever. */
+  async function phFetch(url, opt, ms, read){
+    const ctl = new AbortController();
+    const bell = setTimeout(() => ctl.abort(), ms);
+    try{
+      const r = await fetch(url, Object.assign({}, opt, {signal: ctl.signal}));
+      if(!r.ok){
+        const t = await r.text().catch(() => '');
+        let b = null; try{ b = JSON.parse(t); }catch(e){}
+        throw Object.assign(new Error((b && (b.message || b.error)) || ('HTTP ' + r.status)),
+                            {status: r.status, body: b || t});
+      }
+      return read ? await read(r) : await r.text();
+    }catch(e){
+      if(e && e.name === 'AbortError')
+        throw Object.assign(new Error('the request timed out'), {timeout: true});
+      throw e;
+    }finally{ clearTimeout(bell); }
+  }
+  /* Not replayed by authed(): PHOTOS.sendAll keeps the name for its one retry,
+     so a repeat is recognised as "already there" rather than stored twice. */
+  function photoPut(path, blob){
+    if(!hasSession()) return noSession();
+    return authedWrite(async () => {
+      await phFetch(BASE + '/storage/v1/object/' + PH_BUCKET + '/' + phPath(path), {
+        method:'POST',
+        headers: hdr({'x-upsert':'false', 'Content-Type':'image/jpeg', 'cache-control':'max-age=3600'}),
+        body: blob}, UPLOAD_TIMEOUT);
+      return path;
+    });
+  }
+  function photoList(prefix){
+    if(!hasSession()) return noSession();
+    return authedRead(() => call('/storage/v1/object/list/' + PH_BUCKET, {
+      method:'POST', headers: hdr({'Content-Type':'application/json'}),
+      body: JSON.stringify({prefix: String(prefix), limit: 20, offset: 0,
+                            sortBy: {column: 'created_at', order: 'asc'}})}));
+  }
+  /* What comes back is drawn only if it IS a JPEG — the first three bytes say
+     so — and it is re-labelled as one, so a stored object that claims to be
+     something else can never be opened as a page from this origin. */
+  function photoGet(path){
+    if(!hasSession()) return noSession();
+    return authedRead(async () => {
+      const buf = await phFetch(BASE + '/storage/v1/object/authenticated/' + PH_BUCKET + '/' + phPath(path),
+                                {headers: hdr()}, TIMEOUT, r => r.arrayBuffer());
+      const h = new Uint8Array(buf, 0, Math.min(3, buf.byteLength));
+      if(!(h.length === 3 && h[0] === 0xFF && h[1] === 0xD8 && h[2] === 0xFF))
+        throw Object.assign(new Error('not a JPEG'), {notJpeg: true});
+      return new Blob([buf], {type: 'image/jpeg'});
+    });
+  }
+
   /* ------------------------------- realtime ------------------------------ */
   let ws = null, ref = 0, hb = null, watchers = [], tables = [], back = 0, joinRef = null;
   let joined = false;                     /* has this page ever had a live channel */
@@ -2569,6 +3055,7 @@ const SB = (function(){
     base: BASE, configured: () => !!(BASE && KEY),
     passwordSignIn, updatePassword, signOutOthers, signOut, refresh, ready, signedIn, isStaff, email, claims,
     sel, ins, ups, upd, del, rpc, upload, signedUrl,
+    hasSession, photoPut, photoList, photoGet,
     watch, stopWatching, rtState: () => rt
   };
   /* SCALE-01. PostgREST answers with at most `db-max-rows` — 1,000 by default —
@@ -3184,6 +3671,203 @@ const LIVE = (function(){
 
 
 
+/* ==========================================================================
+   PUSH — NOTE-01, 13 October 2026: a notification when one of the resident's
+   requests changes status. The iPhone app only.
+
+   The web app has no notifications and promises none; nothing below runs
+   without the native plugin, so on the web this whole block is inert. In the
+   iPhone app the resident is asked once, on Home, after their apartment has
+   opened — never on the sign-in screen, and never by the system dialog
+   before they have said yes on ours, because iOS lets an app show that
+   dialog exactly once.
+
+   What is registered is a token Apple issues for this phone, against this
+   login, through register_push_device() (sql/2026-10-13_push_notifications.sql),
+   which accepts it only from a current resident with a live session. Signing
+   out switches it off first, through unregister_push_device(), while there
+   is still a session to do it with. Who is told about which request is
+   decided when a notification is sent, from who lives in the flat at that
+   moment — not from anything this phone says.
+   ========================================================================== */
+const PUSH = (function(){
+  const NOT_NOW = ENV.prefix + '.push.notnow.v1';  /* "Not now", on this phone */
+  const TOKEN   = ENV.prefix + '.push.token.v1';   /* the token this phone last registered */
+  let perm = 'none';          /* none (no plugin) | prompt | granted | denied */
+  let on = false;             /* the office holds this phone's token for this login */
+  let busy = false, wired = false, opened = false;
+  let pendingWO = null;       /* a tapped notification waiting for the list */
+  let waiting = null;         /* an enable() waiting for its token */
+
+  function plugin(){
+    try{
+      const C = window.Capacitor;
+      if(!C || typeof C.isNativePlatform !== 'function' || !C.isNativePlatform()) return null;
+      const P = C.Plugins && C.Plugins.PushNotifications;
+      return (P && typeof P.register === 'function' && typeof P.addListener === 'function') ? P : null;
+    }catch(e){ return null; }
+  }
+  const store = {
+    get: k => { try{ return localStorage.getItem(k); }catch(e){ return null; } },
+    set: (k, v) => { try{ v === null ? localStorage.removeItem(k) : localStorage.setItem(k, v); }catch(e){} }
+  };
+  const tokenOK = t => /^[0-9a-f]{32,200}$/.test(t);
+  async function check(P){
+    try{ const r = await P.checkPermissions(); return (r && r.receive) || 'prompt'; }
+    catch(e){ return 'prompt'; }
+  }
+
+  /* Wired once, at boot, before anything else can happen: a tap on a
+     notification that opened the app is held by the plugin until somebody
+     listens, and it is the first thing that should be heard. */
+  function boot(){
+    const P = plugin(); if(!P || wired) return;
+    wired = true;
+    try{
+      P.addListener('registration', ev => { onToken(ev && ev.value); });
+      P.addListener('registrationError', ev => {
+        console.error('PUSH.registrationError', ev && ev.error);
+        if(waiting){ const w = waiting; waiting = null; w(false); }
+      });
+      P.addListener('pushNotificationActionPerformed', ev => {
+        const d = (ev && ev.notification && ev.notification.data) || {};
+        const wo = (typeof d.wo === 'string' && /^[A-Za-z0-9_-]{1,40}$/.test(d.wo)) ? d.wo : null;
+        if(!wo) return;
+        pendingWO = wo;
+        if(opened) openPending();
+      });
+      /* In the foreground the banner shows anyway (capacitor.config.json);
+         the screen catches up at once rather than at the next change. */
+      P.addListener('pushNotificationReceived', () => {
+        if(opened){ try{ LIVE.reload(); }catch(e){} }
+      });
+    }catch(e){ console.error('PUSH.boot', e); }
+  }
+
+  async function onToken(v){
+    const t = String(v == null ? '' : v).trim().toLowerCase();
+    if(!tokenOK(t)){ if(waiting){ const w = waiting; waiting = null; w(false); } return; }
+    store.set(TOKEN, t);
+    if(!opened || !SB.signedIn()){ if(waiting){ const w = waiting; waiting = null; w(false); } return; }
+    let ok = false;
+    try{
+      await SB.rpc('register_push_device', {p_token: t, p_platform: 'ios',
+                                            p_lang: LANG === 'ar' ? 'ar' : 'en', p_app_version: null});
+      ok = true;
+    }catch(e){ console.error('PUSH.register', e); }
+    on = ok;
+    if(waiting){ const w = waiting; waiting = null; w(ok); }
+    if(ok) store.set(NOT_NOW, null);
+    if(opened && TAB === 'prof') render();
+  }
+
+  /* After the apartment has opened — and only then. A phone that already
+     said yes registers again on every launch, which is what Apple asks for
+     and what keeps the token and its language current. */
+  async function afterOpen(){
+    const P = plugin(); if(!P) return;
+    boot();
+    /* A login with no apartment — staff, or a resident who has moved out —
+       has nothing to be told about, and the office would refuse the token. */
+    if(NOTENANCY) return;
+    opened = true;
+    perm = await check(P);
+    if(perm === 'granted'){ try{ await P.register(); }catch(e){ console.error('PUSH.register', e); } }
+    if(TAB === 'home' || TAB === 'prof') render();
+    if(pendingWO) openPending();
+  }
+
+  async function openPending(){
+    const id = pendingWO; pendingWO = null;
+    if(!id || !opened || NOTENANCY) return;
+    let r = REQUESTS.find(x => String(x.id) === id);
+    if(!r){ try{ await LIVE.reload(); }catch(e){} r = REQUESTS.find(x => String(x.id) === id); }
+    closeAll();
+    TAB = 'svc'; SVC_TAB = (r && !reqOpen(r)) ? 'hist' : 'open';
+    render();
+    if(r) sheetRequest(r.id);
+  }
+
+  /* The resident pressed Turn on. Our card has said what they will get; the
+     system dialog follows, then Apple's token, then the office records it. */
+  async function enable(){
+    const P = plugin(); if(!P || busy) return;
+    busy = true; render();
+    try{
+      let st = perm;
+      if(st !== 'granted'){
+        try{ const r = await P.requestPermissions(); st = (r && r.receive) || 'denied'; }
+        catch(e){ st = 'denied'; }
+      }
+      perm = st;
+      if(st !== 'granted'){ toast(T('pn_denied')); return; }
+      const got = new Promise(res => {
+        waiting = res;
+        setTimeout(() => { if(waiting === res){ waiting = null; res(false); } }, 15000);
+      });
+      try{ await P.register(); }catch(e){ if(waiting){ const w = waiting; waiting = null; w(false); } }
+      toast((await got) ? T('pn_on') : T('pn_fail'));
+    }finally{
+      busy = false; render();
+    }
+  }
+  function notNow(){ store.set(NOT_NOW, '1'); render(); }
+
+  /* Sign-out comes here first, while there is still a session to switch the
+     token off with. Three seconds at most: a sign-out that hangs on a dead
+     network is worse than a token the office will stop using anyway once the
+     session it was registered under is gone. */
+  async function forget(){
+    const t = store.get(TOKEN);
+    on = false;
+    if(!t || !tokenOK(t) || !SB.signedIn()) return;
+    toast(T('pn_signing_out'));
+    try{
+      await Promise.race([SB.rpc('unregister_push_device', {p_token: t}),
+                          new Promise(res => setTimeout(res, 3000))]);
+    }catch(e){ console.error('PUSH.forget', e); }
+    store.set(TOKEN, null);
+  }
+  /* The notifications are written in the resident's language at the moment
+     they are sent; a change of language here is passed on. */
+  function langChanged(){
+    const t = store.get(TOKEN);
+    if(!on || !t || !tokenOK(t) || !opened) return;
+    SB.rpc('register_push_device', {p_token: t, p_platform: 'ios',
+                                    p_lang: LANG === 'ar' ? 'ar' : 'en', p_app_version: null})
+      .catch(e => console.error('PUSH.lang', e));
+  }
+
+  /* What Home and Profile show. Nothing at all without the plugin. */
+  function card(){
+    if(!plugin() || !opened || perm !== 'prompt' || store.get(NOT_NOW) === '1') return '';
+    return `
+    <div class="card pn-card">
+      <div class="row" style="align-items:flex-start">
+        <span class="icobox" style="background:var(--blue-soft);color:var(--blue)">${I('bell', 22)}</span>
+        <div class="grow">
+          <div style="font-size:15px;font-weight:800;line-height:1.3">${T('pn_card_t')}</div>
+          <div class="muted" style="margin-top:5px;line-height:1.5">${T('pn_card_d')}</div>
+        </div>
+      </div>
+      <div class="acts">
+        <button class="btn primary" type="button" onclick="PUSH.enable()"${busy ? ' disabled' : ''}>${busy ? T('pn_busy') : T('pn_on_btn')}</button>
+        <button class="btn ghost" type="button" onclick="PUSH.notNow()"${busy ? ' disabled' : ''}>${T('pn_later')}</button>
+      </div>
+    </div>`;
+  }
+  function row(){
+    if(!plugin() || !opened || perm === 'none') return '';
+    if(perm === 'granted') return menuRow('bell', T('pn_row'), on ? T('pn_row_on') : T('pn_row_off'), on ? '' : 'PUSH.enable()');
+    if(perm === 'denied')  return menuRow('bell', T('pn_row'), T('pn_row_denied'), '');
+    return menuRow('bell', T('pn_row'), T('pn_row_off'), 'PUSH.enable()');
+  }
+
+  return {boot, afterOpen, enable, notNow, forget, langChanged, card, row,
+          state: () => ({perm, on, opened, busy, pending: pendingWO})};
+})();
+
+
 /* ------------------------------ connection ------------------------------ */
 /* Signed out this is a demonstration of one apartment. Signed in it is the
    resident's own tenancy, and the only reason they cannot see anyone else's
@@ -3348,6 +4032,7 @@ async function openApartment(linked){
   LINK.onChange(() => { render(); linkFlash(); });
   closeAll(); render();
   toast(L('Signed in.','تم تسجيل الدخول.'));
+  PUSH.afterOpen();
   return true;
 }
 
@@ -3474,7 +4159,15 @@ async function pwSave(inSheet){
      * the history entry is REPLACED, so Back cannot return to the signed-in
        screen of the account that just left.  */
 const AUTH_EVENT = ENV.prefix + '.auth.event';
-function sbOut(){
+let SIGNING_OUT = false;
+async function sbOut(){
+  /* NOTE-01. This phone's notifications are switched off for this login
+     before the session goes — afterwards there is no session to do it with.
+     PUSH.forget() returns at once on the web, and within three seconds on a
+     phone whatever the network does. */
+  if(SIGNING_OUT) return;
+  SIGNING_OUT = true;
+  try{ await PUSH.forget(); }catch(e){}
   try{ SB.signOut(); }catch(e){}
   try{ LINK.reset(); }catch(e){}
   try{ localStorage.setItem(AUTH_EVENT, 'out:' + Date.now()); }catch(e){}
@@ -3496,6 +4189,9 @@ window.addEventListener('storage', e => {
   /* Painted first and synchronously. The shell ships empty now, so without
      this a visitor watches a blank page for as long as the network takes. */
   try{ render(); }catch(e){ console.error('first paint', e); }
+  /* NOTE-01. Before anything that waits on the network: a tap on a
+     notification that opened the app is waiting to be heard. */
+  try{ PUSH.boot(); }catch(e){ console.error('PUSH.boot', e); }
   if(!SB.configured()) return;
   try{
     if(await SB.ready()){
@@ -3511,6 +4207,7 @@ window.addEventListener('storage', e => {
       if(await LIVE.start()){
         LINK.onChange(() => { render(); linkFlash(); });
         render();
+        PUSH.afterOpen();
       }else{
         /* a signed-in account with no tenancy attached is worse than useless
            here — say so once rather than showing someone else's apartment */

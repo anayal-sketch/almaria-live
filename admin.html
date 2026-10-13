@@ -281,6 +281,15 @@ label.f{display:block;font-size:11.5px;font-weight:800;color:var(--ink-2);margin
 .empty .et{font-size:15px;font-weight:800;color:var(--ink-2);margin:12px 0 5px}
 .empty .ed{font-size:13px;color:var(--muted)}
 .note{font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:10px}
+/* PHOTO-01. A resident's photos on the job: thumbnails, and the one chosen,
+   large, underneath. */
+.wo-ph{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.wo-ph-t{aspect-ratio:1/1;border:1px solid var(--line);border-radius:8px;overflow:hidden;padding:0;
+  background:var(--plane);cursor:pointer}
+.wo-ph-t img{width:100%;height:100%;object-fit:cover;display:block}
+.wo-ph-t:hover{border-color:var(--teal-600)}
+.wo-ph-big{width:100%;border-radius:8px;display:block;margin-top:12px;background:var(--plane)}
+a.tbtn{text-decoration:none}
 .demo{
   background:var(--gold-soft);border:1px solid #EFDFB4;border-radius:9px;padding:10px 13px;
   font-size:12px;font-weight:700;color:var(--gold-ink);display:flex;gap:9px;align-items:center;margin-bottom:16px
@@ -947,6 +956,8 @@ const D={
   search:'Search reference, unit or description…',
   wo_detail:'Work order', wo_timeline:'Progress', wo_internal:'Internal notes',
   wo_said:'What the resident wrote', wo_visit:'Preferred visit',
+  wo_photos:'Photos from the resident', wo_ph_loading:'Loading photos…', wo_ph_none:'The resident added no photos.',
+  wo_ph_fail:'Some photos could not be loaded just now.', wo_ph_n:'Photo {n} of {m}', wo_ph_save:'Save',
   vw_morning:'Morning 9–12', vw_after:'Afternoon 1–5', vw_eve:'Evening 5–8',
   vw_weekend:'Weekend', vw_any:'Any time',
   wo_close:'Close out', wo_close_d:'Cost capture is mandatory. A job cannot be closed without it.',
@@ -1303,6 +1314,8 @@ const D={
   search:'ابحث برقم الطلب أو الوحدة أو الوصف…',
   wo_detail:'أمر عمل', wo_timeline:'المسار', wo_internal:'ملاحظات داخلية',
   wo_said:'ما كتبه الساكن', wo_visit:'الوقت المفضل للزيارة',
+  wo_photos:'صور من الساكن', wo_ph_loading:'جارٍ تحميل الصور…', wo_ph_none:'لم يرفق الساكن صوراً.',
+  wo_ph_fail:'تعذّر تحميل بعض الصور الآن.', wo_ph_n:'الصورة {n} من {m}', wo_ph_save:'حفظ',
   vw_morning:'صباحاً ٩–١٢', vw_after:'ظهراً ١–٥', vw_eve:'مساءً ٥–٨',
   vw_weekend:'نهاية الأسبوع', vw_any:'أي وقت',
   wo_close:'إغلاق الأمر', wo_close_d:'تسجيل التكلفة إلزامي. لا يمكن إغلاق الأمر بدونه.',
@@ -4324,6 +4337,7 @@ function woDetail(id){
   <div class="card mb"><div class="bd">
    <div style="white-space:pre-wrap;line-height:1.55">${esc(w.desc)}</div>
   </div></div>`:''}
+  ${woPhotosHTML(w)}
 
   <div class="card mb"><div class="hd">
     <div style="flex:1">${(()=>{const n=docsFor({type:'wo',wo:w.id}).length;
@@ -4367,6 +4381,80 @@ function woDetail(id){
      ${w.rating?`<dt>${T('rating')}</dt><dd>${NUM(w.rating)} / ${NUM(5)}</dd>`:''}
     </dl></div></div>`}
  `);
+ woPhotosLoad(w);
+}
+
+/* PHOTO-01, 13 October 2026. What the resident photographed, on the job.
+
+   The photos are listed under <flat>/<reference>/ in the request-photos
+   bucket — the same two values the resident's phone used, which the storage
+   rules held it to — and every one is shown: staff see all of them. Drawn
+   only with a session of this page's own, and only for a reference and flat
+   of the shapes those rules accept; anything else is not a place a photo can
+   be, and is not looked for.
+
+   A slow read belongs to the drawer that asked. If the operator has moved
+   on, it paints nothing. */
+const WO_PH_NAME = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$/;
+const woPhotoOK = w => !!w && /^[A-Za-z0-9-]{1,20}$/.test(String(w.unit == null ? '' : w.unit))
+                         && /^[A-Za-z0-9_-]{1,40}$/.test(String(w.id == null ? '' : w.id));
+const WO_PH_CACHE = new Map();               /* object path -> blob: URL, for this page's life */
+let WO_PH_SEQ = 0;
+let WO_PH = null;                            /* {id, urls} for the drawer on screen */
+function woPhotosHTML(w){
+  if(!SB.hasSession() || !woPhotoOK(w)) return '';
+  return `<div class="sect" style="margin-top:0" id="woPhotosH">${T('wo_photos')}</div>
+  <div class="card mb"><div class="bd" id="woPhotos" data-id="${esc(w.id)}" aria-live="polite">
+   <div class="note" style="padding:0">${T('wo_ph_loading')}</div></div></div>`;
+}
+async function woPhotosLoad(w){
+  if(!SB.hasSession() || !woPhotoOK(w)) return;
+  const mine = ++WO_PH_SEQ;
+  const box = () => {
+    const el = $('woPhotos');
+    return (el && mine === WO_PH_SEQ && el.dataset.id === String(w.id)) ? el : null;
+  };
+  const prefix = String(w.unit) + '/' + String(w.id);
+  let urls;
+  try{
+    const rows = await SB.photoList(prefix);
+    const paths = (Array.isArray(rows) ? rows : [])
+      .filter(o => o && o.id && WO_PH_NAME.test(String(o.name || '')))
+      .map(o => prefix + '/' + o.name).slice(0, 8);
+    urls = await Promise.all(paths.map(async p => {
+      if(WO_PH_CACHE.has(p)) return WO_PH_CACHE.get(p);
+      try{ const u = URL.createObjectURL(await SB.photoGet(p)); WO_PH_CACHE.set(p, u); return u; }
+      catch(e){ return null; }
+    }));
+  }catch(e){
+    const el = box(); if(!el) return;
+    if(e && e.noSession){ const h = $('woPhotosH'); if(h) h.remove(); const c = el.closest('.card'); if(c) c.remove(); return; }
+    el.innerHTML = `<div class="note" style="padding:0">${T('wo_ph_fail')}</div>`;
+    return;
+  }
+  const el = box(); if(!el) return;
+  const shown = urls.filter(Boolean);
+  WO_PH = {id: String(w.id), urls: shown};
+  if(!urls.length){ el.innerHTML = `<div class="note" style="padding:0">${T('wo_ph_none')}</div>`; return; }
+  const n = shown.length;
+  el.innerHTML = `
+   <div class="wo-ph">${shown.map((u, i) => `<button class="wo-ph-t" type="button" data-i="${i}"
+       onclick="woPhotoShow(this.dataset.i)" aria-label="${esc(T('wo_ph_n').replace('{n}', NUM(i + 1)).replace('{m}', NUM(n)))}"><img src="${esc(u)}" alt=""></button>`).join('')}</div>
+   ${urls.length > n ? `<div class="note" style="padding:8px 0 0">${T('wo_ph_fail')}</div>` : ''}
+   <div id="woPhotoBig"></div>`;
+}
+function woPhotoShow(i){
+  const k = parseInt(i, 10);
+  const u = WO_PH && WO_PH.urls[k];
+  const big = $('woPhotoBig');
+  if(!u || !big) return;
+  const name = T('wo_ph_n').replace('{n}', NUM(k + 1)).replace('{m}', NUM(WO_PH.urls.length));
+  big.innerHTML = `
+   <img class="wo-ph-big" src="${esc(u)}" alt="${esc(name)}">
+   <div style="display:flex;gap:14px;align-items:center;margin-top:8px">
+    <span class="note" style="padding:0;flex:1">${esc(name)}</span>
+    <a class="tbtn" href="${esc(u)}" download="${esc(WO_PH.id + '-' + (k + 1) + '.jpg')}">${I('dl', 15)}<span>${T('wo_ph_save')}</span></a>
+   </div>`;
 }
 async function closeWO(id){
   if(!writeGate()) return;
@@ -8606,6 +8694,54 @@ const SB = (function(){
     });
   }
 
+  /* PHOTO-01, 13 October 2026. The photos residents add to their requests, in
+     the private `request-photos` bucket. The console only reads them: the
+     storage rules give staff every photo and give nobody here a way to add,
+     replace or remove one. Read with the session and drawn from memory — this
+     page's CSP takes images only from itself and from blob:.
+
+     Both need a session of THIS page's own. signedIn() can be stubbed by a
+     harness; `sess` cannot, and a photo read with no session behind it must
+     not reach any network at all. */
+  const PH_BUCKET = 'request-photos';
+  const hasSession = () => !!(sess && sess.access_token);
+  const noSession = () => Promise.reject(Object.assign(new Error('not signed in'), {noSession: true}));
+  function photoList(prefix){
+    if(!hasSession()) return noSession();
+    return authedRead(() => call('/storage/v1/object/list/' + PH_BUCKET, {
+      method:'POST', headers: hdr({'Content-Type':'application/json'}),
+      body: JSON.stringify({prefix: String(prefix), limit: 20, offset: 0,
+                            sortBy: {column: 'created_at', order: 'asc'}})}));
+  }
+  /* Drawn only if it IS a JPEG — the first three bytes say so — and re-labelled
+     as one, so an object that claims to be something else can never be opened
+     as a page from this origin, not even through the Save link. */
+  function photoGet(path){
+    if(!hasSession()) return noSession();
+    return authedRead(async () => {
+      const ctl = new AbortController();
+      const bell = setTimeout(() => ctl.abort(), TIMEOUT);
+      let buf;
+      try{
+        const r = await fetch(BASE + '/storage/v1/object/authenticated/' + PH_BUCKET + '/' +
+                              String(path).split('/').map(encodeURIComponent).join('/'),
+                              {headers: hdr(), signal: ctl.signal});
+        if(!r.ok){
+          const t = await r.text().catch(() => '');
+          throw Object.assign(new Error('HTTP ' + r.status), {status: r.status, body: t});
+        }
+        buf = await r.arrayBuffer();
+      }catch(e){
+        if(e && e.name === 'AbortError') throw Object.assign(new Error('the request timed out'), {timeout: true});
+        throw e;
+      }finally{ clearTimeout(bell); }
+      const h = new Uint8Array(buf, 0, Math.min(3, buf.byteLength));
+      if(!(h.length === 3 && h[0] === 0xFF && h[1] === 0xD8 && h[2] === 0xFF))
+        throw Object.assign(new Error('not a JPEG'), {notJpeg: true});
+      return new Blob([buf], {type: 'image/jpeg'});
+    });
+  }
+
   /* ------------------------------- realtime ------------------------------ */
   let ws = null, ref = 0, hb = null, watchers = [], tables = [], back = 0, joinRef = null;
   let joined = false;                     /* has this page ever had a live channel */
@@ -8714,6 +8850,7 @@ const SB = (function(){
     signIn, signOut, refresh, ready, signedIn, isStaff, email, claims,
     setPassword, adoptRecovery,
     sel, ins, ups, upd, del, rpc, rpcAppend, upload, signedUrl,
+    hasSession, photoList, photoGet,
     watch, stopWatching, rtState: () => rt
   };
   /* SCALE-01. PostgREST answers with at most `db-max-rows` — 1,000 by default —
